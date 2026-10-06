@@ -2,6 +2,8 @@
 
 # TFT_eSPI_ESP8266
 
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/Diaszano/TFT_eSPI_ESP8266/badge)](https://scorecard.dev/viewer/?uri=github.com/Diaszano/TFT_eSPI_ESP8266)
+
 TFT_eSPI_ESP8266 é uma biblioteca gráfica Arduino para controlar um display ST7789 por SPI com um ESP8266. Ela mantém o cabeçalho conhecido `TFT_eSPI.h` e a classe `TFT_eSPI`, com gráficos, texto, fontes e sprites em RAM configurados para este alvo.
 
 | Parte | Alvo suportado |
