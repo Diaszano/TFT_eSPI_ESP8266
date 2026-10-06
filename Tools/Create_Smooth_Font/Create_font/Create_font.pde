@@ -6,20 +6,20 @@
 
 /*
 Software License Agreement (FreeBSD License)
- 
+
  Copyright (c) 2018 Bodmer (https://github.com/Bodmer)
- 
+
  All rights reserved.
- 
+
  Redistribution and use in source and binary forms, with or without
  modification, are permitted provided that the following conditions are met:
- 
+
  1. Redistributions of source code must retain the above copyright notice, this
  list of conditions and the following disclaimer.
  2. Redistributions in binary form must reproduce the above copyright notice,
  this list of conditions and the following disclaimer in the documentation
  and/or other materials provided with the distribution.
- 
+
  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -30,7 +30,7 @@ Software License Agreement (FreeBSD License)
  ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- 
+
  The views and conclusions contained in the software and documentation are those
  of the authors and should not be interpreted as representing official policies,
  either expressed or implied, of the FreeBSD Project.
@@ -95,18 +95,18 @@ Software License Agreement (FreeBSD License)
 /*
 
  https://en.wikipedia.org/wiki/Unicode_font
- 
+
  https://www.gnu.org/software/freefont/
  https://www.gnu.org/software/freefont/sources/
  https://www.gnu.org/software/freefont/ranges/
  http://savannah.gnu.org/projects/freefont/
- 
+
  http://www.google.com/get/noto/
- 
+
  https://github.com/Bodmer/TFT_eSPI
  https://github.com/esp8266/arduino-esp8266fs-plugin
  https://github.com/me-no-dev/arduino-esp32fs-plugin
- 
+
    >>>>>>>>>>>>>>>>>>>>         END OF INSTRUCTIONS         <<<<<<<<<<<<<<<<<<<< */
 
 
@@ -343,24 +343,24 @@ static final int[] specificUnicodes = {
   /*
     0x0102, 0x0103, 0x0104, 0x0105, 0x0106, 0x0107, 0x010C, 0x010D,
     0x010E, 0x010F, 0x0110, 0x0111, 0x0118, 0x0119, 0x011A, 0x011B,
- 
+
     0x0131, 0x0139, 0x013A, 0x013D, 0x013E, 0x0141, 0x0142, 0x0143,
     0x0144, 0x0147, 0x0148, 0x0150, 0x0151, 0x0152, 0x0153, 0x0154,
     0x0155, 0x0158, 0x0159, 0x015A, 0x015B, 0x015E, 0x015F, 0x0160,
     0x0161, 0x0162, 0x0163, 0x0164, 0x0165, 0x016E, 0x016F, 0x0170,
     0x0171, 0x0178, 0x0179, 0x017A, 0x017B, 0x017C, 0x017D, 0x017E,
     0x0192,
- 
+
     0x02C6, 0x02C7, 0x02D8, 0x02D9, 0x02DA, 0x02DB, 0x02DC, 0x02DD,
     0x03A9, 0x03C0, 0x2013, 0x2014, 0x2018, 0x2019, 0x201A, 0x201C,
     0x201D, 0x201E, 0x2020, 0x2021, 0x2022, 0x2026, 0x2030, 0x2039,
     0x203A, 0x2044, 0x20AC,
- 
+
     0x2122, 0x2202, 0x2206, 0x220F,
- 
+
     0x2211, 0x221A, 0x221E, 0x222B, 0x2248, 0x2260, 0x2264, 0x2265,
     0x25CA,
- 
+
     0xF8FF, 0xFB01, 0xFB02,
   //*/
 };
@@ -378,7 +378,7 @@ PFont myFont;
 PrintWriter logOutput;
 
 void setup() {
-  logOutput = createWriter("FontFiles/System_Font_List.txt"); 
+  logOutput = createWriter("FontFiles/System_Font_List.txt");
 
   size(1000, 800);
 
