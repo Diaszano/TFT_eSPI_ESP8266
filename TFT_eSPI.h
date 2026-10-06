@@ -1,6 +1,5 @@
 /***************************************************
-  Arduino TFT graphics library targeted at ESP8266
-  and ESP32 based boards.
+  Arduino TFT graphics library for ESP8266.
 
   This is a stand-alone library that contains the
   hardware driver, the graphics functions and the
@@ -72,7 +71,161 @@
   #include <pgmspace.h>
 
 // Include the processor specific drivers
-  #include "Processors/TFT_eSPI_ESP8266.h"
+// ESP8266 SPI layer
+// Processor ID reported by getSetup()
+#define PROCESSOR_ID 0x8266
+
+// Include processor specific header
+// None
+
+// Processor specific code used by SPI bus transaction startWrite and endWrite functions
+#define SET_BUS_WRITE_MODE SPI1U=SPI1U_WRITE
+#define SET_BUS_READ_MODE  SPI1U=SPI1U_READ
+
+// Code to check if DMA is busy, used by SPI bus transaction transaction and endWrite functions
+#define DMA_BUSY_CHECK // DMA not available, leave blank
+
+// Initialise processor specific SPI functions, used by init()
+#if (!defined (SUPPORT_TRANSACTIONS) && defined (ARDUINO_ARCH_ESP8266))
+  #define INIT_TFT_DATA_BUS \
+    spi.setBitOrder(MSBFIRST); \
+    spi.setDataMode(TFT_SPI_MODE); \
+    spi.setFrequency(SPI_FREQUENCY);
+  #else
+    #define INIT_TFT_DATA_BUS
+#endif
+
+// If smooth fonts are enabled the filing system may need to be loaded
+#ifdef SMOOTH_FONT
+  // Call up the SPIFFS FLASH filing system for the anti-aliased fonts
+  #define FS_NO_GLOBALS
+  #include <FS.h>
+  #define FONT_FS_AVAILABLE
+#endif
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////
+// Define the DC (TFT Data/Command or Register Select (RS))pin drive code
+////////////////////////////////////////////////////////////////////////////////////////
+#ifndef TFT_DC
+  #define DC_C // No macro allocated so it generates no code
+  #define DC_D // No macro allocated so it generates no code
+#else
+  #if (TFT_DC == 16)
+    #define DC_C digitalWrite(TFT_DC, LOW)
+    #define DC_D digitalWrite(TFT_DC, HIGH)
+  #else
+    #define DC_C GPOC=dcpinmask
+    #define DC_D GPOS=dcpinmask
+  #endif
+#endif
+
+////////////////////////////////////////////////////////////////////////////////////////
+// Define the CS (TFT chip select) pin drive code
+////////////////////////////////////////////////////////////////////////////////////////
+#ifndef TFT_CS
+  #define CS_L // No macro allocated so it generates no code
+  #define CS_H // No macro allocated so it generates no code
+#else
+  #if (TFT_CS == 16)
+    #define CS_L digitalWrite(TFT_CS, LOW)
+    #define CS_H digitalWrite(TFT_CS, HIGH)
+  #else
+    #define CS_L GPOC=cspinmask
+    #define CS_H GPOS=cspinmask
+  #endif
+#endif
+
+////////////////////////////////////////////////////////////////////////////////////////
+// Define the WR (TFT Write) pin drive code
+////////////////////////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////////////////////////
+// Define the touch screen chip select pin drive code
+////////////////////////////////////////////////////////////////////////////////////////
+  #define T_CS_L // No macro allocated so it generates no code
+  #define T_CS_H // No macro allocated so it generates no code
+
+////////////////////////////////////////////////////////////////////////////////////////
+// Make sure TFT_MISO is defined if not used to avoid an error message
+////////////////////////////////////////////////////////////////////////////////////////
+#ifndef TFT_MISO
+  #define TFT_MISO -1
+#endif
+
+////////////////////////////////////////////////////////////////////////////////////////
+// ESP8266 specific SPI macros
+////////////////////////////////////////////////////////////////////////////////////////
+#if defined (TFT_SPI_OVERLAP)
+  #undef TFT_CS
+  #define SPI1U_WRITE (SPIUMOSI | SPIUSSE | SPIUCSSETUP | SPIUCSHOLD)
+  #define SPI1U_READ  (SPIUMOSI | SPIUSSE | SPIUCSSETUP | SPIUCSHOLD | SPIUDUPLEX)
+#else
+  #define SPI1U_WRITE (SPIUMOSI | SPIUSSE)
+  #define SPI1U_READ  (SPIUMOSI | SPIUSSE | SPIUDUPLEX)
+#endif
+
+////////////////////////////////////////////////////////////////////////////////////////
+// Macros to write commands and pixel colour data over SPI
+////////////////////////////////////////////////////////////////////////////////////////
+  // Command is 8 bits
+  #define CMD_BITS 8
+
+  #define tft_Write_8(C) \
+  SPI1U1 = ((CMD_BITS-1) << SPILMOSI) | ((CMD_BITS-1) << SPILMISO); \
+  SPI1W0 = (C)<<(CMD_BITS - 8); \
+  SPI1CMD |= SPIBUSY; \
+  while(SPI1CMD & SPIBUSY) {;}
+
+  #define tft_Write_16(C) \
+  SPI1U1 = (15 << SPILMOSI) | (15 << SPILMISO); \
+  SPI1W0 = ((C)<<8 | (C)>>8); \
+  SPI1CMD |= SPIBUSY; \
+  while(SPI1CMD & SPIBUSY) {;}
+
+  #define tft_Write_16N(C) \
+  SPI1U1 = (15 << SPILMOSI) | (15 << SPILMISO); \
+  SPI1W0 = ((C)<<8 | (C)>>8); \
+  SPI1CMD |= SPIBUSY
+
+  #define tft_Write_16S(C) \
+  SPI1U1 = (15 << SPILMOSI) | (15 << SPILMISO); \
+  SPI1W0 = C; \
+  SPI1CMD |= SPIBUSY; \
+  while(SPI1CMD & SPIBUSY) {;}
+
+  #define tft_Write_32(C) \
+  SPI1U1 = (31 << SPILMOSI) | (31 << SPILMISO); \
+  SPI1W0 = C; \
+  SPI1CMD |= SPIBUSY; \
+  while(SPI1CMD & SPIBUSY) {;}
+
+  #define tft_Write_32C(C,D) \
+  SPI1U1 = (31 << SPILMOSI) | (31 << SPILMISO); \
+  SPI1W0 = ((D)>>8 | (D)<<8)<<16 | ((C)>>8 | (C)<<8); \
+  SPI1CMD |= SPIBUSY; \
+  while(SPI1CMD & SPIBUSY) {;}
+
+  #define tft_Write_32D(C) \
+  SPI1U1 = (31 << SPILMOSI) | (31 << SPILMISO); \
+  SPI1W0 = ((C)>>8 | (C)<<8)<<16 | ((C)>>8 | (C)<<8); \
+  SPI1CMD |= SPIBUSY; \
+  while(SPI1CMD & SPIBUSY) {;}
+
+
+#ifndef tft_Write_16N
+  #define tft_Write_16N tft_Write_16
+#endif
+
+////////////////////////////////////////////////////////////////////////////////////////
+// Macros to read from display using SPI or software SPI
+////////////////////////////////////////////////////////////////////////////////////////
+  // Use a SPI read transfer
+  #define tft_Read_8() spi.transfer(0)
+
+// Concatenate a byte sequence A,B,C,D to CDAB, P is a uint8_t pointer
+#define DAT8TO32(P) ( (uint32_t)P[0]<<8 | P[1] | P[2]<<24 | P[3]<<16 )
 
 /***************************************************************************************
 **                         Section 3: Interface setup
@@ -111,7 +264,7 @@
 **                         Section 4: Setup fonts
 ***************************************************************************************/
 // Use GLCD font in error case where user requests a smooth font file
-// that does not exist (this is a temporary fix to stop ESP32 reboot)
+// that does not exist (temporary workaround)
 #ifdef SMOOTH_FONT
   #ifndef LOAD_GLCD
     #define LOAD_GLCD
@@ -318,7 +471,7 @@ String  setup_info;  // Setup reference name available to use in a user setup
 uint32_t setup_id;   // ID available to use in a user setup
 int32_t esp;         // Processor code
 uint8_t trans;       // SPI transaction support
-uint8_t serial;      // Serial (SPI) or parallel
+uint8_t serial;      // SPI interface
 uint8_t  port;       // SPI port
 uint8_t overlap;     // ESP8266 overlap mode
 uint8_t interface;   // Interface type
@@ -346,7 +499,7 @@ int8_t pin_tft_rd;
 int8_t pin_tft_wr;
 int8_t pin_tft_rst;
 
-int8_t pin_tft_d0;   // Parallel port pins
+int8_t pin_tft_d0;   // Data pin
 int8_t pin_tft_d1;
 int8_t pin_tft_d2;
 int8_t pin_tft_d3;
@@ -381,7 +534,7 @@ class TFT_eSPI : public Print { friend class TFT_eSprite; // Sprite class has ac
   TFT_eSPI(int16_t _W = TFT_WIDTH, int16_t _H = TFT_HEIGHT);
 
   // init() and begin() are equivalent, begin() included for backwards compatibility
-  // Sketch defined tab colour option is for ST7735 displays only
+  // Sketch-defined tab colour option
   void     init(uint8_t tc = TAB_COLOUR), begin(uint8_t tc = TAB_COLOUR);
 
   // These are virtual so the TFT_eSprite class can override them with sprite specific functions
@@ -676,8 +829,7 @@ class TFT_eSPI : public Print { friend class TFT_eSprite; // Sprite class has ac
   uint32_t alphaBlend24(uint8_t alpha, uint32_t fgc, uint32_t bgc, uint8_t dither = 0);
 
   // Direct Memory Access (DMA) support functions
-  // These can be used for SPI writes when using the ESP32 (original) or STM32 processors.
-  // DMA also works on a RP2040 processor with PIO based SPI and parallel (8 and 16-bit) interfaces
+
            // Bear in mind DMA will only be of benefit in particular circumstances and can be tricky
            // to manage by noobs. The functions have however been designed to be noob friendly and
            // avoid a few DMA behaviour "gotchas".
@@ -703,8 +855,7 @@ class TFT_eSPI : public Print { friend class TFT_eSprite; // Sprite class has ac
            //
 
   bool     initDMA(bool ctrl_cs = false);  // Initialise the DMA engine and attach to SPI bus - typically used in setup()
-                                           // Parameter "true" enables DMA engine control of TFT chip select (ESP32 only)
-                                           // For ESP32 only, TFT reads will not work if parameter is true
+
   void     deInitDMA(void);   // De-initialise the DMA engine and detach from SPI bus - typically not used
 
            // Push an image to the TFT using DMA, buffer is optional and grabs (double buffers) a copy of the image
@@ -728,7 +879,7 @@ class TFT_eSPI : public Print { friend class TFT_eSprite; // Sprite class has ac
   void     dmaWait(void); // wait until DMA is complete
 
   bool     DMA_Enabled = false;   // Flag for DMA enabled state
-  uint8_t  spiBusyCheck = 0;      // Number of ESP32 transfer buffers to check
+  uint8_t  spiBusyCheck = 0;      // Number of transfer buffers to check
 
   // Bare metal functions
   void     startWrite(void);                         // Begin SPI transaction
@@ -740,7 +891,7 @@ class TFT_eSPI : public Print { friend class TFT_eSprite; // Sprite class has ac
   //       id = 0: reserved - may be used in future to reset all attributes to a default state
   //       id = 1: Turn on (a=true) or off (a=false) GLCD cp437 font character error correction
   //       id = 2: Turn on (a=true) or off (a=false) UTF8 decoding
-  //       id = 3: Enable or disable use of ESP32 PSRAM (if available)
+
            #define CP437_SWITCH 1
            #define UTF8_SWITCH  2
            #define PSRAM_ENABLE 3
@@ -797,7 +948,7 @@ class TFT_eSPI : public Print { friend class TFT_eSprite; // Sprite class has ac
            // Byte read prototype
   uint8_t  readByte(void);
 
-           // GPIO parallel bus input/output direction control
+           // GPIO input/output direction control
   void     busDir(uint32_t mask, uint8_t mode);
 
            // Single GPIO input/output direction control
@@ -810,7 +961,7 @@ class TFT_eSPI : public Print { friend class TFT_eSprite; // Sprite class has ac
   float    wedgeLineDistance(float pax, float pay, float bax, float bay, float dr);
 
            // Display variant settings
-  uint8_t  tabcolor,                   // ST7735 screen protector "tab" colour (now invalid)
+  uint8_t  tabcolor,                   // Display tab colour (now invalid)
            colstart = 0, rowstart = 0; // Screen display area to CGRAM area coordinate offsets
 
            // Port and pin masks for control signals (ESP826 only) - TODO: remove need for this

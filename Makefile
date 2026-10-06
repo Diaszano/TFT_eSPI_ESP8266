@@ -4,7 +4,7 @@
 EXAMPLES := $(notdir $(patsubst %/,%,$(wildcard examples/*/)))
 JOBS ?= $(shell nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 1)
 PIO_CI_FLAGS = --lib=. --board=nodemcuv2 -O "lib_deps=bitbank2/PNGdec" -O "board_build.filesystem=littlefs"
-LIB_SRC = $(wildcard TFT_eSPI.* User_Setup*.h TFT_Drivers/* Extensions/* Processors/* Fonts/*.h User_Setups/*)
+LIB_SRC = $(wildcard TFT_eSPI.* User_Setup*.h TFT_Drivers/* Extensions/* Fonts/*.h User_Setups/*)
 
 .PHONY: build $(addprefix build-,$(EXAMPLES)) upload uploadfs monitor clean help
 
@@ -16,7 +16,7 @@ $(addprefix build-,$(EXAMPLES)): build-%: .build/%/.ok
 .build/pio-library/.stamp: $(LIB_SRC) $(wildcard Fonts/*.c Fonts/GFXFF/*.h) library.json library.properties
 	@rm -rf .build/pio-library
 	@mkdir -p .build/pio-library
-	@cp -R TFT_eSPI.* User_Setup*.h TFT_Drivers Extensions Processors Fonts User_Setups library.json library.properties .build/pio-library/
+	@cp -R TFT_eSPI.* User_Setup*.h TFT_Drivers Extensions Fonts User_Setups library.json library.properties .build/pio-library/
 	@touch $@
 
 .build/%/.ok: $(LIB_SRC) .build/pio-library/.stamp $$(wildcard examples/$$*/*.ino)

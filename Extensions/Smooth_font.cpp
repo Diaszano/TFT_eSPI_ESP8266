@@ -105,7 +105,7 @@ void TFT_eSPI::loadFont(String fontName, bool flash)
 
     if(spiffs) fontFS = SPIFFS;
 
-    // Avoid a crash on the ESP32 if the file does not exist
+    // Avoid a crash if the file does not exist
     if (fontFS.exists("/" + fontName + ".vlw") == false) {
       Serial.println("Font file " + fontName + " not found!");
       return;
@@ -415,7 +415,7 @@ void TFT_eSPI::drawGlyph(uint16_t code)
     int16_t  bx = 0;
     uint8_t pixel;
 
-    startWrite(); // Avoid slow ESP32 transaction overhead for every pixel
+    startWrite(); // Avoid transaction overhead for every pixel
 
     int16_t fillwidth  = 0;
     int16_t fillheight = 0;

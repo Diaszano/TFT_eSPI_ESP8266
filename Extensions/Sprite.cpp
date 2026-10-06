@@ -78,11 +78,7 @@ void* TFT_eSprite::createSprite(int16_t w, int16_t h, uint8_t frames)
     _img8_2 = _img8 + (w * h * 2 + 1);
   }
 
-  // ESP32 only 16bpp check
-  //if (esp_ptr_dma_capable(_img8_1)) Serial.println("DMA capable Sprite pointer _img8_1");
-  //else Serial.println("Not a DMA capable Sprite pointer _img8_1");
-  //if (esp_ptr_dma_capable(_img8_2)) Serial.println("DMA capable Sprite pointer _img8_2");
-  //else Serial.println("Not a DMA capable Sprite pointer _img8_2");
+
 
   if ( (_bpp == 8) && (frames > 1) ) {
     _img8_2 = _img8 + (w * h + 1);

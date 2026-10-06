@@ -1,6 +1,5 @@
 /***************************************************
-  Arduino TFT graphics library targeted at 32-bit
-  processors such as ESP32, ESP8266 and STM32.
+  Arduino TFT graphics library for ESP8266.
 
   This is a stand-alone library that contains the
   hardware driver, the graphics functions and the
@@ -15,7 +14,230 @@
 
 #include "TFT_eSPI.h"
 
-  #include "Processors/TFT_eSPI_ESP8266.c"
+// ESP8266 SPI layer
+// Select the SPI port to use
+// ESP8266 default (FLASH port also available via overlap mode)
+  SPIClass& spi = SPI;
+
+// Buffer for SPI transmit byte padding and byte order manipulation
+uint8_t   spiBuffer[8] = {0,0,0,0,0,0,0,0};
+
+////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////
+
+
+/***************************************************************************************
+** Function name:           read byte  - supports class functions
+** Description:             Unused dummy function
+***************************************************************************************/
+uint8_t TFT_eSPI::readByte(void)
+{
+  uint8_t b = 0xAA;
+  return b;
+}
+
+////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////
+
+/***************************************************************************************
+** Function name:           pushBlock - for ESP8266
+** Description:             Write a block of pixels of the same colour
+***************************************************************************************/
+// Clear screen test: 76.8ms theoretical, 81.5ms TFT_eSPI, 967ms reference library
+//Performance 26.15Mbps@26.66MHz, 39.04Mbps@40MHz, 75.4Mbps@80MHz SPI clock
+//Efficiency:
+//       TFT_eSPI       98.06%              97.59%          94.24%
+//       Adafruit_GFX   19.62%              14.31%           7.94%
+//
+void TFT_eSPI::pushBlock(uint16_t color, uint32_t len)
+{
+/*
+while (len>1) { tft_Write_32(color<<16 | color); len-=2;}
+if (len) tft_Write_16(color);
+return;
+//*/
+  uint16_t color16 = (color >> 8) | (color << 8);
+  uint32_t color32 = color16 | color16 << 16;
+/*
+  while(len--) {
+    SPI1U1 = ((16-1) << SPILMOSI) | ((16-1) << SPILMISO);
+    SPI1W0 = color16;
+    SPI1CMD |= SPIBUSY;
+    while(SPI1CMD & SPIBUSY) {}
+  }
+  return;
+//*/
+
+  SPI1W0 = color32;
+  SPI1W1 = color32;
+  SPI1W2 = color32;
+  SPI1W3 = color32;
+  if (len > 8)
+  {
+    SPI1W4 = color32;
+    SPI1W5 = color32;
+    SPI1W6 = color32;
+    SPI1W7 = color32;
+  }
+  if (len > 16)
+  {
+    SPI1W8 = color32;
+    SPI1W9 = color32;
+    SPI1W10 = color32;
+    SPI1W11 = color32;
+  }
+  if (len > 24)
+  {
+    SPI1W12 = color32;
+    SPI1W13 = color32;
+    SPI1W14 = color32;
+    SPI1W15 = color32;
+  }
+  if (len > 31)
+  {
+    SPI1U1 = (511 << SPILMOSI);
+    while(len>31)
+    {
+#if (defined (SPI_FREQUENCY) && (SPI_FREQUENCY == 80000000))
+      if(SPI1CMD & SPIBUSY) // added to sync with flag change
+#endif
+      while(SPI1CMD & SPIBUSY) {}
+      SPI1CMD |= SPIBUSY;
+      len -= 32;
+    }
+    while(SPI1CMD & SPIBUSY) {}
+  }
+
+  if (len)
+  {
+    len = (len << 4) - 1;
+    SPI1U1 = (len << SPILMOSI);
+    SPI1CMD |= SPIBUSY;
+    while(SPI1CMD & SPIBUSY) {}
+  }
+
+}
+
+/***************************************************************************************
+** Function name:           pushPixels - for ESP8266
+** Description:             Write a sequence of pixels
+***************************************************************************************/
+void TFT_eSPI::pushPixels(const void* data_in, uint32_t len){
+
+  if(_swapBytes) {
+    pushSwapBytePixels(data_in, len);
+    return;
+  }
+
+  uint16_t *data = (uint16_t*) data_in;
+
+  uint32_t color[8];
+
+  SPI1U1 = (255 << SPILMOSI) | (255 << SPILMISO);
+
+
+  while(len>15)
+  {
+    memcpy(color,data,32);
+    data+=16;
+
+    len -= 16;
+
+    // ESP8266 wait time here at 40MHz SPI is ~5.45us
+    while(SPI1CMD & SPIBUSY) {}
+    SPI1W0 = color[0];
+    SPI1W1 = color[1];
+    SPI1W2 = color[2];
+    SPI1W3 = color[3];
+    SPI1W4 = color[4];
+    SPI1W5 = color[5];
+    SPI1W6 = color[6];
+    SPI1W7 = color[7];
+    SPI1CMD |= SPIBUSY;
+  }
+
+  if(len)
+  {
+    uint32_t bits = (len*16-1); // bits left to shift - 1
+
+    memcpy(color,data,len<<1);
+
+    while(SPI1CMD & SPIBUSY) {}
+    SPI1U1 = (bits << SPILMOSI) | (bits << SPILMISO);
+    SPI1W0 = color[0];
+    SPI1W1 = color[1];
+    SPI1W2 = color[2];
+    SPI1W3 = color[3];
+    SPI1W4 = color[4];
+    SPI1W5 = color[5];
+    SPI1W6 = color[6];
+    SPI1W7 = color[7];
+    SPI1CMD |= SPIBUSY;
+  }
+
+  while(SPI1CMD & SPIBUSY) {}
+
+}
+
+/***************************************************************************************
+** Function name:           pushSwapBytePixels - for ESP8266
+** Description:             Write a sequence of pixels with swapped bytes
+***************************************************************************************/
+void TFT_eSPI::pushSwapBytePixels(const void* data_in, uint32_t len){
+
+  uint8_t* data = (uint8_t*)data_in;
+  //uint16_t* data = (uint16_t*)data_in;
+
+  uint32_t color[8];
+
+  SPI1U1 = (255 << SPILMOSI) | (255 << SPILMISO);
+
+  while(len>15)
+  {
+    uint32_t i = 0;
+    while(i<8) { color[i++] = DAT8TO32(data); data+=4; }
+
+    len -= 16;
+
+    // ESP8266 wait time here at 40MHz SPI is ~5.45us
+    while(SPI1CMD & SPIBUSY) {}
+    SPI1W0 = color[0];
+    SPI1W1 = color[1];
+    SPI1W2 = color[2];
+    SPI1W3 = color[3];
+    SPI1W4 = color[4];
+    SPI1W5 = color[5];
+    SPI1W6 = color[6];
+    SPI1W7 = color[7];
+    SPI1CMD |= SPIBUSY;
+  }
+
+  if(len)
+  {
+    uint32_t i = 0;
+    uint32_t bits = (len*16-1); // bits left to shift - 1
+    len = (len+1)>>1;
+    while(len--) { color[i++] = DAT8TO32(data); data+=4; }
+
+    while(SPI1CMD & SPIBUSY) {}
+    SPI1U1 = (bits << SPILMOSI) | (bits << SPILMISO);
+    SPI1W0 = color[0];
+    SPI1W1 = color[1];
+    SPI1W2 = color[2];
+    SPI1W3 = color[3];
+    SPI1W4 = color[4];
+    SPI1W5 = color[5];
+    SPI1W6 = color[6];
+    SPI1W7 = color[7];
+    SPI1CMD |= SPIBUSY;
+  }
+
+  while(SPI1CMD & SPIBUSY) {}
+
+}
+
+////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////
 
 #ifndef SPI_BUSY_CHECK
   #define SPI_BUSY_CHECK
@@ -58,11 +280,11 @@
 inline void TFT_eSPI::begin_tft_write(void){
   if (locked) {
     locked = false; // Flag to show SPI access now unlocked
-#if defined (SPI_HAS_TRANSACTION) && defined (SUPPORT_TRANSACTIONS) && !defined(TFT_PARALLEL_8_BIT) && !defined(RP2040_PIO_INTERFACE)
+#if defined (SPI_HAS_TRANSACTION) && defined (SUPPORT_TRANSACTIONS)
     spi.beginTransaction(SPISettings(SPI_FREQUENCY, MSBFIRST, TFT_SPI_MODE));
 #endif
     CS_L;
-    SET_BUS_WRITE_MODE;  // Some processors (e.g. ESP32) allow recycling the tx buffer when rx is not used
+    SET_BUS_WRITE_MODE;
   }
 }
 
@@ -70,11 +292,11 @@ inline void TFT_eSPI::begin_tft_write(void){
 void TFT_eSPI::begin_nin_write(void){
   if (locked) {
     locked = false; // Flag to show SPI access now unlocked
-#if defined (SPI_HAS_TRANSACTION) && defined (SUPPORT_TRANSACTIONS) && !defined(TFT_PARALLEL_8_BIT) && !defined(RP2040_PIO_INTERFACE)
+#if defined (SPI_HAS_TRANSACTION) && defined (SUPPORT_TRANSACTIONS)
     spi.beginTransaction(SPISettings(SPI_FREQUENCY, MSBFIRST, TFT_SPI_MODE));
 #endif
     CS_L;
-    SET_BUS_WRITE_MODE;  // Some processors (e.g. ESP32) allow recycling the tx buffer when rx is not used
+    SET_BUS_WRITE_MODE;
   }
 }
 
@@ -89,7 +311,7 @@ inline void TFT_eSPI::end_tft_write(void){
       SPI_BUSY_CHECK;       // Check send complete and clean out unused rx data
       CS_H;
       SET_BUS_READ_MODE;    // In case bus has been configured for tx only
-#if defined (SPI_HAS_TRANSACTION) && defined (SUPPORT_TRANSACTIONS) && !defined(TFT_PARALLEL_8_BIT) && !defined(RP2040_PIO_INTERFACE)
+#if defined (SPI_HAS_TRANSACTION) && defined (SUPPORT_TRANSACTIONS)
       spi.endTransaction();
 #endif
     }
@@ -104,7 +326,7 @@ inline void TFT_eSPI::end_nin_write(void){
       SPI_BUSY_CHECK;       // Check send complete and clean out unused rx data
       CS_H;
       SET_BUS_READ_MODE;    // In case SPI has been configured for tx only
-#if defined (SPI_HAS_TRANSACTION) && defined (SUPPORT_TRANSACTIONS) && !defined(TFT_PARALLEL_8_BIT) && !defined(RP2040_PIO_INTERFACE)
+#if defined (SPI_HAS_TRANSACTION) && defined (SUPPORT_TRANSACTIONS)
       spi.endTransaction();
 #endif
     }
@@ -118,7 +340,7 @@ inline void TFT_eSPI::end_nin_write(void){
 // Reads require a lower SPI clock rate than writes
 inline void TFT_eSPI::begin_tft_read(void){
   DMA_BUSY_CHECK; // Wait for any DMA transfer to complete before changing SPI settings
-#if defined (SPI_HAS_TRANSACTION) && defined (SUPPORT_TRANSACTIONS) && !defined(TFT_PARALLEL_8_BIT) && !defined(RP2040_PIO_INTERFACE)
+#if defined (SPI_HAS_TRANSACTION) && defined (SUPPORT_TRANSACTIONS)
   if (locked) {
     locked = false;
     spi.beginTransaction(SPISettings(SPI_READ_FREQUENCY, MSBFIRST, TFT_SPI_MODE));
@@ -136,7 +358,7 @@ inline void TFT_eSPI::begin_tft_read(void){
 ** Description:             End transaction for reads and deselect TFT
 ***************************************************************************************/
 inline void TFT_eSPI::end_tft_read(void){
-#if defined (SPI_HAS_TRANSACTION) && defined (SUPPORT_TRANSACTIONS) && !defined(TFT_PARALLEL_8_BIT) && !defined(RP2040_PIO_INTERFACE)
+#if defined (SPI_HAS_TRANSACTION) && defined (SUPPORT_TRANSACTIONS)
   if(!inTransaction) {
     if (!locked) {
       locked = true;
@@ -504,7 +726,7 @@ TFT_eSPI::TFT_eSPI(int16_t w, int16_t h)
 
 /***************************************************************************************
 ** Function name:           initBus
-** Description:             initialise the SPI or parallel bus
+** Description:             initialise the SPI bus
 ***************************************************************************************/
 void TFT_eSPI::initBus(void) {
 
@@ -517,7 +739,7 @@ void TFT_eSPI::initBus(void) {
 
 // Configure chip select for touchscreen controller if present
 
-// In parallel mode and with the RP2040 processor, the TFT_WR line is handled in the  PIO
+
 
 #ifdef TFT_DC
   if (TFT_DC >= 0) {
@@ -546,7 +768,7 @@ void TFT_eSPI::begin(uint8_t tc)
 
 
 /***************************************************************************************
-** Function name:           init (tc is tab colour for ST7735 displays only)
+** Function name:           init (tc is tab colour)
 ** Description:             Reset, then initialise the TFT display registers
 ***************************************************************************************/
 void TFT_eSPI::init(uint8_t tc)
@@ -585,7 +807,7 @@ void TFT_eSPI::init(uint8_t tc)
     INIT_TFT_DATA_BUS;
 
 
-#if defined (TFT_CS) && !defined(RP2040_PIO_INTERFACE)
+#if defined (TFT_CS)
   // Set to output once again in case MISO is used for CS
   if (TFT_CS >= 0) {
     pinMode(TFT_CS, OUTPUT);
@@ -597,7 +819,7 @@ void TFT_eSPI::init(uint8_t tc)
 
 
   // Set to output once again in case MISO is used for DC
-#if defined (TFT_DC) && !defined(RP2040_PIO_INTERFACE)
+#if defined (TFT_DC)
   if (TFT_DC >= 0) {
     pinMode(TFT_DC, OUTPUT);
     digitalWrite(TFT_DC, HIGH); // Data/Command high = data mode
@@ -727,7 +949,7 @@ int32_t TFT_eSPI::getOriginY(void)
 
 
 /***************************************************************************************
-** Function name:           commandList, used for FLASH based lists only (e.g. ST7735)
+** Function name:           commandList, used for FLASH based command lists
 ** Description:             Get initialisation commands from FLASH and send to TFT
 ***************************************************************************************/
 void TFT_eSPI::commandList (const uint8_t *addr)
@@ -814,7 +1036,7 @@ void TFT_eSPI::writedata(uint8_t d)
 uint8_t TFT_eSPI::readcommand8(uint8_t cmd_function, uint8_t index)
 {
   uint8_t reg = 0;
-  // Tested with ILI9341 set to Interface II i.e. IM [3:0] = "1101"
+
   begin_tft_read();
   index = 0x10 + (index & 0x0F);
 
@@ -2897,7 +3119,7 @@ void TFT_eSPI::setWindow(int32_t x0, int32_t y0, int32_t x1, int32_t y1)
     y1+=rowstart;
   #endif
 
-  // Temporary solution is to include the RP2040 optimised code here
+
     SPI_BUSY_CHECK;
     DC_C; tft_Write_8(TFT_CASET);
     DC_D; tft_Write_32C(x0, x1);
@@ -2930,7 +3152,7 @@ void TFT_eSPI::readAddrWindow(int32_t xs, int32_t ys, int32_t w, int32_t h)
   ye += rowstart;
 #endif
 
-  // Temporary solution is to include the RP2040 optimised code here
+
   // Column addr set
   DC_C; tft_Write_8(TFT_CASET);
   DC_D; tft_Write_32C(xs, xe);
@@ -3246,7 +3468,7 @@ void TFT_eSPI::drawSmoothArc(int32_t x, int32_t y, int32_t r, int32_t ir, uint32
 ***************************************************************************************/
 // Compute the fixed point square root of an integer and
 // return the 8 MS bits of fractional part.
-// Quicker than sqrt() for processors that do not have an FPU (e.g. RP2040)
+// Quicker than sqrt() for processors that do not have an FPU
 inline uint8_t TFT_eSPI::sqrt_fraction(uint32_t num) {
   if (num > (0x40000000)) return 0;
   uint32_t bsh = 0x00004000;
@@ -3472,7 +3694,7 @@ void TFT_eSPI::fillSmoothCircle(int32_t x, int32_t y, int32_t r, uint32_t color,
   int32_t r1 = r * r;
   r++;
   int32_t r2 = r * r;
-  
+
   for (int32_t cy = r - 1; cy > 0; cy--)
   {
     int32_t dy2 = (r - cy) * (r - cy);
@@ -5072,7 +5294,7 @@ int16_t TFT_eSPI::drawFloat(float floatNumber, uint8_t dp, int32_t poX, int32_t 
 
 void TFT_eSPI::setFreeFont(const GFXfont *f)
 {
-  if (f == nullptr) { // Fix issue #400 (ESP32 crash)
+  if (f == nullptr) { // Fix issue #400
     setTextFont(1); // Use GLCD font
     return;
   }
