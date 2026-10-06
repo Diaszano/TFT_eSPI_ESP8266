@@ -12,7 +12,7 @@
  */
 
 
-#include <TFT_eSPI.h> // Graphics and font library for ILI9341 driver chip
+#include <TFT_eSPI.h> // Graphics and font library for ST7789 display
 #include <SPI.h>
 
 #define TFT_GREY 0x5AEB // New colour

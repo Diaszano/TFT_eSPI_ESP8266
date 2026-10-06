@@ -3,7 +3,6 @@
 
 EXAMPLES := $(notdir $(patsubst %/,%,$(wildcard examples/*/)))
 JOBS ?= $(shell nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 1)
-PIO_CI_FLAGS = --lib=. --board=nodemcuv2 -O "lib_deps=bitbank2/PNGdec" -O "board_build.filesystem=littlefs"
 LIB_SRC = $(wildcard TFT_eSPI.* User_Setup*.h TFT_Drivers/* Extensions/* Fonts/*.h User_Setups/*)
 
 .PHONY: build $(addprefix build-,$(EXAMPLES)) upload uploadfs monitor clean help
@@ -22,7 +21,7 @@ $(addprefix build-,$(EXAMPLES)): build-%: .build/%/.ok
 .build/%/.ok: $(LIB_SRC) .build/pio-library/.stamp $$(wildcard examples/$$*/*.ino)
 	@rm -rf .build/$*
 	@mkdir -p .build/$*
-	@if pio ci --lib=$(CURDIR)/.build/pio-library --board=nodemcuv2 -O "lib_deps=bitbank2/PNGdec" -O "board_build.filesystem=littlefs" --build-dir $(CURDIR)/.build/$* --keep-build-dir examples/$* > .build/$*.log 2>&1; then \
+	@if pio ci --lib=$(CURDIR)/.build/pio-library --board=nodemcuv2 -O "board_build.filesystem=littlefs" --build-dir $(CURDIR)/.build/$* --keep-build-dir examples/$* > .build/$*.log 2>&1; then \
 		touch $@; echo "OK $*"; \
 	else \
 		tail -n 30 .build/$*.log; echo "FAIL $*"; exit 1; \

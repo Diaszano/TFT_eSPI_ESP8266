@@ -1,7 +1,7 @@
 /*
   This sketch is the same as the Font_Demo_1 example, except the fonts in this
   example are in a FLASH (program memory) array. This means that processors
-  such as the STM32 series that are not supported by a SPIFFS library can use
+  without an installed filesystem can use
   smooth (anti-aliased) fonts.
 */
 

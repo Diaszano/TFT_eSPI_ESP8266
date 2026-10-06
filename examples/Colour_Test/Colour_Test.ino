@@ -18,7 +18,7 @@
 
  This control register is also used to manage the display
  rotation and coordinate mirroring. The control register
- typically has 8 bits, for the ILI9341 these are:
+ typically has 8 bits, for the ST7789 these are:
 
  Bit Function
  7   Mirror Y coordinate (row address order)
@@ -35,7 +35,7 @@
     tft.writecommand(TFT_MADCTL);
     tft.writedata(0x48);          // Bits 6 and 3 set
     
- 0x48 is the default value for ILI9341 (0xA8 for ESP32 M5STACK)
+ 0x48 is the default value for the target ST7789 setup
  in rotation 0 orientation.
  
  Another control register can be used to "invert" colours,
