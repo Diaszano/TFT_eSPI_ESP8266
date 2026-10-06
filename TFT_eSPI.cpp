@@ -1092,6 +1092,8 @@ uint32_t TFT_eSPI::readcommand32(uint8_t cmd_function, uint8_t index)
 ***************************************************************************************/
 uint16_t TFT_eSPI::readPixel(int32_t x0, int32_t y0)
 {
+  if (TFT_MISO < 0) return 0; // No MISO wired: display is write-only, assume black
+
   if (_vpOoB) return 0;
 
   x0+= _xDatum;
