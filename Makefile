@@ -61,6 +61,7 @@ setup:
 
 lint:
 	pre-commit run --all-files
+	python3 -m unittest -q scripts/test_ci_config.py
 	$(MAKE) check-version
 
 lint-update:

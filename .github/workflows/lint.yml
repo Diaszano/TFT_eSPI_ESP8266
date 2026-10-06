@@ -1,6 +1,9 @@
 name: lint
 
-on: [push, pull_request]
+on:
+  push:
+  pull_request:
+    types: [opened, synchronize, reopened, edited]
 
 permissions: {}
 
@@ -21,13 +24,15 @@ jobs:
           python-version: '3.x'
       - name: Install gitleaks
         run: |
-          curl -fsSL "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" -o gitleaks.tar.gz
+          curl -fsSL "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" -o "gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
           curl -fsSL "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_checksums.txt" -o gitleaks_checksums.txt
           sha256sum --ignore-missing -c gitleaks_checksums.txt
-          tar -xzf gitleaks.tar.gz gitleaks
+          tar -xzf "gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" gitleaks
           echo "$PWD" >> "$GITHUB_PATH"
       - run: python -m pip install pre-commit
       - run: pre-commit run --all-files --show-diff-on-failure
+      - run: gitleaks dir . --redact
+      - run: python3 -m unittest -q scripts/test_ci_config.py
       - run: make check-version
 
   arduino-lint:

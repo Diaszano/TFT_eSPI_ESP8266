@@ -1,14 +1,18 @@
 {
-  "release-type": "simple",
-  "include-component-in-tag": false,
-  "changelog-path": "CHANGELOG.md",
-  "bootstrap-sha": "16e37595040eac69cd628e4bffb56fc30cad6299",
-  "release-as": "1.0.0",
-  "extra-files": [
-    {
-      "type": "json",
-      "path": "library.json",
-      "jsonpath": "$.version"
+  "packages": {
+    ".": {
+      "release-type": "simple",
+      "include-component-in-tag": false,
+      "changelog-path": "CHANGELOG.md",
+      "bootstrap-sha": "16e37595040eac69cd628e4bffb56fc30cad6299",
+      "release-as": "1.0.0",
+      "extra-files": [
+        {
+          "type": "json",
+          "path": "library.json",
+          "jsonpath": "$.version"
+        }
+      ]
     }
-  ]
+  }
 }

@@ -10,7 +10,6 @@ permissions: {}
 
 jobs:
   analyze:
-    name: Analyze C/C++
     runs-on: ubuntu-latest
     permissions:
       actions: read

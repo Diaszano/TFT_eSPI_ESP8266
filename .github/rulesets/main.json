@@ -1,6 +1,6 @@
 {
   "name": "Protect default branch",
-  "target": "~DEFAULT_BRANCH",
+  "target": "branch",
   "enforcement": "active",
   "conditions": {
     "ref_name": {
