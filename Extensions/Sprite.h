@@ -30,7 +30,7 @@ class TFT_eSprite : public TFT_eSPI {
            // Delete the sprite to free up the RAM
   void     deleteSprite(void);
 
-           // Select the frame buffer for graphics write (for 2 colour ePaper and DMA toggle buffer)
+           // Select the frame buffer for graphics write (for 2 colour ePaper toggle buffer)
            // Returns a pointer to the Sprite frame buffer
   void*    frameBuffer(int8_t f);
   

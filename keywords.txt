@@ -119,13 +119,6 @@ color24to16	KEYWORD2
 alphaBlend	KEYWORD2
 alphaBlend24	KEYWORD2
 
-initDMA	KEYWORD2
-deInitDMA	KEYWORD2
-pushImageDMA	KEYWORD2
-pushPixelsDMA	KEYWORD2
-dmaBusy	KEYWORD2
-dmaWait	KEYWORD2
-
 startWrite	KEYWORD2
 writeColor	KEYWORD2
 endWrite	KEYWORD2
@@ -134,16 +127,6 @@ setAttribute	KEYWORD2
 getAttribute	KEYWORD2
 getSetup	KEYWORD2
 getSPIinstance	KEYWORD2
-
-
-# Touch functions
-
-getTouchRaw	KEYWORD2
-getTouchRawZ	KEYWORD2
-convertRawXY	KEYWORD2
-getTouch	KEYWORD2
-calibrateTouch	KEYWORD2
-setTouch	KEYWORD2
 
 # Smooth (anti-aliased) graphics functions
 drawSmoothCircle	KEYWORD2
@@ -162,22 +145,6 @@ loadFont	KEYWORD2
 unloadFont	KEYWORD2
 getUnicodeIndex	KEYWORD2
 showFont	KEYWORD2
-
-
-# Button class
-
-TFT_eSPI_Button	KEYWORD1
-
-initButton	KEYWORD2
-initButtonUL	KEYWORD2
-setLabelDatum	KEYWORD2
-drawButton	KEYWORD2
-contains	KEYWORD2
-press	KEYWORD2
-isPressed	KEYWORD2
-justPressed	KEYWORD2
-justReleased	KEYWORD2
-
 
 # Sprite class
 

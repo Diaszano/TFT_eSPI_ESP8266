@@ -63,6 +63,9 @@
 #if defined (TFT_PARALLEL_8_BIT) || defined (TFT_PARALLEL_16_BIT)
   #error "TFT_eSPI_ESP8266 supports only SPI"
 #endif
+#ifdef TOUCH_CS
+  #error "TFT_eSPI_ESP8266 has no touch support"
+#endif
 
   #include "TFT_Drivers/ST7789_Defines.h"
   #define TFT_DRIVER 0x7789
@@ -81,9 +84,6 @@
 // Processor specific code used by SPI bus transaction startWrite and endWrite functions
 #define SET_BUS_WRITE_MODE SPI1U=SPI1U_WRITE
 #define SET_BUS_READ_MODE  SPI1U=SPI1U_READ
-
-// Code to check if DMA is busy, used by SPI bus transaction transaction and endWrite functions
-#define DMA_BUSY_CHECK // DMA not available, leave blank
 
 // Initialise processor specific SPI functions, used by init()
 #if (!defined (SUPPORT_TRANSACTIONS) && defined (ARDUINO_ARCH_ESP8266))
@@ -247,11 +247,6 @@
 // Some ST7789 boards do not work with Mode 0
 #ifndef TFT_SPI_MODE
     #define TFT_SPI_MODE SPI_MODE3
-#endif
-
-// If the XPT2046 SPI frequency is not defined, set a default
-#ifndef SPI_TOUCH_FREQUENCY
-  #define SPI_TOUCH_FREQUENCY  2500000
 #endif
 
 #ifndef SPI_BUSY_CHECK
@@ -511,11 +506,9 @@ int8_t pin_tft_d7;
 int8_t pin_tft_led;
 int8_t pin_tft_led_on;
 
-int8_t pin_tch_cs;   // Touch chip select pin
 
 int16_t tft_spi_freq;// TFT write SPI frequency
 int16_t tft_rd_freq; // TFT read  SPI frequency
-int16_t tch_spi_freq;// Touch controller read/write SPI frequency
 } setup_t;
 
 /***************************************************************************************
@@ -828,58 +821,6 @@ class TFT_eSPI : public Print { friend class TFT_eSprite; // Sprite class has ac
            // 24-bit colour alphaBlend with optional alpha dither
   uint32_t alphaBlend24(uint8_t alpha, uint32_t fgc, uint32_t bgc, uint8_t dither = 0);
 
-  // Direct Memory Access (DMA) support functions
-
-           // Bear in mind DMA will only be of benefit in particular circumstances and can be tricky
-           // to manage by noobs. The functions have however been designed to be noob friendly and
-           // avoid a few DMA behaviour "gotchas".
-           //
-           // At best you will get a 2x TFT rendering performance improvement when using DMA because
-           // this library handles the SPI bus so efficiently during normal (non DMA) transfers. The best
-           // performance improvement scenario is the DMA transfer time is exactly the same as the time it
-           // takes for the processor to prepare the next image buffer and initiate another DMA transfer.
-           //
-           // DMA transfer to the TFT is done while the processor moves on to handle other tasks. Bear
-           // this in mind and watch out for "gotchas" like the image buffer going out of scope as the
-           // processor leaves a function or its content being changed while the DMA engine is reading it.
-           //
-           // The compiler MAY change the implied scope of a buffer which has been set aside by creating
-           // an array. For example a buffer defined before a "for-next" loop may get de-allocated when
-           // the loop ends. To avoid this use, for example, malloc() and free() to take control of when
-           // the buffer space is available and ensure it is not released until DMA is complete.
-           //
-           // Clearly you should not modify a buffer that is being DMA'ed to the TFT until the DMA is over.
-           // Use the dmaBusy() function to check this.  Use tft.startWrite() before invoking DMA so the
-           // TFT chip select stays low. If you use tft.endWrite() before DMA is complete then the endWrite
-           // function will wait for the DMA to complete, so this may defeat any DMA performance benefit.
-           //
-
-  bool     initDMA(bool ctrl_cs = false);  // Initialise the DMA engine and attach to SPI bus - typically used in setup()
-
-  void     deInitDMA(void);   // De-initialise the DMA engine and detach from SPI bus - typically not used
-
-           // Push an image to the TFT using DMA, buffer is optional and grabs (double buffers) a copy of the image
-           // Use the buffer if the image data will get over-written or destroyed while DMA is in progress
-           //
-           // Note 1: If swapping colour bytes is defined, and the double buffer option is NOT used, then the bytes
-           // in the original image buffer content will be byte swapped by the function before DMA is initiated.
-           //
-           // Note 2: If part of the image will be off screen or outside of a set viewport, then the the original
-           // image buffer content will be altered to a correctly clipped image before DMA is initiated.
-           //
-           // The function will wait for the last DMA to complete if it is called while a previous DMA is still
-           // in progress, this simplifies the sketch and helps avoid "gotchas".
-  void     pushImageDMA(int32_t x, int32_t y, int32_t w, int32_t h, uint16_t* data, uint16_t* buffer = nullptr);
-
-           // Push a block of pixels into a window set up using setAddrWindow()
-  void     pushPixelsDMA(uint16_t* image, uint32_t len);
-
-           // Check if the DMA is complete - use while(tft.dmaBusy); for a blocking wait
-  bool     dmaBusy(void); // returns true if DMA is still in progress
-  void     dmaWait(void); // wait until DMA is complete
-
-  bool     DMA_Enabled = false;   // Flag for DMA enabled state
-  uint8_t  spiBusyCheck = 0;      // Number of transfer buffers to check
 
   // Bare metal functions
   void     startWrite(void);                         // Begin SPI transaction
@@ -1028,10 +969,6 @@ class TFT_eSPI : public Print { friend class TFT_eSprite; // Sprite class has ac
 /***************************************************************************************
 **                         Section 9: TFT_eSPI class conditional extensions
 ***************************************************************************************/
-// Load the Touch extension
-    #if !defined(DISABLE_ALL_LIBRARY_WARNINGS)
-      #warning >>>>------>> TOUCH_CS pin not defined, TFT_eSPI touch functions will not be available!
-    #endif
 
 // Load the Anti-aliased font extension
 #ifdef SMOOTH_FONT
@@ -1061,8 +998,6 @@ fastBlend(A alpha, F fgc, B bgc)
 /***************************************************************************************
 **                         Section 10: Additional extension classes
 ***************************************************************************************/
-// Load the Button Class
-#include "Extensions/Button.h"
 
 // Load the Sprite Class
 #include "Extensions/Sprite.h"

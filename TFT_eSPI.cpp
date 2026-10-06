@@ -339,7 +339,6 @@ inline void TFT_eSPI::end_nin_write(void){
 ***************************************************************************************/
 // Reads require a lower SPI clock rate than writes
 inline void TFT_eSPI::begin_tft_read(void){
-  DMA_BUSY_CHECK; // Wait for any DMA transfer to complete before changing SPI settings
 #if defined (SPI_HAS_TRANSACTION) && defined (SUPPORT_TRANSACTIONS)
   if (locked) {
     locked = false;
@@ -3268,7 +3267,6 @@ void TFT_eSPI::endWrite(void)
 {
   lockTransaction = false; // Release sketch induced transaction lock
   inTransaction = false;
-  DMA_BUSY_CHECK;          // Safety check - user code should have checked this!
   end_tft_write();         // Release SPI bus
 }
 
@@ -5510,14 +5508,11 @@ void TFT_eSPI::getSetup(setup_t &tft_settings)
   tft_settings.pin_tft_led_on = TFT_BACKLIGHT_ON;
 #endif
 
-  tft_settings.pin_tch_cs   = -1;
-  tft_settings.tch_spi_freq = 0;
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include "Extensions/Button.cpp"
 
 #include "Extensions/Sprite.cpp"
 
@@ -5529,4 +5524,3 @@ void TFT_eSPI::getSetup(setup_t &tft_settings)
   #include "Extensions/AA_graphics.cpp"  // Loaded if SMOOTH_FONT is defined by user
 #endif
 ////////////////////////////////////////////////////////////////////////////////////////
-
