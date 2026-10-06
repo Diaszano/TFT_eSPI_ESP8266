@@ -30,7 +30,21 @@ def check(root: Path) -> list[str]:
         if path.name not in en_names:
             errors.append(f"{path.relative_to(root)}: missing English pair")
 
-    documents = [root / "README.md", root / "README.pt-BR.md", *en_files, *pt_files]
+    contributing_en = root / "CONTRIBUTING.md"
+    contributing_pt = root / "CONTRIBUTING.pt-BR.md"
+    if contributing_en.is_file() and not contributing_pt.is_file():
+        errors.append("CONTRIBUTING.pt-BR.md: missing pair")
+    if contributing_pt.is_file() and not contributing_en.is_file():
+        errors.append("CONTRIBUTING.md: missing pair")
+
+    documents = [
+        root / "README.md",
+        root / "README.pt-BR.md",
+        contributing_en,
+        contributing_pt,
+        *en_files,
+        *pt_files,
+    ]
     for path in documents:
         if not path.is_file():
             continue

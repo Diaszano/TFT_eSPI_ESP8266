@@ -46,6 +46,19 @@ class DocsCheckTests(unittest.TestCase):
         self.assertEqual(len(errors), 1)
         self.assertIn("README.pt-BR.md", errors[0])
 
+    def test_missing_contributing_pt_br(self):
+        self.write("CONTRIBUTING.md", "# Contributing\n")
+        errors = check(self.root)
+        self.assertEqual(len(errors), 1)
+        self.assertIn("CONTRIBUTING.pt-BR.md", errors[0])
+
+    def test_contributing_broken_link(self):
+        self.write("CONTRIBUTING.md", "[x](nope.md)\n")
+        self.write("CONTRIBUTING.pt-BR.md", "# Contribuir\n")
+        errors = check(self.root)
+        self.assertEqual(len(errors), 1)
+        self.assertIn("CONTRIBUTING.md", errors[0])
+
     def test_broken_relative_link(self):
         self.write("docs/en/a.md", "[x](nope.md)\n")
         errors = check(self.root)
