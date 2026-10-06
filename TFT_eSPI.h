@@ -29,25 +29,15 @@
 //Standard support
 #include <Arduino.h>
 #include <Print.h>
-#if !defined (TFT_PARALLEL_8_BIT) && !defined (RP2040_PIO_INTERFACE)
   #include <SPI.h>
-#endif
 /***************************************************************************************
 **                         Section 2: Load library and processor specific header files
 ***************************************************************************************/
 // Include header file that defines the fonts loaded, the TFT drivers
 // available and the pins to be used, etc. etc.
-#ifdef CONFIG_TFT_eSPI_ESPIDF
-  #include "TFT_config.h"
-#endif
 
 // New ESP8266 board package uses ARDUINO_ARCH_ESP8266
 // old package defined ESP8266
-#if defined (ESP8266)
-  #ifndef ARDUINO_ARCH_ESP8266
-    #define ARDUINO_ARCH_ESP8266
-  #endif
-#endif
 
 // The following lines allow the user setup to be included in the sketch folder, see
 // "Sketch_with_tft_setup" generic example.
@@ -68,52 +58,21 @@
 
 #include <User_Setup_Select.h>
 
-#if defined(ST7789_DRIVER)
+#ifndef ST7789_DRIVER
+  #error "TFT_eSPI_ESP8266 supports only ST7789_DRIVER"
+#endif
+#if defined (TFT_PARALLEL_8_BIT) || defined (TFT_PARALLEL_16_BIT)
+  #error "TFT_eSPI_ESP8266 supports only SPI"
+#endif
+
   #include "TFT_Drivers/ST7789_Defines.h"
   #define TFT_DRIVER 0x7789
-#endif
 
 // Handle FLASH based storage e.g. PROGMEM
-#if defined(ARDUINO_ARCH_RP2040)
-  #undef pgm_read_byte
-  #define pgm_read_byte(addr)   (*(const unsigned char *)(addr))
-  #undef pgm_read_word
-  #define pgm_read_word(addr) ({ \
-    typeof(addr) _addr = (addr); \
-    *(const unsigned short *)(_addr); \
-  })
-  #undef pgm_read_dword
-  #define pgm_read_dword(addr) ({ \
-    typeof(addr) _addr = (addr); \
-    *(const unsigned long *)(_addr); \
-  })
-#elif defined(__AVR__)
-  #include <avr/pgmspace.h>
-#elif defined(ARDUINO_ARCH_ESP8266) || defined(ESP32)
   #include <pgmspace.h>
-#else
-  #ifndef PROGMEM
-    #define PROGMEM
-  #endif
-#endif
 
 // Include the processor specific drivers
-#if defined(CONFIG_IDF_TARGET_ESP32S3)
-  #include "Processors/TFT_eSPI_ESP32_S3.h"
-#elif defined(CONFIG_IDF_TARGET_ESP32C3)
-  #include "Processors/TFT_eSPI_ESP32_C3.h"
-#elif defined (ESP32)
-  #include "Processors/TFT_eSPI_ESP32.h"
-#elif defined (ARDUINO_ARCH_ESP8266)
   #include "Processors/TFT_eSPI_ESP8266.h"
-#elif defined (STM32)
-  #include "Processors/TFT_eSPI_STM32.h"
-#elif defined(ARDUINO_ARCH_RP2040)
-  #include "Processors/TFT_eSPI_RP2040.h"
-#else
-  #include "Processors/TFT_eSPI_Generic.h"
-  #define GENERIC_PROCESSOR
-#endif
 
 /***************************************************************************************
 **                         Section 3: Interface setup
@@ -134,11 +93,7 @@
 
 // Some ST7789 boards do not work with Mode 0
 #ifndef TFT_SPI_MODE
-  #if defined(ST7789_DRIVER) || defined(ST7789_2_DRIVER)
     #define TFT_SPI_MODE SPI_MODE3
-  #else
-    #define TFT_SPI_MODE SPI_MODE0
-  #endif
 #endif
 
 // If the XPT2046 SPI frequency is not defined, set a default
@@ -151,15 +106,6 @@
 #endif
 
 // If half duplex SDA mode is defined then MISO pin should be -1
-#ifdef TFT_SDA_READ
-  #ifdef TFT_MISO
-    #if TFT_MISO != -1
-      #undef TFT_MISO
-      #define TFT_MISO -1
-      #warning TFT_MISO set to -1
-    #endif
-  #endif
-#endif  
 
 /***************************************************************************************
 **                         Section 4: Setup fonts
@@ -373,9 +319,7 @@ uint32_t setup_id;   // ID available to use in a user setup
 int32_t esp;         // Processor code
 uint8_t trans;       // SPI transaction support
 uint8_t serial;      // Serial (SPI) or parallel
-#ifndef GENERIC_PROCESSOR
 uint8_t  port;       // SPI port
-#endif
 uint8_t overlap;     // ESP8266 overlap mode
 uint8_t interface;   // Interface type
 
@@ -508,13 +452,6 @@ class TFT_eSPI : public Print { friend class TFT_eSprite; // Sprite class has ac
   void     pushPixels(const void * data_in, uint32_t len);
 
            // Support for half duplex (bi-directional SDA) SPI bus where MOSI must be switched to input
-           #ifdef TFT_SDA_READ
-             #if defined (TFT_eSPI_ENABLE_8_BIT_READ)
-  uint8_t  tft_Read_8(void);     // Read 8-bit value from TFT command register
-             #endif
-  void     begin_SDA_Read(void); // Begin a read on a half duplex (bi-directional SDA) SPI bus - sets MOSI to input
-  void     end_SDA_Read(void);   // Restore MOSI to output
-           #endif
 
 
   // Graphics drawing
@@ -705,13 +642,7 @@ class TFT_eSPI : public Print { friend class TFT_eSprite; // Sprite class has ac
 
   // Low level read/write
   void     spiwrite(uint8_t);        // legacy support only
-#ifdef RM68120_DRIVER
-  void     writecommand(uint16_t c);                 // Send a 16-bit command, function resets DC/RS high ready for data
-  void     writeRegister8(uint16_t c, uint8_t d);    // Write 8-bit data data to 16-bit command register
-  void     writeRegister16(uint16_t c, uint16_t d);  // Write 16-bit data data to 16-bit command register
-#else
   void     writecommand(uint8_t c);  // Send an 8-bit command, function resets DC/RS high ready for data
-#endif
   void     writedata(uint8_t d);     // Send data with DC/RS set high
 
   void     commandList(const uint8_t *addr); // Send a initialisation sequence to TFT stored in FLASH
@@ -789,10 +720,6 @@ class TFT_eSPI : public Print { friend class TFT_eSprite; // Sprite class has ac
            // in progress, this simplifies the sketch and helps avoid "gotchas".
   void     pushImageDMA(int32_t x, int32_t y, int32_t w, int32_t h, uint16_t* data, uint16_t* buffer = nullptr);
 
-#if defined (ESP32) // ESP32 only at the moment
-           // For case where pointer is a const and the image data must not be modified (clipped or byte swapped)
-  void     pushImageDMA(int32_t x, int32_t y, int32_t w, int32_t h, uint16_t const* data);
-#endif
            // Push a block of pixels into a window set up using setAddrWindow()
   void     pushPixelsDMA(uint16_t* image, uint32_t len);
 
@@ -825,9 +752,7 @@ class TFT_eSPI : public Print { friend class TFT_eSprite; // Sprite class has ac
   bool     verifySetupID(uint32_t id);
 
   // Global variables
-#if !defined (TFT_PARALLEL_8_BIT) && !defined (RP2040_PIO_INTERFACE)
   static   SPIClass& getSPIinstance(void); // Get SPI class handle
-#endif
   uint32_t textcolor, textbgcolor;         // Text foreground and background colours
 
   uint32_t bitmap_fg, bitmap_bg;           // Bitmap foreground (bit=1) and background (bit=0) colours
@@ -892,14 +817,6 @@ class TFT_eSPI : public Print { friend class TFT_eSprite; // Sprite class has ac
   volatile uint32_t *dcport, *csport;
   uint32_t cspinmask, dcpinmask, wrpinmask, sclkpinmask;
 
-           #if defined(ESP32_PARALLEL)
-           // Bit masks for ESP32 parallel bus interface
-  uint32_t xclr_mask, xdir_mask; // Port set/clear and direction control masks
-
-           // Lookup table for ESP32 parallel bus interface uses 1kbyte RAM,
-  uint32_t xset_mask[256]; // Makes Sprite rendering test 33% faster, for slower macro equivalent
-                           // see commented out #define set_mask(C) within TFT_eSPI_ESP32.h
-           #endif
 
   //uint32_t lastColor = 0xFFFF; // Last colour - used to minimise bit shifting overhead
 
@@ -952,10 +869,6 @@ class TFT_eSPI : public Print { friend class TFT_eSprite; // Sprite class has ac
 
   bool     _fillbg;    // Fill background flag (just for for smooth fonts at the moment)
 
-#if defined (SSD1963_DRIVER)
-  uint16_t Cswap;      // Swap buffer for SSD1963
-  uint8_t r6, g6, b6;  // RGB buffer for SSD1963
-#endif
 
 #ifdef LOAD_GFXFF
   GFXfont  *gfxFont;
@@ -965,19 +878,9 @@ class TFT_eSPI : public Print { friend class TFT_eSprite; // Sprite class has ac
 **                         Section 9: TFT_eSPI class conditional extensions
 ***************************************************************************************/
 // Load the Touch extension
-#ifdef TOUCH_CS
-  #if defined (TFT_PARALLEL_8_BIT) || defined (RP2040_PIO_INTERFACE)
-    #if !defined(DISABLE_ALL_LIBRARY_WARNINGS)
-      #error >>>>------>> Touch functions not supported in 8/16-bit parallel mode or with RP2040 PIO.
-    #endif
-  #else
-    #include "Extensions/Touch.h"        // Loaded if TOUCH_CS is defined by user
-  #endif
-#else
     #if !defined(DISABLE_ALL_LIBRARY_WARNINGS)
       #warning >>>>------>> TOUCH_CS pin not defined, TFT_eSPI touch functions will not be available!
     #endif
-#endif
 
 // Load the Anti-aliased font extension
 #ifdef SMOOTH_FONT

@@ -37,12 +37,6 @@
 #endif
 
 // Do not allow parallel mode for ESP8266
-#ifdef ESP32_PARALLEL
-  #undef ESP32_PARALLEL
-#endif
-#ifdef TFT_PARALLEL_8_BIT
-  #undef TFT_PARALLEL_8_BIT
-#endif
 
 ////////////////////////////////////////////////////////////////////////////////////////
 // Define the DC (TFT Data/Command or Register Select (RS))pin drive code
@@ -79,21 +73,12 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 // Define the WR (TFT Write) pin drive code
 ////////////////////////////////////////////////////////////////////////////////////////
-#ifdef TFT_WR
-  #define WR_L GPOC=wrpinmask
-  #define WR_H GPOS=wrpinmask
-#endif
 
 ////////////////////////////////////////////////////////////////////////////////////////
 // Define the touch screen chip select pin drive code
 ////////////////////////////////////////////////////////////////////////////////////////
-#ifndef TOUCH_CS
   #define T_CS_L // No macro allocated so it generates no code
   #define T_CS_H // No macro allocated so it generates no code
-#else
-  #define T_CS_L digitalWrite(TOUCH_CS, LOW)
-  #define T_CS_H digitalWrite(TOUCH_CS, HIGH)
-#endif
 
 ////////////////////////////////////////////////////////////////////////////////////////
 // Make sure TFT_MISO is defined if not used to avoid an error message
@@ -117,65 +102,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 // Macros to write commands/pixel colour data to a SPI ILI948x TFT
 ////////////////////////////////////////////////////////////////////////////////////////
-#if  defined (SPI_18BIT_DRIVER) // SPI 18-bit colour
-
-  // Write 8 bits to TFT
-  #define tft_Write_8(C)   spi.transfer(C)
-
-  // Convert 16-bit colour to 18-bit and write in 3 bytes
-  #define tft_Write_16(C)  spi.transfer(((C) & 0xF800)>>8); \
-                           spi.transfer(((C) & 0x07E0)>>3); \
-                           spi.transfer(((C) & 0x001F)<<3)
-
-  // Convert swapped byte 16-bit colour to 18-bit and write in 3 bytes
-  #define tft_Write_16S(C) spi.transfer((C) & 0xF8); \
-                           spi.transfer(((C) & 0xE000)>>11 | ((C) & 0x07)<<5); \
-                           spi.transfer(((C) & 0x1F00)>>5)
-
-  // Write 32 bits to TFT
-  #define tft_Write_32(C)  spi.write32(C)
-
-  // Write two address coordinates
-  #define tft_Write_32C(C,D) spi.write32((C)<<16 | (D))
-  
-  // Write same value twice
-  #define tft_Write_32D(C) spi.write32((C)<<16 | (C))
-
-////////////////////////////////////////////////////////////////////////////////////////
-// Macros to write commands/pixel colour data to an Raspberry Pi TFT
-////////////////////////////////////////////////////////////////////////////////////////
-#elif  defined (RPI_DISPLAY_TYPE)
-  // Command is 16 bits
-  #define CMD_BITS 16
-
-  // ESP8266 low level SPI writes for 8, 16 and 32-bit values
-  // to avoid the function call overhead
-  #define TFT_WRITE_BITS(D, B) \
-  SPI1U1 = ((B-1) << SPILMOSI); \
-  SPI1W0 = D; \
-  SPI1CMD |= SPIBUSY; \
-  while(SPI1CMD & SPIBUSY) {}
-
-  #define tft_Write_8(C)     TFT_WRITE_BITS((uint16_t)(C)<<8, CMD_BITS)
-
-  #define tft_Write_16(C)    TFT_WRITE_BITS((C)>>8 | (C)<<8, 16)
-
-  #define tft_Write_16S(C)   TFT_WRITE_BITS(C, 16)
-
-  #define tft_Write_32(C)    TFT_WRITE_BITS(C, 32)
-
-  #define tft_Write_32C(C,D) SPI1U1 = ((64-1) << SPILMOSI); \
-                             SPI1W0 = ((C)<<24) | (C); \
-                             SPI1W1 = ((D)<<24) | (D); \
-                             SPI1CMD |= SPIBUSY; \
-                             while(SPI1CMD & SPIBUSY) {;}
-
-  #define tft_Write_32D(C) tft_Write_32C(C,C)
-
-////////////////////////////////////////////////////////////////////////////////////////
-// Macros for all other SPI displays
-////////////////////////////////////////////////////////////////////////////////////////
-#else
   // Command is 8 bits
   #define CMD_BITS 8
 
@@ -220,7 +146,6 @@
   SPI1CMD |= SPIBUSY; \
   while(SPI1CMD & SPIBUSY) {;}
 
-#endif
 
 #ifndef tft_Write_16N
   #define tft_Write_16N tft_Write_16
@@ -229,15 +154,8 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 // Macros to read from display using SPI or software SPI
 ////////////////////////////////////////////////////////////////////////////////////////
-#if defined (TFT_SDA_READ)
-  // Use a bit banged function call for ESP8266 and bi-directional SDA pin
-  #define TFT_eSPI_ENABLE_8_BIT_READ // Enable tft_Read_8(void);
-  #define SCLK_L GPOC=sclkpinmask
-  #define SCLK_H GPOS=sclkpinmask
-#else
   // Use a SPI read transfer
   #define tft_Read_8() spi.transfer(0)
-#endif
 
 // Concatenate a byte sequence A,B,C,D to CDAB, P is a uint8_t pointer
 #define DAT8TO32(P) ( (uint32_t)P[0]<<8 | P[1] | P[2]<<24 | P[3]<<16 )
