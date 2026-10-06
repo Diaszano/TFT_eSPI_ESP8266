@@ -68,6 +68,11 @@
 
 #include <User_Setup_Select.h>
 
+#if defined(ST7789_DRIVER)
+  #include "TFT_Drivers/ST7789_Defines.h"
+  #define TFT_DRIVER 0x7789
+#endif
+
 // Handle FLASH based storage e.g. PROGMEM
 #if defined(ARDUINO_ARCH_RP2040)
   #undef pgm_read_byte
