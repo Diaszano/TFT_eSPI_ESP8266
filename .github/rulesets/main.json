@@ -1,0 +1,37 @@
+{
+  "name": "Protect default branch",
+  "target": "~DEFAULT_BRANCH",
+  "enforcement": "active",
+  "conditions": {
+    "ref_name": {
+      "include": ["~DEFAULT_BRANCH"],
+      "exclude": []
+    }
+  },
+  "rules": [
+    { "type": "deletion" },
+    { "type": "non_fast_forward" },
+    {
+      "type": "pull_request",
+      "parameters": {
+        "required_approving_review_count": 0,
+        "allowed_merge_methods": ["squash"]
+      }
+    },
+    {
+      "type": "required_status_checks",
+      "parameters": {
+        "strict_required_status_checks_policy": true,
+        "required_status_checks": [
+          { "context": "build" },
+          { "context": "lint" },
+          { "context": "arduino-lint" },
+          { "context": "pio-pack" },
+          { "context": "pr-title" },
+          { "context": "docs" },
+          { "context": "analyze" }
+        ]
+      }
+    }
+  ]
+}
