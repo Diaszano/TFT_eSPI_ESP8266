@@ -35,4 +35,4 @@ tft.drawString("Smooth text", 10, 20);
 tft.unloadFont();
 ```
 
-`Font_Demo_1_Array` demonstrates embedding font data in a flash array instead of a filesystem. Creating `.vlw` files is supported by the Processing sketch in `Tools/Create_Smooth_Font/Create_font`. `Tools/bmp2array4bit` converts indexed BMP images into palette and pixel arrays for 4-bit sprites; it does not convert fonts.
+`Font_Demo_1_Array` demonstrates embedding font data in a flash array instead of a filesystem. Creating `.vlw` files is supported by the Processing sketch in `extras/Create_Smooth_Font/Create_font`. `Tools/bmp2array4bit` converts indexed BMP images into palette and pixel arrays for 4-bit sprites; it does not convert fonts.
