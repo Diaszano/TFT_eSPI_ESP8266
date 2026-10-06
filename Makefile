@@ -6,7 +6,7 @@ JOBS ?= $(shell nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 1)
 VERSION := $(shell python3 -c "import json;print(json.load(open('library.json'))['version'])")
 LIB_SRC = $(wildcard TFT_eSPI.* User_Setup*.h TFT_Drivers/* Extensions/* Fonts/*.h User_Setups/*)
 
-.PHONY: build $(addprefix build-,$(EXAMPLES)) upload uploadfs monitor clean help docs-check docs-api docs
+.PHONY: build $(addprefix build-,$(EXAMPLES)) upload uploadfs monitor clean help docs-check docs-api docs setup lint lint-update check-version
 
 build:
 	$(MAKE) --no-print-directory -j$(JOBS) $(EXAMPLES:%=.build/%/.ok)
@@ -54,5 +54,20 @@ docs-api:
 
 docs: docs-check docs-api
 
+setup:
+	command -v clang-format || brew install clang-format
+	command -v gitleaks || brew install gitleaks
+	pre-commit install --hook-type pre-commit --hook-type commit-msg
+
+lint:
+	pre-commit run --all-files
+	$(MAKE) check-version
+
+lint-update:
+	pre-commit autoupdate --freeze
+
+check-version:
+	python3 -m unittest -q scripts/test_check_version.py && python3 scripts/check_version.py
+
 help:
-	@printf '%s\n' 'build: compile all curated examples' 'build-<Nome>: compile one example' 'upload EX=<Nome> [PORT=<port>]: upload one example' 'uploadfs EX=<Nome> [PORT=<port>]: upload example filesystem' 'monitor [PORT=<port>]: open serial monitor' 'clean: remove build files' 'docs-check: validate documentation pairs, links and removed APIs' 'docs-api: generate the Doxygen API reference' 'docs: validate docs and generate the API reference' 'help: show this help'
+	@printf '%s\n' 'build: compile all curated examples' 'build-<Nome>: compile one example' 'upload EX=<Nome> [PORT=<port>]: upload one example' 'uploadfs EX=<Nome> [PORT=<port>]: upload example filesystem' 'monitor [PORT=<port>]: open serial monitor' 'clean: remove build files' 'docs-check: validate documentation pairs, links and removed APIs' 'docs-api: generate the Doxygen API reference' 'docs: validate docs and generate the API reference' 'setup: install lint tools and hooks' 'lint: run pre-commit checks and version check' 'lint-update: update pre-commit hook revisions' 'check-version: verify package versions' 'help: show this help'
