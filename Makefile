@@ -5,7 +5,7 @@ EXAMPLES := $(notdir $(patsubst %/,%,$(wildcard examples/*/)))
 JOBS ?= $(shell nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 1)
 LIB_SRC = $(wildcard TFT_eSPI.* User_Setup*.h TFT_Drivers/* Extensions/* Fonts/*.h User_Setups/*)
 
-.PHONY: build $(addprefix build-,$(EXAMPLES)) upload uploadfs monitor clean help
+.PHONY: build $(addprefix build-,$(EXAMPLES)) upload uploadfs monitor clean help docs-check
 
 build:
 	$(MAKE) --no-print-directory -j$(JOBS) $(EXAMPLES:%=.build/%/.ok)
@@ -45,5 +45,8 @@ monitor:
 clean:
 	rm -rf .build
 
+docs-check:
+	python3 -m unittest -q scripts/test_docs_check.py && python3 scripts/docs_check.py
+
 help:
-	@printf '%s\n' 'build: compile all curated examples' 'build-<Nome>: compile one example' 'upload EX=<Nome> [PORT=<port>]: upload one example' 'uploadfs EX=<Nome> [PORT=<port>]: upload example filesystem' 'monitor [PORT=<port>]: open serial monitor' 'clean: remove build files' 'help: show this help'
+	@printf '%s\n' 'build: compile all curated examples' 'build-<Nome>: compile one example' 'upload EX=<Nome> [PORT=<port>]: upload one example' 'uploadfs EX=<Nome> [PORT=<port>]: upload example filesystem' 'monitor [PORT=<port>]: open serial monitor' 'clean: remove build files' 'docs-check: validate documentation pairs, links and removed APIs' 'help: show this help'
