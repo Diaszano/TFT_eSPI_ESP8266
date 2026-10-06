@@ -1,75 +1,75 @@
 // Change the width and height if required (defined in portrait mode)
 // or use the constructor to over-ride defaults
 #ifndef TFT_WIDTH
-  #define TFT_WIDTH  240
+#define TFT_WIDTH 240
 #endif
 #ifndef TFT_HEIGHT
-  #define TFT_HEIGHT 320
+#define TFT_HEIGHT 320
 #endif
 
 #if (TFT_HEIGHT == 240) && (TFT_WIDTH == 240)
-  #ifndef CGRAM_OFFSET
-    #define CGRAM_OFFSET
-  #endif
+#ifndef CGRAM_OFFSET
+#define CGRAM_OFFSET
+#endif
 #endif
 
 // Adafruit 1.44 TFT support
 #if (TFT_HEIGHT == 240) && (TFT_WIDTH == 135)
-  #ifndef CGRAM_OFFSET
-    #define CGRAM_OFFSET
-  #endif
+#ifndef CGRAM_OFFSET
+#define CGRAM_OFFSET
+#endif
 #endif
 
 // Adafruit 1.69 round corner TFT support
 #if (TFT_HEIGHT == 280) && (TFT_WIDTH == 240)
-  #ifndef CGRAM_OFFSET
-    #define CGRAM_OFFSET
-  #endif
+#ifndef CGRAM_OFFSET
+#define CGRAM_OFFSET
+#endif
 #endif
 
 // 1.47" 172x320 Round Rectangle Color IPS TFT Display
 #if (TFT_HEIGHT == 320) && (TFT_WIDTH == 172)
-  #ifndef CGRAM_OFFSET
-    #define CGRAM_OFFSET
-  #endif
+#ifndef CGRAM_OFFSET
+#define CGRAM_OFFSET
+#endif
 #endif
 
 #if (TFT_HEIGHT == 320) && (TFT_WIDTH == 170)
-  #ifndef CGRAM_OFFSET
-    #define CGRAM_OFFSET
-  #endif
+#ifndef CGRAM_OFFSET
+#define CGRAM_OFFSET
+#endif
 #endif
 
 #if (TFT_HEIGHT == 300) && (TFT_WIDTH == 240)
-  #ifndef CGRAM_OFFSET
-    #define CGRAM_OFFSET
-  #endif
+#ifndef CGRAM_OFFSET
+#define CGRAM_OFFSET
+#endif
 #endif
 
 // Delay between some initialisation commands
-#define TFT_INIT_DELAY 0x80 // Not used unless commandlist invoked
-
+#define TFT_INIT_DELAY 0x80  // Not used unless commandlist invoked
 
 // Generic commands used by TFT_eSPI.cpp
-#define TFT_NOP     0x00
-#define TFT_SWRST   0x01
+#define TFT_NOP 0x00
+#define TFT_SWRST 0x01
 
-#define TFT_SLPIN   0x10
-#define TFT_SLPOUT  0x11
-#define TFT_NORON   0x13
+#define TFT_SLPIN 0x10
+#define TFT_SLPOUT 0x11
+#define TFT_NORON 0x13
 
-#define TFT_INVOFF  0x20
-#define TFT_INVON   0x21
+#define TFT_INVOFF 0x20
+#define TFT_INVON 0x21
 #define TFT_DISPOFF 0x28
-#define TFT_DISPON  0x29
-#define TFT_CASET   0x2A
-#define TFT_PASET   0x2B
-#define TFT_RAMWR   0x2C
-#define TFT_RAMRD   0x2E
-#define TFT_MADCTL  0x36
-#define TFT_COLMOD  0x3A
+#define TFT_DISPON 0x29
+#define TFT_CASET 0x2A
+#define TFT_PASET 0x2B
+#define TFT_RAMWR 0x2C
+#define TFT_RAMRD 0x2E
+#define TFT_MADCTL 0x36
+#define TFT_COLMOD 0x3A
 
 // Flags for TFT_MADCTL
+// clang-format off
 #define TFT_MAD_MY  0x80
 #define TFT_MAD_MX  0x40
 #define TFT_MAD_MV  0x20
@@ -79,24 +79,26 @@
 #define TFT_MAD_MH  0x04
 #define TFT_MAD_SS  0x02
 #define TFT_MAD_GS  0x01
+// clang-format on
 
 #ifdef TFT_RGB_ORDER
-  #if (TFT_RGB_ORDER == 1)
-    #define TFT_MAD_COLOR_ORDER TFT_MAD_RGB
-  #else
-    #define TFT_MAD_COLOR_ORDER TFT_MAD_BGR
-  #endif
+#if (TFT_RGB_ORDER == 1)
+#define TFT_MAD_COLOR_ORDER TFT_MAD_RGB
 #else
-  #ifdef CGRAM_OFFSET
-    #define TFT_MAD_COLOR_ORDER TFT_MAD_BGR
-  #else
-    #define TFT_MAD_COLOR_ORDER TFT_MAD_RGB
-  #endif
+#define TFT_MAD_COLOR_ORDER TFT_MAD_BGR
+#endif
+#else
+#ifdef CGRAM_OFFSET
+#define TFT_MAD_COLOR_ORDER TFT_MAD_BGR
+#else
+#define TFT_MAD_COLOR_ORDER TFT_MAD_RGB
+#endif
 #endif
 
-#define TFT_IDXRD   0x00 // ILI9341 only, indexed control register read
+#define TFT_IDXRD 0x00  // ILI9341 only, indexed control register read
 
 // ST7789 specific commands used in init
+// clang-format off
 #define ST7789_NOP			0x00
 #define ST7789_SWRESET		0x01
 #define ST7789_RDDID		0x04
@@ -172,4 +174,4 @@
 #define ST7789_PROMEN		0xFA      // Program mode enable
 #define ST7789_NVMSET		0xFC      // NVM setting
 #define ST7789_PROMACT		0xFE      // Program action
-
+// clang-format on

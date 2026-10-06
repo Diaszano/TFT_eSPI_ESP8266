@@ -1,19 +1,18 @@
 // Sketch to draw an analogue clock on the screen
 // This uses anti-aliased drawing functions that are built into TFT_eSPI
 
-// Anti-aliased lines can be drawn with sub-pixel resolution and permit lines to be
-// drawn with less jaggedness.
+// Anti-aliased lines can be drawn with sub-pixel resolution and permit lines to
+// be drawn with less jaggedness.
 
 // Based on a sketch by DavyLandman:
 // https://github.com/Bodmer/TFT_eSPI/issues/905
 
-
-#define WIFI_SSID      "Your_SSID"
-#define WIFI_PASSWORD  "Your_Password"
+#define WIFI_SSID "Your_SSID"
+#define WIFI_PASSWORD "Your_Password"
 
 #include <Arduino.h>
-#include <TFT_eSPI.h> // Master copy here: https://github.com/Bodmer/TFT_eSPI
 #include <SPI.h>
+#include <TFT_eSPI.h>  // Master copy here: https://github.com/Bodmer/TFT_eSPI
 
 #include "NotoSansBold15.h"
 
@@ -23,15 +22,15 @@ TFT_eSprite face = TFT_eSprite(&tft);
 #define CLOCK_X_POS 10
 #define CLOCK_Y_POS 10
 
-#define CLOCK_FG   TFT_SKYBLUE
-#define CLOCK_BG   TFT_NAVY
+#define CLOCK_FG TFT_SKYBLUE
+#define CLOCK_BG TFT_NAVY
 #define SECCOND_FG TFT_RED
-#define LABEL_FG   TFT_GOLD
+#define LABEL_FG TFT_GOLD
 
-#define CLOCK_R       127.0f / 2.0f // Clock face radius (float type)
-#define H_HAND_LENGTH CLOCK_R/2.0f
-#define M_HAND_LENGTH CLOCK_R/1.4f
-#define S_HAND_LENGTH CLOCK_R/1.3f
+#define CLOCK_R 127.0f / 2.0f  // Clock face radius (float type)
+#define H_HAND_LENGTH CLOCK_R / 2.0f
+#define M_HAND_LENGTH CLOCK_R / 1.4f
+#define S_HAND_LENGTH CLOCK_R / 1.3f
 
 #define FACE_W CLOCK_R * 2 + 1
 #define FACE_H CLOCK_R * 2 + 1
@@ -40,7 +39,7 @@ TFT_eSprite face = TFT_eSprite(&tft);
 // change every second so we see smooth sub-pixel movement
 #define SECOND_ANGLE 360.0 / 60.0
 #define MINUTE_ANGLE SECOND_ANGLE / 60.0
-#define HOUR_ANGLE   MINUTE_ANGLE / 12.0
+#define HOUR_ANGLE MINUTE_ANGLE / 12.0
 
 // Sprite width and height
 #define FACE_W CLOCK_R * 2 + 1
@@ -51,8 +50,9 @@ uint8_t h = 0, m = 0, s = 0;
 
 float time_secs = h * 3600 + m * 60 + s;
 
-// Load header after time_secs global variable has been created so it is in scope
-#include "NTP_Time.h" // Attached to this sketch, see that tab for library needs
+// Load header after time_secs global variable has been created so it is in
+// scope
+#include "NTP_Time.h"  // Attached to this sketch, see that tab for library needs
 
 // Time for next tick
 uint32_t targetTime = 0;
@@ -74,7 +74,8 @@ void setup() {
   tft.fillScreen(TFT_BLACK);
 
   // Create the clock face sprite
-  //face.setColorDepth(8); // 8-bit will work, but reduces effectiveness of anti-aliasing
+  // face.setColorDepth(8); // 8-bit will work, but reduces effectiveness of
+  // anti-aliasing
   face.createSprite(FACE_W, FACE_H);
 
   // Only 1 font used in the sprite, so can remain loaded
@@ -92,7 +93,6 @@ void setup() {
 void loop() {
   // Update time periodically
   if (targetTime < millis()) {
-
     // Update next tick time in 100 milliseconds for smooth movement
     targetTime = millis() + 100;
 
@@ -123,7 +123,7 @@ static void renderFace(float t) {
   face.fillSprite(TFT_BLACK);
 
   // Draw the face circle
-  face.fillSmoothCircle( CLOCK_R, CLOCK_R, CLOCK_R, CLOCK_BG );
+  face.fillSmoothCircle(CLOCK_R, CLOCK_R, CLOCK_R, CLOCK_BG);
 
   // Set text datum to middle centre and the colour
   face.setTextDatum(MC_DATUM);
@@ -134,7 +134,7 @@ static void renderFace(float t) {
   // Text offset adjustment
   constexpr uint32_t dialOffset = CLOCK_R - 10;
 
-  float xp = 0.0, yp = 0.0; // Use float pixel position for smooth AA motion
+  float xp = 0.0, yp = 0.0;  // Use float pixel position for smooth AA motion
 
   // Draw digits around clock perimeter
   for (uint32_t h = 1; h <= 12; h++) {
@@ -170,10 +170,9 @@ static void renderFace(float t) {
 // =========================================================================
 // Coordinates are returned to caller via the xp and yp pointers
 #define DEG2RAD 0.0174532925
-void getCoord(int16_t x, int16_t y, float *xp, float *yp, int16_t r, float a)
-{
-  float sx1 = cos( (a - 90) * DEG2RAD);
-  float sy1 = sin( (a - 90) * DEG2RAD);
-  *xp =  sx1 * r + x;
-  *yp =  sy1 * r + y;
+void getCoord(int16_t x, int16_t y, float* xp, float* yp, int16_t r, float a) {
+  float sx1 = cos((a - 90) * DEG2RAD);
+  float sy1 = sin((a - 90) * DEG2RAD);
+  *xp = sx1 * r + x;
+  *yp = sy1 * r + y;
 }

@@ -1,14 +1,14 @@
 #define USER_SETUP_INFO "TFT_eSPI_ESP8266 default"
 
 #define ST7789_DRIVER
-#define TFT_WIDTH  240
+#define TFT_WIDTH 240
 #define TFT_HEIGHT 240
 
 #define TFT_MOSI 13
 #define TFT_SCLK 14
-#define TFT_DC    0
-#define TFT_RST   2
-#define TFT_BL    5
+#define TFT_DC 0
+#define TFT_RST 2
+#define TFT_BL 5
 #define TFT_BACKLIGHT_ON LOW
 // TFT_CS not defined: CS tied to GND
 // TFT_MISO not defined: display is write-only

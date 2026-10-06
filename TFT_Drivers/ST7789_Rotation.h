@@ -1,7 +1,8 @@
-  // This is the command sequence that rotates the ST7789 driver coordinate frame
+// This is the command sequence that rotates the ST7789 driver coordinate frame
 
-  writecommand(TFT_MADCTL);
-  rotation = m % 4;
+writecommand(TFT_MADCTL);
+rotation = m % 4;
+// clang-format off
   switch (rotation) {
     case 0: // Portrait
 #ifdef CGRAM_OFFSET
@@ -138,3 +139,4 @@
       _height = _init_width;
       break;
   }
+// clang-format on

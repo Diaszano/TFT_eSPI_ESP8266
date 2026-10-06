@@ -16,18 +16,19 @@
 
   On a ESP8266 Sprite sizes up to 126 x 160 can be accommodated,
   this size requires 40kBytes of RAM for a 16-bit colour depth.
-  
+
   When 8-bit colour depth sprites are created they occupy
   (width * height) bytes in RAM, so larger sprites can be
   created, or the RAM required is halved.
 */
 
-#include <TFT_eSPI.h>                 // Include the graphics library (this includes the sprite functions)
+#include <TFT_eSPI.h>  // Include the graphics library (this includes the sprite functions)
 
-TFT_eSPI    tft = TFT_eSPI();         // Create object "tft"
+TFT_eSPI tft = TFT_eSPI();  // Create object "tft"
 
-TFT_eSprite img = TFT_eSprite(&tft);  // Create Sprite object "img" with pointer to "tft" object
-                                      // the pointer is used by pushSprite() to push it onto the TFT
+TFT_eSprite img = TFT_eSprite(
+    &tft);  // Create Sprite object "img" with pointer to "tft" object
+            // the pointer is used by pushSprite() to push it onto the TFT
 
 void setup(void) {
   Serial.begin(250000);
@@ -38,15 +39,13 @@ void setup(void) {
 }
 
 void loop() {
-
   tft.fillScreen(TFT_NAVY);
 
   // Draw 10 sprites containing a "transparent" colour
-  for (int i = 0; i < 10; i++)
-  {
-    int x = random(240-70);
-    int y = random(320-80);
-    int c = random(0x10000); // Random colour
+  for (int i = 0; i < 10; i++) {
+    int x = random(240 - 70);
+    int y = random(320 - 80);
+    int c = random(0x10000);  // Random colour
     drawStar(x, y, c);
   }
 
@@ -55,27 +54,24 @@ void loop() {
   uint32_t dt = millis();
 
   // Now go bananas and draw 500 more
-  for (int i = 0; i < 500; i++)
-  {
-    int x = random(240-70);
-    int y = random(320-80);
-    int c = random(0x10000); // Random colour
+  for (int i = 0; i < 500; i++) {
+    int x = random(240 - 70);
+    int y = random(320 - 80);
+    int c = random(0x10000);  // Random colour
     drawStar(x, y, c);
-    yield(); // Stop watchdog reset
+    yield();  // Stop watchdog reset
   }
 
   // Show time in milliseconds to draw and then push 1 sprite to TFT screen
-  numberBox( 10, 10, (millis()-dt)/500.0 );
+  numberBox(10, 10, (millis() - dt) / 500.0);
 
   delay(2000);
-
 }
 
 // #########################################################################
 // Create sprite, plot graphics in it, plot to screen, then delete sprite
 // #########################################################################
-void drawStar(int x, int y, int star_color)
-{
+void drawStar(int x, int y, int star_color) {
   // Create an 8-bit sprite 70x 80 pixels (uses 5600 bytes of RAM)
   img.setColorDepth(8);
   img.createSprite(70, 80);
@@ -87,12 +83,12 @@ void drawStar(int x, int y, int star_color)
   img.fillSprite(TFT_TRANSPARENT);
 
   // Draw 2 triangles to create a filled in star
-  img.fillTriangle(35, 0, 0,59, 69,59, star_color);
-  img.fillTriangle(35,79, 0,20, 69,20, star_color);
+  img.fillTriangle(35, 0, 0, 59, 69, 59, star_color);
+  img.fillTriangle(35, 79, 0, 20, 69, 20, star_color);
 
   // Punch a star shaped hole in the middle with a smaller transparent star
-  img.fillTriangle(35, 7, 6,56, 63,56, TFT_TRANSPARENT);
-  img.fillTriangle(35,73, 6,24, 63,24, TFT_TRANSPARENT);
+  img.fillTriangle(35, 7, 6, 56, 63, 56, TFT_TRANSPARENT);
+  img.fillTriangle(35, 73, 6, 24, 63, 24, TFT_TRANSPARENT);
 
   // Push sprite to TFT screen CGRAM at coordinate x,y (top left corner)
   // Specify what colour is to be treated as transparent.
@@ -100,18 +96,15 @@ void drawStar(int x, int y, int star_color)
 
   // Delete it to free memory
   img.deleteSprite();
- 
 }
 
 // #########################################################################
 // Draw a number in a rounded rectangle with some transparent pixels
 // #########################################################################
-void numberBox(int x, int y, float num )
-{
-
-  // Size of sprite
-  #define IWIDTH  80
-  #define IHEIGHT 35
+void numberBox(int x, int y, float num) {
+// Size of sprite
+#define IWIDTH 80
+#define IHEIGHT 35
 
   // Create a 8-bit sprite 80 pixels wide, 35 high (2800 bytes of RAM needed)
   img.setColorDepth(8);
@@ -121,8 +114,8 @@ void numberBox(int x, int y, float num )
   img.fillSprite(TFT_BLACK);
 
   // Draw a background for the numbers
-  img.fillRoundRect(  0, 0,  80, 35, 15, TFT_RED);
-  img.drawRoundRect(  0, 0,  80, 35, 15, TFT_WHITE);
+  img.fillRoundRect(0, 0, 80, 35, 15, TFT_RED);
+  img.drawRoundRect(0, 0, 80, 35, 15, TFT_WHITE);
 
   // Set the font parameters
   img.setTextSize(1);           // Font size scaling is x1
@@ -141,4 +134,3 @@ void numberBox(int x, int y, float num )
   // Delete sprite to free up the RAM
   img.deleteSprite();
 }
-

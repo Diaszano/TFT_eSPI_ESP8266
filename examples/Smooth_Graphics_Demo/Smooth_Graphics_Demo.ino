@@ -1,7 +1,7 @@
 // Sketch to demonstrate smooth (anti-aliased) graphics functions:
 // Smooth graphics result in less pixel resolution jaggedness.
 
-#include <TFT_eSPI.h> // Master copy here: https://github.com/Bodmer/TFT_eSPI
+#include <TFT_eSPI.h>  // Master copy here: https://github.com/Bodmer/TFT_eSPI
 
 TFT_eSPI tft = TFT_eSPI();  // Invoke library, pins defined in User_Setup.h
 
@@ -31,7 +31,6 @@ void setup() {
 // Loop
 // =========================================================================
 void loop() {
-
   // drawSpot is for small anti-aliased circles, coordinates and radius are
   // floating point to allow sub-pixel positioning (large circles will
   // be slow to draw). Use fillSmoothCircle() for large circles.
@@ -45,14 +44,14 @@ void loop() {
   spr.fillSprite(TFT_RED);
   // Draw spot in sprite, the background colour is omitted so function
   // reads background colour for aliasing. (To use this method with direct write
-  // to TFT (tft.drawSpot...) requires the capability to read data from the TFT!)
+  // to TFT (tft.drawSpot...) requires the capability to read data from the
+  // TFT!)
   spr.drawSpot(x, y, r, TFT_WHITE);
   spr.pushSprite(21, 0);
 
-
   // Draw a segmented ring meter type display
   // Centre of screen
-  int cx = tft.width()  / 2;
+  int cx = tft.width() / 2;
   int cy = tft.height() / 2;
 
   // Inner and outer radius of ring
@@ -69,8 +68,8 @@ void loop() {
   float px2 = 0.0;
   float py2 = 0.0;
 
-  // Wedge line function, an anti-aliased wide line between 2 points, with different
-  // line widths at the two ends. Background colour is black.
+  // Wedge line function, an anti-aliased wide line between 2 points, with
+  // different line widths at the two ends. Background colour is black.
   for (int angle = -130; angle <= 130; angle += 10) {
     getCoord(cx, cy, &px1, &py1, &px2, &py2, r1, r2, angle);
     uint16_t colour = rainbow(map(angle, -130, 130, 0, 127));
@@ -105,10 +104,12 @@ void loop() {
   int y1 = h - 1;
   int y2 = wd;
 
-  for (x2 = wd; x2 < w; x2 += wd * 3) tft.drawWideLine(x1, y1, x2, y2, wd, TFT_WHITE, TFT_BLACK);
+  for (x2 = wd; x2 < w; x2 += wd * 3)
+    tft.drawWideLine(x1, y1, x2, y2, wd, TFT_WHITE, TFT_BLACK);
 
-  x2    = wd;
-  for (y2 = wd; y2 < h; y2 += wd * 4) tft.drawWideLine(x1, y1, x2, y2, wd, TFT_WHITE, TFT_BLACK);
+  x2 = wd;
+  for (y2 = wd; y2 < h; y2 += wd * 4)
+    tft.drawWideLine(x1, y1, x2, y2, wd, TFT_WHITE, TFT_BLACK);
 
   delay(5000);
 
@@ -127,33 +128,32 @@ void loop() {
   while (1) delay(100);
 }
 
-
 // =========================================================================
 // Get coordinates of two ends of a line from r1 to r2, pivot at x,y, angle a
 // =========================================================================
 // Coordinates are returned to caller via the xp and yp pointers
 #define DEG2RAD 0.0174532925
-void getCoord(int16_t x, int16_t y, float *xp1, float *yp1, float *xp2, float *yp2, int16_t r1, int16_t r2, float a)
-{
-  float sx = cos( (a - 90) * DEG2RAD);
-  float sy = sin( (a - 90) * DEG2RAD);
-  *xp1 =  sx * r1 + x;
-  *yp1 =  sy * r1 + y;
-  *xp2 =  sx * r2 + x;
-  *yp2 =  sy * r2 + y;
+void getCoord(int16_t x, int16_t y, float* xp1, float* yp1, float* xp2,
+              float* yp2, int16_t r1, int16_t r2, float a) {
+  float sx = cos((a - 90) * DEG2RAD);
+  float sy = sin((a - 90) * DEG2RAD);
+  *xp1 = sx * r1 + x;
+  *yp1 = sy * r1 + y;
+  *xp2 = sx * r2 + x;
+  *yp2 = sy * r2 + y;
 }
 
 // =========================================================================
 // Return a 16-bit rainbow colour
 // =========================================================================
-unsigned int rainbow(byte value)
-{
+unsigned int rainbow(byte value) {
   // Value is expected to be in range 0-127
-  // The value is converted to a spectrum colour from 0 = blue through to 127 = red
+  // The value is converted to a spectrum colour from 0 = blue through to 127 =
+  // red
 
-  byte red = 0; // Red is the top 5 bits of a 16-bit colour value
-  byte green = 0;// Green is the middle 6 bits
-  byte blue = 0; // Blue is the bottom 5 bits
+  byte red = 0;    // Red is the top 5 bits of a 16-bit colour value
+  byte green = 0;  // Green is the middle 6 bits
+  byte blue = 0;   // Blue is the bottom 5 bits
 
   byte quadrant = value / 32;
 

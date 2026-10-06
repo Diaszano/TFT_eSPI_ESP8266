@@ -11,21 +11,22 @@
   This sketch uses method 1, using tft.print() and tft.println() calls.
 
   In some cases the sketch shows what can go wrong too, so read the comments!
-  
-  The font is rendered WITHOUT a background, but a background colour needs to be
-  set so the anti-aliasing of the character is performed correctly. This is because
-  characters are drawn one by one.
-  
-  This method is good for static text that does not change often because changing
-  values may flicker. The text appears at the tft cursor coordinates.
 
-  It is also possible to "print" text directly into a created sprite, for example using
-  spr.println("Hello"); and then push the sprite to the screen. That method is not
-  demonstrated in this sketch.
-  
+  The font is rendered WITHOUT a background, but a background colour needs to be
+  set so the anti-aliasing of the character is performed correctly. This is
+  because characters are drawn one by one.
+
+  This method is good for static text that does not change often because
+  changing values may flicker. The text appears at the tft cursor coordinates.
+
+  It is also possible to "print" text directly into a created sprite, for
+  example using spr.println("Hello"); and then push the sprite to the screen.
+  That method is not demonstrated in this sketch.
+
 */
 
-//  A processing sketch to create new fonts can be found in the Tools folder of TFT_eSPI
+//  A processing sketch to create new fonts can be found in the Tools folder of
+//  TFT_eSPI
 //  https://github.com/Bodmer/TFT_eSPI/tree/master/Tools/Create_Smooth_Font/Create_font
 
 //  This sketch uses font files created from the Noto family of fonts:
@@ -39,13 +40,11 @@
 #define AA_FONT_LARGE NotoSansBold36
 
 #include <SPI.h>
-#include <TFT_eSPI.h>       // Hardware-specific library
+#include <TFT_eSPI.h>  // Hardware-specific library
 
 TFT_eSPI tft = TFT_eSPI();
 
-
 void setup(void) {
-
   Serial.begin(250000);
 
   tft.begin();
@@ -53,32 +52,30 @@ void setup(void) {
   tft.setRotation(0);
 }
 
-
 void loop() {
-
   tft.fillScreen(TFT_BLACK);
 
-  tft.setTextColor(TFT_WHITE, TFT_BLACK); // Set the font colour AND the background colour
-                                          // so the anti-aliasing works
+  tft.setTextColor(TFT_WHITE,
+                   TFT_BLACK);  // Set the font colour AND the background colour
+                                // so the anti-aliasing works
 
-  tft.setCursor(0, 0); // Set cursor at top left of screen
-
+  tft.setCursor(0, 0);  // Set cursor at top left of screen
 
   // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
   // Small font
   // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
   Serial.println("Loading font");
 
-  tft.loadFont(AA_FONT_SMALL);    // Must load the font first
+  tft.loadFont(AA_FONT_SMALL);  // Must load the font first
 
-  tft.println("Small 15pt font"); // println moves cursor down for a new line
+  tft.println("Small 15pt font");  // println moves cursor down for a new line
 
-  tft.println(); // New line
+  tft.println();  // New line
 
-  tft.print("ABC"); // print leaves cursor at end of line
+  tft.print("ABC");  // print leaves cursor at end of line
 
   tft.setTextColor(TFT_CYAN, TFT_BLACK);
-  tft.println("1234"); // Added to line after ABC
+  tft.println("1234");  // Added to line after ABC
 
   tft.setTextColor(TFT_YELLOW, TFT_BLACK);
   // print stream formatting can be used,see:
@@ -90,7 +87,7 @@ void loop() {
   tft.println(ivalue, OCT);  // print as an ASCII-encoded octal
   tft.println(ivalue, BIN);  // print as an ASCII-encoded binary
 
-  tft.println(); // New line
+  tft.println();  // New line
   tft.setTextColor(TFT_MAGENTA, TFT_BLACK);
   float fvalue = 1.23456;
   tft.println(fvalue, 0);  // no decimal places
@@ -102,39 +99,39 @@ void loop() {
 
   // Get ready for the next demo while we have this font loaded
   tft.fillScreen(TFT_BLACK);
-  tft.setCursor(0, 0); // Set cursor at top left of screen
+  tft.setCursor(0, 0);  // Set cursor at top left of screen
   tft.setTextColor(TFT_WHITE, TFT_BLACK);
   tft.println("Wrong and right ways to");
   tft.println("print changing values...");
 
-  tft.unloadFont(); // Remove the font to recover memory used
-
+  tft.unloadFont();  // Remove the font to recover memory used
 
   // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
   // Large font
   // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-  tft.loadFont(AA_FONT_LARGE); // Load another different font
+  tft.loadFont(AA_FONT_LARGE);  // Load another different font
 
-  //tft.fillScreen(TFT_BLACK);
-  
-  // Draw changing numbers - does not work unless a filled rectangle is drawn over the old text
-  for (int i = 0; i <= 99; i++)
-  {
+  // tft.fillScreen(TFT_BLACK);
+
+  // Draw changing numbers - does not work unless a filled rectangle is drawn
+  // over the old text
+  for (int i = 0; i <= 99; i++) {
     tft.setCursor(50, 50);
-    tft.setTextColor(TFT_GREEN, TFT_BLACK); // TFT_BLACK is used for anti-aliasing only
-                                            // By default background fill is off
-    tft.print("      "); // Overprinting old number with spaces DOES NOT WORK!
+    tft.setTextColor(TFT_GREEN,
+                     TFT_BLACK);  // TFT_BLACK is used for anti-aliasing only
+                                  // By default background fill is off
+    tft.print("      ");  // Overprinting old number with spaces DOES NOT WORK!
     tft.setCursor(50, 50);
     tft.print(i / 10.0, 1);
 
-    // Adding a parameter "true" to the setTextColor() function fills character background
-    // This extra parameter is only for smooth fonts!
+    // Adding a parameter "true" to the setTextColor() function fills character
+    // background This extra parameter is only for smooth fonts!
     tft.setTextColor(TFT_GREEN, TFT_BLACK, true);
     tft.setCursor(50, 90);
     tft.print(i / 10.0, 1);
-    
-    delay (200);
+
+    delay(200);
   }
 
   delay(5000);
@@ -144,22 +141,24 @@ void loop() {
   // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
   tft.fillScreen(TFT_BLACK);
-  
-  tft.setTextColor(TFT_YELLOW, TFT_BLACK); // Change the font colour and the background colour
 
-  tft.setCursor(0, 0); // Set cursor at top left of screen
+  tft.setTextColor(
+      TFT_YELLOW,
+      TFT_BLACK);  // Change the font colour and the background colour
+
+  tft.setCursor(0, 0);  // Set cursor at top left of screen
 
   tft.println("Large font!");
 
-  tft.setTextWrap(true); // Wrap on width
+  tft.setTextWrap(true);  // Wrap on width
   tft.setTextColor(TFT_CYAN, TFT_BLACK);
   tft.println("Long lines wrap to the next line");
 
-  tft.setTextWrap(false, false); // Wrap on width and height switched off
+  tft.setTextWrap(false, false);  // Wrap on width and height switched off
   tft.setTextColor(TFT_MAGENTA, TFT_BLACK);
   tft.println("Unless text wrap is switched off");
 
-  tft.unloadFont(); // Remove the font to recover memory used
+  tft.unloadFont();  // Remove the font to recover memory used
 
   delay(8000);
 }
