@@ -17,7 +17,7 @@ Create the bmp file in Gimp (www.gimp.org) from any image as follows:
 * Select Generate optimum palette with 16 colors (max)
 * Export the file with a .bmp extension. Do **NOT** select options:
   * Run-Length Encoded
-  * Compatibility Options: "Do not write color space information" 
+  * Compatibility Options: "Do not write color space information"
   * There are no Advanced Options available with these settings
 
 (There are other tools that will produce bmp files, and these should work provided you don't use run-length encoding or other advanced features).

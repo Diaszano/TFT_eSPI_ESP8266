@@ -8,7 +8,7 @@
     You'll need python 3.6 (the original use Python 2.7)
 
     usage: python fourbitbmp2array.py [-v] star.bmp [-o myfile.c]
-    
+
     Create the bmp file in Gimp by :
 
     . Remove the alpha channel (if it has one) Layer -> Transparency -> Remove Alpha Channel
@@ -20,7 +20,7 @@
         . There are no Advanced Options available with these settings
 
 
-    
+
 
 '''
 
@@ -173,17 +173,17 @@ for i in range(colorsUsed[0]):
     debugOut("color at index {0} is {1:04x}, (r,g,b,a) = ({2:02x}, {3:02x}, {4:02x}, {5:02x})".format(i,  colorIndex[i], red, green, blue, contents[upto+3]))
 
 #debugOut(the color definitions
-# for i in range(colorsUsed[0]):    
+# for i in range(colorsUsed[0]):
 #     print hex(colorIndex[i])
 
 # perfect, except upside down.
 
 #Make a string to hold the output of our script
-arraySize = (len(contents) - offset[0]) 
+arraySize = (len(contents) - offset[0])
 outputString = "/* This was generated using a script based on the SparkFun BMPtoArray python script" + '\n'
 outputString += " See https://github.com/sparkfun/BMPtoArray for more info */" + '\n\n'
 outputString += "static const uint16_t palette[" + str(colorsUsed[0]) + "] = {";
-for i in range(colorsUsed[0]): 
+for i in range(colorsUsed[0]):
     # print hexlify(colorIndex[i])
     if i % 4 == 0:
         outputString += "\n\t"
@@ -197,7 +197,7 @@ outputString += "static const uint8_t myGraphic[" + str(arraySize) + "] PROGMEM 
 if bitsPerPixel != 4:
     print("Expected 4 bits per pixel; found {}".format(bitsPerPixel))
     sys.exit(1)
-    
+
 #Start converting spots to values
 #Start at the offset and go to the end of the file
 dropLastNumber = True #(width % 4) == 2 or (width % 4) == 1
@@ -212,7 +212,7 @@ width = int(width / 2)
 for col in range(height-1, -1, -1):
     i = 0
     for row in range(width):
-        colorCode1 = contents[row + col*paddedWidth + offset[0]]  
+        colorCode1 = contents[row + col*paddedWidth + offset[0]]
 
         if r > 0 and r % width == 0:
             i = 0
@@ -220,7 +220,7 @@ for col in range(height-1, -1, -1):
         elif (i + 1) % 12 == 0 :
             outputString += '\n'
             i = 0
-        
+
         #debugOut("cell ({0}, {1})".format(row, col)
 
         r = r + 1
@@ -228,7 +228,7 @@ for col in range(height-1, -1, -1):
         outputString += "0x{:02x}, ".format(colorCode1)
 
 
-    
+
 #Once we've reached the end of our input string, pull the last two
 #characters off (the last comma and space) since we don't need
 #them. Top it off with a closing bracket and a semicolon.
