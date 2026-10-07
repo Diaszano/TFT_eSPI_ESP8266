@@ -9,6 +9,7 @@ LIB_SRC = $(wildcard TFT_eSPI.* User_Setup*.h TFT_Drivers/* Extensions/* Fonts/*
 .PHONY: build $(addprefix build-,$(EXAMPLES)) upload uploadfs monitor clean help docs-check docs-api docs setup lint lint-update check-version
 
 build:
+	@mkdir -p "$${PLATFORMIO_CORE_DIR:-$$HOME/.platformio}"
 	$(MAKE) --no-print-directory -j$(JOBS) $(EXAMPLES:%=.build/%/.ok)
 
 $(addprefix build-,$(EXAMPLES)): build-%: .build/%/.ok
@@ -50,6 +51,7 @@ docs-check:
 	python3 -m unittest -q scripts/test_docs_check.py && python3 scripts/docs_check.py
 
 docs-api:
+	@mkdir -p .build
 	PROJECT_VERSION=$(VERSION) doxygen Doxyfile
 
 docs: docs-check docs-api
