@@ -1076,7 +1076,6 @@ class TFT_eSPI : public Print {
   // stream
   /// @brief write operation.
   size_t write(uint8_t);
-  // size_t   write(const uint8_t *buf, size_t len);
 
   // Used by Smooth font class to fetch a pixel colour for the anti-aliasing
   /// @brief setCallback operation.

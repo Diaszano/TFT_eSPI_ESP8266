@@ -4450,25 +4450,6 @@ uint32_t TFT_eSPI::alphaBlend24(uint8_t alpha, uint32_t fgc, uint32_t bgc, uint8
 ** Function name:           write
 ** Description:             draw characters piped through serial stream
 ***************************************************************************************/
-/* // Not all processors support buffered write
-#ifndef ARDUINO_ARCH_ESP8266 // Avoid ESP8266 board package bug
-size_t TFT_eSPI::write(const uint8_t *buf, size_t len)
-{
-  inTransaction = true;
-
-  uint8_t *lbuf = (uint8_t *)buf;
-  while(*lbuf !=0 && len--) write(*lbuf++);
-
-  inTransaction = lockTransaction;
-  end_tft_write();
-  return 1;
-}
-#endif
-*/
-/***************************************************************************************
-** Function name:           write
-** Description:             draw characters piped through serial stream
-***************************************************************************************/
 size_t TFT_eSPI::write(uint8_t utf8) {
   if (_vpOoB) return 1;
 
