@@ -1,6 +1,7 @@
 #include <unity.h>
 
 #include "internal/color_conversion.h"
+#include "internal/sprite_layout.h"
 
 using namespace tft_espi_internal;
 
@@ -36,10 +37,26 @@ void test_rgb332_all_expansions() {
   TEST_ASSERT_EQUAL_HEX16(0x0015, rgb332_to_rgb565(2));
 }
 
+void test_second_16bit_frame_alignment() {
+  const uint16_t dimensions[][2] = {{1, 1}, {2, 2}, {3, 2}};
+  for (const auto& size : dimensions) {
+    uint8_t storage[32] = {};
+    const uint32_t offset = sprite_frame2_offset_16bpp(size[0], size[1]);
+    uint8_t* first = storage;
+    uint8_t* second = storage + offset;
+    TEST_ASSERT_EQUAL_UINT32(0, reinterpret_cast<uintptr_t>(second) % alignof(uint16_t));
+    reinterpret_cast<uint16_t*>(first)[0] = 0x1234;
+    reinterpret_cast<uint16_t*>(second)[0] = 0xABCD;
+    TEST_ASSERT_EQUAL_HEX16(0x1234, reinterpret_cast<uint16_t*>(first)[0]);
+    TEST_ASSERT_EQUAL_HEX16(0xABCD, reinterpret_cast<uint16_t*>(second)[0]);
+  }
+}
+
 int main() {
   UNITY_BEGIN();
   RUN_TEST(test_rgb888_boundaries);
   RUN_TEST(test_rgb565_truncation_boundaries);
   RUN_TEST(test_rgb332_all_expansions);
+  RUN_TEST(test_second_16bit_frame_alignment);
   return UNITY_END();
 }

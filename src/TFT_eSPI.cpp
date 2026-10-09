@@ -14,6 +14,7 @@
 
 #include "TFT_eSPI.h"
 #include "internal/color_conversion.h"
+#include "internal/sprite_layout.h"
 
 // ESP8266 SPI layer
 // Select the SPI port to use

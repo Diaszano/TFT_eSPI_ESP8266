@@ -75,7 +75,7 @@ void* TFT_eSprite::createSprite(int16_t w, int16_t h, uint8_t frames) {
   _img4 = _img8;
 
   if ((_bpp == 16) && (frames > 1)) {
-    _img8_2 = _img8 + (w * h * 2 + 1);
+    _img8_2 = _img8 + tft_espi_internal::sprite_frame2_offset_16bpp(w, h);
   }
 
   if ((_bpp == 8) && (frames > 1)) {
