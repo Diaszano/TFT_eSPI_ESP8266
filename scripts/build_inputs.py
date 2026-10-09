@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """List library and example files that affect staged PlatformIO builds."""
+import hashlib
 import pathlib
 import sys
 
@@ -39,7 +40,7 @@ def example_files(root: pathlib.Path) -> list[str]:
 def main() -> None:
     root = pathlib.Path(__file__).resolve().parent.parent
     files = {"library": library_files, "examples": example_files}[sys.argv[1]](root)
-    print("\n".join(files))
+    print("\n".join(f"{name}\t{hashlib.sha256((root / name).read_bytes()).hexdigest()}" for name in files))
 
 
 if __name__ == "__main__":

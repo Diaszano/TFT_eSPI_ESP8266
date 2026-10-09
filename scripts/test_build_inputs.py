@@ -1,4 +1,3 @@
-import os
 import pathlib
 import shutil
 import subprocess
@@ -73,18 +72,14 @@ class BuildInputsTests(unittest.TestCase):
         self.assertEqual(counter.read_text().splitlines(), ["build"])
         self.assertEqual(inventory.stat().st_mtime_ns, first_mtime)
         (self.root / "Fonts/Custom/Fixture.h").write_text("changed\n")
-        os.utime(self.root / ".build/stamp", (1, 1))
         build()
         self.assertEqual(counter.read_text().splitlines(), ["build", "build"])
         (self.root / "Fonts/Custom/Fixture.h").unlink()
-        os.utime(self.root / ".build/stamp", (1, 1))
         build()
         self.assertEqual(counter.read_text().splitlines(), ["build", "build", "build"])
         (self.root / "examples/Fixture/helper.h").write_text("changed\n")
-        os.utime(self.root / ".build/stamp", (1, 1))
         build()
         (self.root / "examples/Fixture/helper.h").unlink()
-        os.utime(self.root / ".build/stamp", (1, 1))
         build()
         self.assertEqual(counter.read_text().splitlines(), ["build"] * 5)
 
