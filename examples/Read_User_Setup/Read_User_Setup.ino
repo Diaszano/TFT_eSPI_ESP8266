@@ -100,17 +100,17 @@ void loop(void) {
   if (user.pin_tft_mosi != -1) {
     Serial.print("MOSI    = ");
     Serial.print("GPIO ");
-    Serial.println(getPinName(user.pin_tft_mosi));
+    Serial.println(user.pin_tft_mosi);
   }
   if (user.pin_tft_miso != -1) {
     Serial.print("MISO    = ");
     Serial.print("GPIO ");
-    Serial.println(getPinName(user.pin_tft_miso));
+    Serial.println(user.pin_tft_miso);
   }
   if (user.pin_tft_clk != -1) {
     Serial.print("SCK     = ");
     Serial.print("GPIO ");
-    Serial.println(getPinName(user.pin_tft_clk));
+    Serial.println(user.pin_tft_clk);
   }
 
   String pinNameRef = "D";

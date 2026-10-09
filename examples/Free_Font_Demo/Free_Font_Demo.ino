@@ -92,9 +92,9 @@ void loop() {
   tft.println();                 // Move cursor down a line
   tft.print("Serif Bold 18pt");  // Print the font name onto the TFT screen
 
-  tft.setFreeFont(FSB24);        // Select Free Serif 24 point font
-  tft.println();                 // Move cursor down a line
-  tft.print("Serif Bold 24pt");  // Print the font name onto the TFT screen
+  tft.setFreeFont(FSB24);  // Select Free Serif 24 point font
+  tft.println();           // Move cursor down a line
+  tft.print("Bold 24pt");  // Print the font name onto the TFT screen
 
   delay(4000);
 
@@ -125,7 +125,7 @@ void loop() {
   ypos += tft.fontHeight(GFXFF);
 
   tft.setFreeFont(FSB24);
-  tft.drawString("Serif Bold 24pt", xpos, ypos, GFXFF);
+  tft.drawString("Bold 24pt", xpos, ypos, GFXFF);
   ypos += tft.fontHeight(GFXFF);
 
   // Set text padding to 100 pixels wide area to over-write old values on screen
@@ -164,7 +164,7 @@ void loop() {
   ypos += tft.fontHeight(GFXFF);
 
   tft.setFreeFont(FSBI24);
-  tft.drawString("Bold Italic 24pt", xpos, ypos, GFXFF);
+  tft.drawString("Italic 24pt", xpos, ypos, GFXFF);
   ypos += tft.fontHeight(GFXFF);
 
   // Set text padding to 100 pixels wide area to over-write old values on screen
@@ -185,74 +185,74 @@ void loop() {
   tft.setTextColor(TFT_DARKGREY, TFT_BLACK);
   tft.setFreeFont(FSS12);
   tft.setTextDatum(TL_DATUM);
-  tft.drawString("[Top left]", 160, 120, GFXFF);
-  drawDatumMarker(160, 120);
+  tft.drawString("[TL]", tft.width() / 2, tft.height() / 2, GFXFF);
+  drawDatumMarker(tft.width() / 2, tft.height() / 2);
   delay(1000);
 
-  tft.fillRect(0, 80, 320, 80, TFT_BLACK);
+  tft.fillRect(0, tft.height() / 2 - 40, tft.width(), 80, TFT_BLACK);
   tft.setTextDatum(TC_DATUM);
-  tft.drawString("[Top centre]", 160, 120, GFXFF);
-  drawDatumMarker(160, 120);
+  tft.drawString("[TC]", tft.width() / 2, tft.height() / 2, GFXFF);
+  drawDatumMarker(tft.width() / 2, tft.height() / 2);
   delay(1000);
 
-  tft.fillRect(0, 80, 320, 80, TFT_BLACK);
+  tft.fillRect(0, tft.height() / 2 - 40, tft.width(), 80, TFT_BLACK);
   tft.setTextDatum(TR_DATUM);
-  tft.drawString("[Top right]", 160, 120, GFXFF);
-  drawDatumMarker(160, 120);
+  tft.drawString("[TR]", tft.width() / 2, tft.height() / 2, GFXFF);
+  drawDatumMarker(tft.width() / 2, tft.height() / 2);
   delay(1000);
 
-  tft.fillRect(0, 80, 320, 80, TFT_BLACK);
+  tft.fillRect(0, tft.height() / 2 - 40, tft.width(), 80, TFT_BLACK);
   tft.setTextDatum(ML_DATUM);
-  tft.drawString("[Middle left]", 160, 120, GFXFF);
-  drawDatumMarker(160, 120);
+  tft.drawString("[ML]", tft.width() / 2, tft.height() / 2, GFXFF);
+  drawDatumMarker(tft.width() / 2, tft.height() / 2);
   delay(1000);
 
-  tft.fillRect(0, 80, 320, 80, TFT_BLACK);
+  tft.fillRect(0, tft.height() / 2 - 40, tft.width(), 80, TFT_BLACK);
   tft.setTextDatum(MC_DATUM);
-  tft.drawString("[Middle centre]", 160, 120, GFXFF);
-  drawDatumMarker(160, 120);
+  tft.drawString("[MC]", tft.width() / 2, tft.height() / 2, GFXFF);
+  drawDatumMarker(tft.width() / 2, tft.height() / 2);
   delay(1000);
 
-  tft.fillRect(0, 80, 320, 80, TFT_BLACK);
+  tft.fillRect(0, tft.height() / 2 - 40, tft.width(), 80, TFT_BLACK);
   tft.setTextDatum(MR_DATUM);
-  tft.drawString("[Middle right]", 160, 120, GFXFF);
-  drawDatumMarker(160, 120);
+  tft.drawString("[MR]", tft.width() / 2, tft.height() / 2, GFXFF);
+  drawDatumMarker(tft.width() / 2, tft.height() / 2);
   delay(1000);
 
-  tft.fillRect(0, 80, 320, 80, TFT_BLACK);
+  tft.fillRect(0, tft.height() / 2 - 40, tft.width(), 80, TFT_BLACK);
   tft.setTextDatum(BL_DATUM);
-  tft.drawString("[Bottom left]", 160, 120, GFXFF);
-  drawDatumMarker(160, 120);
+  tft.drawString("[BL]", tft.width() / 2, tft.height() / 2, GFXFF);
+  drawDatumMarker(tft.width() / 2, tft.height() / 2);
   delay(1000);
 
-  tft.fillRect(0, 80, 320, 80, TFT_BLACK);
+  tft.fillRect(0, tft.height() / 2 - 40, tft.width(), 80, TFT_BLACK);
   tft.setTextDatum(BC_DATUM);
-  tft.drawString("[Bottom centre]", 160, 120, GFXFF);
-  drawDatumMarker(160, 120);
+  tft.drawString("[BC]", tft.width() / 2, tft.height() / 2, GFXFF);
+  drawDatumMarker(tft.width() / 2, tft.height() / 2);
   delay(1000);
 
-  tft.fillRect(0, 80, 320, 80, TFT_BLACK);
+  tft.fillRect(0, tft.height() / 2 - 40, tft.width(), 80, TFT_BLACK);
   tft.setTextDatum(BR_DATUM);
-  tft.drawString("[Bottom right]", 160, 120, GFXFF);
-  drawDatumMarker(160, 120);
+  tft.drawString("[BR]", tft.width() / 2, tft.height() / 2, GFXFF);
+  drawDatumMarker(tft.width() / 2, tft.height() / 2);
   delay(1000);
 
-  tft.fillRect(0, 80, 320, 80, TFT_BLACK);
+  tft.fillRect(0, tft.height() / 2 - 40, tft.width(), 80, TFT_BLACK);
   tft.setTextDatum(L_BASELINE);
-  tft.drawString("[Left baseline]", 160, 120, GFXFF);
-  drawDatumMarker(160, 120);
+  tft.drawString("[L base]", tft.width() / 2, tft.height() / 2, GFXFF);
+  drawDatumMarker(tft.width() / 2, tft.height() / 2);
   delay(1000);
 
-  tft.fillRect(0, 80, 320, 80, TFT_BLACK);
+  tft.fillRect(0, tft.height() / 2 - 40, tft.width(), 80, TFT_BLACK);
   tft.setTextDatum(C_BASELINE);
-  tft.drawString("[Centre baseline]", 160, 120, GFXFF);
-  drawDatumMarker(160, 120);
+  tft.drawString("[C base]", tft.width() / 2, tft.height() / 2, GFXFF);
+  drawDatumMarker(tft.width() / 2, tft.height() / 2);
   delay(1000);
 
-  tft.fillRect(0, 80, 320, 80, TFT_BLACK);
+  tft.fillRect(0, tft.height() / 2 - 40, tft.width(), 80, TFT_BLACK);
   tft.setTextDatum(R_BASELINE);
-  tft.drawString("[Right baseline]", 160, 120, GFXFF);
-  drawDatumMarker(160, 120);
+  tft.drawString("[R base]", tft.width() / 2, tft.height() / 2, GFXFF);
+  drawDatumMarker(tft.width() / 2, tft.height() / 2);
   delay(1000);
 
   // while(1);
@@ -264,9 +264,9 @@ void header(const char* string, uint16_t color) {
   tft.fillScreen(color);
   tft.setTextSize(1);
   tft.setTextColor(TFT_MAGENTA, TFT_BLUE);
-  tft.fillRect(0, 0, 320, 30, TFT_BLUE);
+  tft.fillRect(0, 0, tft.width(), 30, TFT_BLUE);
   tft.setTextDatum(TC_DATUM);
-  tft.drawString(string, 160, 2, 4);  // Font 4 for fast drawing with background
+  tft.drawString(string, tft.width() / 2, 2, 2);  // Font 4 for fast drawing with background
 }
 
 // Draw a + mark centred on x,y

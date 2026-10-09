@@ -42,8 +42,8 @@ void loop() {
 
   // Draw 10 sprites containing a "transparent" colour
   for (int i = 0; i < 10; i++) {
-    int x = random(240 - 70);
-    int y = random(320 - 80);
+    int x = random(tft.width() - 70);
+    int y = random(tft.height() - 80);
     int c = random(0x10000);  // Random colour
     drawStar(x, y, c);
   }
@@ -54,8 +54,8 @@ void loop() {
 
   // Now go bananas and draw 500 more
   for (int i = 0; i < 500; i++) {
-    int x = random(240 - 70);
-    int y = random(320 - 80);
+    int x = random(tft.width() - 70);
+    int y = random(tft.height() - 80);
     int c = random(0x10000);  // Random colour
     drawStar(x, y, c);
     yield();  // Stop watchdog reset
