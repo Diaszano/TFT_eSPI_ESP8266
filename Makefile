@@ -25,7 +25,6 @@ test-host:
 test-compile: .build/pio-library/.stamp
 	@cd /tmp && pio ci --lib=$(CURDIR)/.build/pio-library --board=nodemcuv2 -O "platform=espressif8266@4.2.1" --build-dir=$(CURDIR)/.build/compile/sprite_ownership --keep-build-dir $(CURDIR)/tests/compile/sprite_ownership
 	@cd /tmp && pio ci --lib=$(CURDIR)/.build/pio-library --board=nodemcuv2 -O "platform=espressif8266@4.2.1" -O "build_flags=-DUSER_SETUP_LOADED -DST7789_DRIVER -DTFT_WIDTH=240 -DTFT_HEIGHT=240 -DTFT_MOSI=13 -DTFT_SCLK=14 -DTFT_DC=0 -DTFT_RST=2 -DSPI_FREQUENCY=40000000 -DLOAD_GLCD" --build-dir=$(CURDIR)/.build/compile/minimal_setup --keep-build-dir $(CURDIR)/tests/compile/minimal_setup
-
 	@cd /tmp && pio ci --lib=$(CURDIR)/.build/pio-library --board=nodemcuv2 -O "platform=espressif8266@4.2.1" --build-dir=$(CURDIR)/.build/compile/firmware_memory --keep-build-dir $(CURDIR)/tests/compile/firmware_memory
 
 build: .build/source-inventory.txt
@@ -129,7 +128,18 @@ cppcheck: build-TFT_Print_Test
 help:
 	@printf '%s\n' 'build: compile all curated examples' 'build-<Nome>: compile one example' 'upload EX=<Nome> [PORT=<port>]: upload one example' 'uploadfs EX=<Nome> [PORT=<port>]: upload example filesystem' 'monitor [PORT=<port>]: open serial monitor' 'clean: remove build files' 'warnings: compare owned compiler warnings across all examples' 'compiledb: prepare the target clang-tidy database' 'compiledb-native: prepare the native pure-logic database' 'tidy: run the target clang-tidy parsing pilot' 'tidy-native: analyze pure color helpers on native' 'cppcheck: run the optional PlatformIO cppcheck pilot' 'test-host: run source-extracted ASan/UBSan host regressions' 'docs-check: validate documentation pairs, links and removed APIs' 'docs-examples: compile README and Sprite guide examples' 'docs-api: generate the Doxygen API reference' 'docs: validate docs and generate the API reference' 'setup: install lint tools and hooks' 'lint: run pre-commit checks and version check' 'lint-update: update pre-commit hook revisions' 'check-version: verify package versions' 'help: show this help'
 
-.PHONY: build-arduino
+.PHONY: build-arduino layout-check package-check test-python
 
 build-arduino:
 	python3 scripts/arduino_build.py
+
+layout-check: compiledb
+	python3 scripts/layout_check.py --root . --project .build/TFT_Print_Test
+
+package-check:
+	@mkdir -p .build
+	pio pkg pack -o .build/library.tar.gz
+	python3 scripts/package_check.py .build/library.tar.gz
+
+test-python:
+	python3 -m unittest discover -s scripts -p 'test_*.py' -v

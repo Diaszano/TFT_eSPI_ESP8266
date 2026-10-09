@@ -4,13 +4,19 @@
   "enforcement": "active",
   "conditions": {
     "ref_name": {
-      "include": ["~DEFAULT_BRANCH"],
+      "include": [
+        "~DEFAULT_BRANCH"
+      ],
       "exclude": []
     }
   },
   "rules": [
-    { "type": "deletion" },
-    { "type": "non_fast_forward" },
+    {
+      "type": "deletion"
+    },
+    {
+      "type": "non_fast_forward"
+    },
     {
       "type": "pull_request",
       "parameters": {
@@ -19,7 +25,9 @@
         "require_last_push_approval": false,
         "required_approving_review_count": 0,
         "required_review_thread_resolution": false,
-        "allowed_merge_methods": ["squash"]
+        "allowed_merge_methods": [
+          "squash"
+        ]
       }
     },
     {
@@ -27,13 +35,38 @@
       "parameters": {
         "strict_required_status_checks_policy": true,
         "required_status_checks": [
-          { "context": "build", "integration_id": 15368 },
-          { "context": "lint", "integration_id": 15368 },
-          { "context": "arduino-lint", "integration_id": 15368 },
-          { "context": "pio-pack", "integration_id": 15368 },
-          { "context": "pr-title", "integration_id": 15368 },
-          { "context": "docs", "integration_id": 15368 },
-          { "context": "analyze", "integration_id": 15368 }
+          {
+            "context": "build",
+            "integration_id": 15368
+          },
+          {
+            "context": "arduino-build",
+            "integration_id": 15368
+          },
+          {
+            "context": "lint",
+            "integration_id": 15368
+          },
+          {
+            "context": "arduino-lint",
+            "integration_id": 15368
+          },
+          {
+            "context": "pio-pack",
+            "integration_id": 15368
+          },
+          {
+            "context": "pr-title",
+            "integration_id": 15368
+          },
+          {
+            "context": "docs",
+            "integration_id": 15368
+          },
+          {
+            "context": "analyze",
+            "integration_id": 15368
+          }
         ]
       }
     }

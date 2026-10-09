@@ -90,10 +90,26 @@ uint8_t pgm_read_byte(const uint8_t* pointer) {
 }
 void yield() {
 }
-void delay(uint32_t) { ++waits; }
-enum Datum { TL_DATUM, TC_DATUM, TR_DATUM, ML_DATUM, MC_DATUM, MR_DATUM,
-             BL_DATUM, BC_DATUM, BR_DATUM, L_BASELINE, C_BASELINE, R_BASELINE };
-struct FontData { uint8_t baseline = 0; } fontdata[9];
+void delay(uint32_t) {
+  ++waits;
+}
+enum Datum {
+  TL_DATUM,
+  TC_DATUM,
+  TR_DATUM,
+  ML_DATUM,
+  MC_DATUM,
+  MR_DATUM,
+  BL_DATUM,
+  BC_DATUM,
+  BR_DATUM,
+  L_BASELINE,
+  C_BASELINE,
+  R_BASELINE
+};
+struct FontData {
+  uint8_t baseline = 0;
+} fontdata[9];
 
 #define malloc host_test::tracked_malloc
 #define free   host_test::tracked_free
@@ -126,8 +142,14 @@ class TFT_eSPI {
   uint16_t padX = 5;
   int16_t textWidth(const char* text, uint8_t) { return std::strlen(text) * 2; }
   int16_t fontHeight(uint8_t = 1) { return 4; }
-  int16_t drawChar(uint16_t, int32_t, int32_t, uint8_t) { ++pixel_draws; return 6; }
-  void setCursor(int32_t x, int32_t y) { cursor_x = x; cursor_y = y; }
+  int16_t drawChar(uint16_t, int32_t, int32_t, uint8_t) {
+    ++pixel_draws;
+    return 6;
+  }
+  void setCursor(int32_t x, int32_t y) {
+    cursor_x = x;
+    cursor_y = y;
+  }
   void fillScreen(uint16_t) { ++screen_fills; }
   uint16_t decodeUTF8(uint8_t* text, uint16_t* offset, uint16_t remaining) {
     assert(remaining > 0);
@@ -348,8 +370,10 @@ int main() {
         SPIFFS.data = font_file(11);
         subject.loadFont(String("font"), true);
         assert(subject.fontLoaded);
-        if (seek_failure) SPIFFS.fail_seek_at = SPIFFS.seek_count + 1;
-        else SPIFFS.data.resize(52);
+        if (seek_failure)
+          SPIFFS.fail_seek_at = SPIFFS.seek_count + 1;
+        else
+          SPIFFS.data.resize(52);
         write_starts = write_ends = pixel_draws = sprite_pushes = screen_fills = waits = 0;
         if (std::strcmp(caller, "draw-string") == 0)
           assert(subject.drawString("AA", 0, 0, 1) == 0);
@@ -381,8 +405,10 @@ int main() {
     TFT_eSPI subject;
     SPIFFS.data = font_file(11);
     subject.loadFont(String("font"), true);
-    if (seek_failure) SPIFFS.fail_seek_at = SPIFFS.seek_count + 1;
-    else SPIFFS.data.resize(52);
+    if (seek_failure)
+      SPIFFS.fail_seek_at = SPIFFS.seek_count + 1;
+    else
+      SPIFFS.data.resize(52);
     write_starts = write_ends = 0;
     assert(subject.drawString("AA", 0, 0, 1) == 0);
     assert(!subject.fontLoaded && host_test::outstanding == 0);
@@ -421,5 +447,4 @@ int main() {
     subject.unloadFont();
     assert(host_test::outstanding == 0);
   }
-
 }
