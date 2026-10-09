@@ -33,7 +33,7 @@ class PackageCheckTests(unittest.TestCase):
                 package_check.validate_members(REQUIRED - {missing}, src_layout=False)
 
     def test_rejects_unsafe_and_tooling_members(self):
-        for bad in ("/etc/passwd", "../outside", "folder/../../outside", ".git/config", ".venv/bin/python", ".superpowers/sdd/progress.md"):
+        for bad in ("/etc/passwd", "../outside", "folder/../../outside", ".git/config", ".venv/bin/python", ".superpowers/sdd/progress.md", "tests/host/run.py"):
             with self.subTest(bad=bad), self.assertRaises(ValueError):
                 package_check.validate_members(REQUIRED | {bad}, src_layout=False)
 

@@ -12,7 +12,7 @@ _DATA = {
     "examples/Font_Demo_1/data/NotoSansBold36.vlw",
     "examples/TFT_SPIFFS_BMP/data/parrot.bmp",
 }
-_TOOL_ARTIFACTS = {".git", ".venv", ".superpowers", ".build", ".pio"}
+_TOOL_ARTIFACTS = {".git", ".venv", ".superpowers", ".build", ".pio", "tests"}
 
 
 def validate_members(names: set[str], src_layout: bool) -> None:

@@ -33,6 +33,7 @@
       ".venv",
       ".superpowers",
       "docs/superpowers",
+      "tests",
       "test",
       "scripts",
       ".pre-commit-config.yaml",
