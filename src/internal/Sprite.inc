@@ -1368,8 +1368,8 @@ void TFT_eSprite::scroll(int16_t dx, int16_t dy) {
   } else if (_bpp == 4) {
     // could optimize for scrolling by even # pixels using memove (later)
     if (dx > 0) {
-      tx += w;
-      fx += w;
+      tx += w - 1;
+      fx += w - 1;
     }  // Start from right edge
     while (h--) {  // move pixels one by one
       for (uint16_t xp = 0; xp < w; xp++) {
@@ -1386,8 +1386,8 @@ void TFT_eSprite::scroll(int16_t dx, int16_t dy) {
     }
   } else if (_bpp == 1) {
     if (dx > 0) {
-      tx += w;
-      fx += w;
+      tx += w - 1;
+      fx += w - 1;
     }  // Start from right edge
     while (h--) {  // move pixels one by one
       for (uint16_t xp = 0; xp < w; xp++) {

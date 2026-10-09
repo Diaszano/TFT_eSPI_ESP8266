@@ -8,7 +8,7 @@ SIZE_LABEL ?= current
 JOBS ?= $(shell nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 1)
 VERSION := $(shell python3 -c "import json;print(json.load(open('library.json'))['version'])")
 
-.PHONY: build $(addprefix build-,$(EXAMPLES)) upload uploadfs monitor clean help docs-check docs-examples docs-api docs setup lint lint-update check-version size-check format format-check test-native test-compile FORCE
+.PHONY: build $(addprefix build-,$(EXAMPLES)) upload uploadfs monitor clean help docs-check docs-examples docs-api docs setup lint lint-update check-version size-check format format-check test-native test-host test-compile FORCE
 
 format:
 	python3 scripts/format.py --write
@@ -18,6 +18,9 @@ format-check:
 
 test-native:
 	pio test -d test -e native
+
+test-host:
+	python3 tests/host/run.py --case scroll
 
 test-compile: .build/pio-library/.stamp
 	@cd /tmp && pio ci --lib=$(CURDIR)/.build/pio-library --board=nodemcuv2 -O "platform=espressif8266@4.2.1" --build-dir=$(CURDIR)/.build/compile/sprite_ownership --keep-build-dir $(CURDIR)/tests/compile/sprite_ownership
