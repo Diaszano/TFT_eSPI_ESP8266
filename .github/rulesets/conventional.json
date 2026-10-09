@@ -1,0 +1,31 @@
+{
+  "name": "Conventional commits and branches",
+  "target": "branch",
+  "enforcement": "active",
+  "conditions": {
+    "ref_name": {
+      "include": ["~ALL"],
+      "exclude": []
+    }
+  },
+  "rules": [
+    {
+      "type": "branch_name_pattern",
+      "parameters": {
+        "name": "Conventional branch name",
+        "negate": false,
+        "operator": "regex",
+        "pattern": "^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)/[a-z0-9]+(-[a-z0-9]+)*$|^(main|codex/execute-all-plans|release-please--branches--main|dependabot/[a-z0-9._/-]+)$"
+      }
+    },
+    {
+      "type": "commit_message_pattern",
+      "parameters": {
+        "name": "Conventional commit message",
+        "negate": false,
+        "operator": "regex",
+        "pattern": "^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\\([^)]+\\))?!?: .+"
+      }
+    }
+  ]
+}
