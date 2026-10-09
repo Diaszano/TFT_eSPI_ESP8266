@@ -20,7 +20,7 @@ repos:
       - id: clang-format
         types_or: [file]
         files: '\.(c|cc|cpp|h|hpp|ino|inc|ipp)$'
-        exclude: '^(User_Setup\.h$|src/Fonts/|src/TFT_Drivers/ST7789_Init\.h$|extras/Create_Smooth_Font/)'
+        exclude: '^(User_Setup\.h$|src/Fonts/|src/TFT_Drivers/ST7789_Init\.h$|extras/Create_Smooth_Font/|examples/(Anti-aliased_Clock/NotoSansBold15|Font_Demo_1_Array/NotoSansBold(15|36))\.h$)'
         stages: [manual]
   - repo: local
     hooks:
@@ -30,7 +30,7 @@ repos:
         language: system
         types: [file]
         files: '\.(c|cc|cpp|h|hpp|ino|inc|ipp)$'
-        exclude: '^(User_Setup\.h$|src/Fonts/|src/TFT_Drivers/ST7789_Init\.h$|extras/Create_Smooth_Font/)'
+        exclude: '^(User_Setup\.h$|src/Fonts/|src/TFT_Drivers/ST7789_Init\.h$|extras/Create_Smooth_Font/|examples/(Anti-aliased_Clock/NotoSansBold15|Font_Demo_1_Array/NotoSansBold(15|36))\.h$)'
         stages: [manual]
   - repo: https://github.com/rhysd/actionlint
     rev: 914e7df21a07ef503a81201c76d2b11c789d3fca  # frozen: v1.7.12

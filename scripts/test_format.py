@@ -19,7 +19,10 @@ class FormatTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             root = pathlib.Path(temp)
             paths = ["examples/X/X.ino", "src/internal/Sprite.inc", "src/Fonts/Font16.inc",
-                     "src/TFT_Drivers/ST7789_Init.h", "extras/Create_Smooth_Font/Create_font.pde"]
+                     "src/TFT_Drivers/ST7789_Init.h", "extras/Create_Smooth_Font/Create_font.pde",
+                     "examples/Anti-aliased_Clock/NotoSansBold15.h",
+                     "examples/Font_Demo_1_Array/NotoSansBold15.h",
+                     "examples/Font_Demo_1_Array/NotoSansBold36.h"]
             self.assertEqual(format.selected_files(root, paths), paths[:2])
 
     def test_rejects_paths_outside_repository(self):
