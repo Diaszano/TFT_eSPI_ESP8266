@@ -31,6 +31,8 @@ framework = arduino
 lib_deps = https://github.com/Diaszano/TFT_eSPI_ESP8266.git
 ```
 
+This repository provides the independently maintained `TFT_eSPI_ESP8266` package. Its release number is recorded in the manifests; `TFT_ESPI_VERSION` continues to identify the inherited 2.5.44 source baseline.
+
 ## Install with Arduino IDE
 
 Download the repository as a ZIP and use **Sketch → Include Library → Add .ZIP Library**. If the original `TFT_eSPI` is already installed, remove it first. Both libraries provide `TFT_eSPI.h`; leaving the original installed can make Arduino IDE select the wrong copy.

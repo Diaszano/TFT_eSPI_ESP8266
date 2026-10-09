@@ -27,6 +27,8 @@ build_flags =
 
 `USER_SETUP_LOADED` informa à biblioteca que o sketch fornece a configuração e evita que o arquivo de configuração da biblioteca seja incluído novamente.
 
+O pacote Arduino mantém os arquivos de implementação em `src/`. Edite o `User_Setup.h` da raiz do pacote como antes; o encaminhador em `src` preserva essa configuração, e o `User_Setup_Select.h` da raiz continua como encaminhador de compatibilidade para includes diretos. O `tft_setup.h` opcional do projeto ainda é carregado antes do seletor.
+
 ## Opções suportadas
 
 | Opção | Padrão | Finalidade |
@@ -47,10 +49,10 @@ build_flags =
 | `CGRAM_OFFSET` | Desativada | Aplica deslocamento na memória do display para painéis que precisam dele. |
 | `LOAD_GLCD` | Ativada | Inclui a fonte GLCD embutida. |
 | `LOAD_FONT2`, `LOAD_FONT4`, `LOAD_FONT6`, `LOAD_FONT7`, `LOAD_FONT8` | Desativadas | Incluem a fonte embutida correspondente. |
-| `LOAD_GFXFF` | Desativada | Inclui as fontes GFX FreeFonts. |
-| `SMOOTH_FONT` | Desativada | Ativa fontes suaves com antialiasing. |
+| `LOAD_GFXFF` | Ativada na configuração fornecida na raiz | Inclui as fontes GFX FreeFonts. |
+| `SMOOTH_FONT` | Ativada na configuração fornecida na raiz | Ativa fontes suaves. |
 | `FONT_FS_AVAILABLE` | Definida pela configuração de fonte suave | Ativa o suporte ao sistema de arquivos para fontes suaves. |
-| `USER_SETUP_LOADED` | Desativada | Usa definições fornecidas pelo sketch ou pelas opções de build. |
+| `USER_SETUP_LOADED` | Desativada | Usa definições fornecidas pelo setup do projeto ou pelas opções de build. |
 | `DISABLE_ALL_LIBRARY_WARNINGS` | Desativada | Suprime avisos da biblioteca quando suportado pelo compilador. |
 
 Altere a ordem RGB ou a inversão uma opção por vez e execute `Colour_Test` para comparar o resultado. Use `TFT_SPI_OVERLAP` somente em placas conectadas para o modo overlap do ESP8266; essa opção não seleciona outro controlador.

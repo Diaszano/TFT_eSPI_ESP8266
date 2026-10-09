@@ -1,0 +1,5 @@
+platformio==6.1.18
+pre-commit==4.6.2
+clang-format==23.1.2
+
+clang-tidy==22.1.8

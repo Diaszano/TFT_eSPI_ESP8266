@@ -1,7 +1,7 @@
 PROJECT_NAME           = TFT_eSPI_ESP8266
 PROJECT_NUMBER         = $(PROJECT_VERSION)
 PROJECT_BRIEF          = "Graphics library for ESP8266 + ST7789 over SPI"
-INPUT                  = TFT_eSPI.h Extensions/Sprite.h README.md docs/en
+INPUT                  = src/TFT_eSPI.h src/Extensions/Sprite.h README.md docs/en
 FILE_PATTERNS          = *.h *.md
 USE_MDFILE_AS_MAINPAGE = README.md
 OUTPUT_DIRECTORY       = .build/docs

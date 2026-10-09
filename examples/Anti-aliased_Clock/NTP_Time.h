@@ -15,7 +15,6 @@ void syncTime(void) {
   if (now > 1700000000) {
     struct tm localTime;
     localtime_r(&now, &localTime);
-    time_secs =
-        localTime.tm_hour * 3600 + localTime.tm_min * 60 + localTime.tm_sec;
+    time_secs = localTime.tm_hour * 3600 + localTime.tm_min * 60 + localTime.tm_sec;
   }
 }

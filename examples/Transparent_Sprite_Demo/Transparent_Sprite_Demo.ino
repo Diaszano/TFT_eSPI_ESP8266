@@ -26,9 +26,8 @@
 
 TFT_eSPI tft = TFT_eSPI();  // Create object "tft"
 
-TFT_eSprite img = TFT_eSprite(
-    &tft);  // Create Sprite object "img" with pointer to "tft" object
-            // the pointer is used by pushSprite() to push it onto the TFT
+TFT_eSprite img(&tft);  // Create Sprite object "img" with pointer to "tft" object
+                        // the pointer is used by pushSprite() to push it onto the TFT
 
 void setup(void) {
   Serial.begin(250000);
@@ -103,7 +102,7 @@ void drawStar(int x, int y, int star_color) {
 // #########################################################################
 void numberBox(int x, int y, float num) {
 // Size of sprite
-#define IWIDTH 80
+#define IWIDTH  80
 #define IHEIGHT 35
 
   // Create a 8-bit sprite 80 pixels wide, 35 high (2800 bytes of RAM needed)

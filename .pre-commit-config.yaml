@@ -3,9 +3,9 @@ repos:
     rev: 3e8a8703264a2f4a69428a0aa4dcb512790b2c8c  # frozen: v6.0.0
     hooks:
       - id: trailing-whitespace
-        exclude: ^Fonts/
+        exclude: ^src/Fonts/
       - id: end-of-file-fixer
-        exclude: ^Fonts/
+        exclude: ^src/Fonts/
       - id: check-yaml
       - id: check-json
       - id: check-merge-conflict
@@ -13,13 +13,25 @@ repos:
         args: [--maxkb=500]
       - id: mixed-line-ending
         args: [--fix=lf]
-        exclude: ^Fonts/
+        exclude: ^src/Fonts/
   - repo: https://github.com/pre-commit/mirrors-clang-format
     rev: a9a8a861f30ed207ead7d5a3b7e8032283ba5da7  # frozen: v23.1.2
     hooks:
       - id: clang-format
-        types_or: [c, c++]
-        files: '\.(c|cpp|h|ino)$'
+        types_or: [file]
+        files: '\.(c|cc|cpp|h|hpp|ino|inc|ipp)$'
+        exclude: '^(User_Setup\.h$|src/Fonts/|src/TFT_Drivers/ST7789_Init\.h$|extras/Create_Smooth_Font/|examples/(Anti-aliased_Clock/NotoSansBold15|Font_Demo_1_Array/NotoSansBold(15|36))\.h$)'
+        stages: [manual]
+  - repo: local
+    hooks:
+      - id: format-check
+        name: Verify formatter output without editing files
+        entry: python3 scripts/format.py --check
+        language: system
+        types: [file]
+        files: '\.(c|cc|cpp|h|hpp|ino|inc|ipp)$'
+        exclude: '^(User_Setup\.h$|src/Fonts/|src/TFT_Drivers/ST7789_Init\.h$|extras/Create_Smooth_Font/|examples/(Anti-aliased_Clock/NotoSansBold15|Font_Demo_1_Array/NotoSansBold(15|36))\.h$)'
+        stages: [manual]
   - repo: https://github.com/rhysd/actionlint
     rev: 914e7df21a07ef503a81201c76d2b11c789d3fca  # frozen: v1.7.12
     hooks:
@@ -39,4 +51,4 @@ repos:
       - id: commitlint
         stages: [commit-msg]
         pass_filenames: true
-        additional_dependencies: ['@commitlint/config-conventional']
+        additional_dependencies: ['@commitlint/config-conventional@21.2.3']

@@ -1,0 +1,18 @@
+{
+  "schema": 1,
+  "scope": "native",
+  "profile": {
+    "platform": "native@1.2.1",
+    "toolchain": "g++ 13.3.0",
+    "setup_sha256": "708c8b14ff729e05d4f0bfaa31626164c614ae747304e8c0131492d2434fd09f",
+    "clang_tidy": "22.1.8",
+    "config_sha256": "8c52d432465a6d85045a5cf022f890d06c3d85c2ce8943437bdd272a2ac30546",
+    "checks_sha256": "fa4d3e70f507e97f33f85c2f216ac76bdca23079c61f6dab0733897af697a23c",
+    "flags": [
+      "-DPLATFORMIO=60118",
+      "-Ianalysis",
+      "-I$ROOT/src"
+    ]
+  },
+  "findings": []
+}

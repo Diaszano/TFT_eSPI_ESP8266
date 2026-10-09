@@ -33,7 +33,6 @@ getViewportWidth	KEYWORD2
 getViewportHeight	KEYWORD2
 getViewportDatum	KEYWORD2
 frameViewport	KEYWORD2
-resetViewport	KEYWORD2
 clipAddrWindow	KEYWORD2
 clipWindow	KEYWORD2
 pushColors	KEYWORD2
@@ -41,8 +40,6 @@ pushBlock	KEYWORD2
 pushPixels	KEYWORD2
 
 tft_Read_8	KEYWORD2
-begin_SDA_Read	KEYWORD2
-end_SDA_Read	KEYWORD2
 
 fillScreen	KEYWORD2
 
@@ -104,7 +101,6 @@ fontsLoaded	KEYWORD2
 
 spiwrite	KEYWORD2
 writecommand	KEYWORD2
-writeRegister	KEYWORD2
 writedata	KEYWORD2
 commandList	KEYWORD2
 readcommand8	KEYWORD2

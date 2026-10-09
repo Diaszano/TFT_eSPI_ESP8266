@@ -121,7 +121,7 @@ void loop() {
     tft.setTextColor(TFT_GREEN,
                      TFT_BLACK);  // TFT_BLACK is used for anti-aliasing only
                                   // By default background fill is off
-    tft.print("      ");  // Overprinting old number with spaces DOES NOT WORK!
+    tft.print("      ");          // Overprinting old number with spaces DOES NOT WORK!
     tft.setCursor(50, 50);
     tft.print(i / 10.0, 1);
 
@@ -142,9 +142,8 @@ void loop() {
 
   tft.fillScreen(TFT_BLACK);
 
-  tft.setTextColor(
-      TFT_YELLOW,
-      TFT_BLACK);  // Change the font colour and the background colour
+  tft.setTextColor(TFT_YELLOW,
+                   TFT_BLACK);  // Change the font colour and the background colour
 
   tft.setCursor(0, 0);  // Set cursor at top left of screen
 

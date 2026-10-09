@@ -5,7 +5,7 @@
 
 TFT_eSPI tft = TFT_eSPI();  // Invoke library, pins defined in User_Setup.h
 
-TFT_eSprite spr = TFT_eSprite(&tft);
+TFT_eSprite spr(&tft);
 
 // =========================================================================
 // Setup
@@ -104,12 +104,10 @@ void loop() {
   int y1 = h - 1;
   int y2 = wd;
 
-  for (x2 = wd; x2 < w; x2 += wd * 3)
-    tft.drawWideLine(x1, y1, x2, y2, wd, TFT_WHITE, TFT_BLACK);
+  for (x2 = wd; x2 < w; x2 += wd * 3) tft.drawWideLine(x1, y1, x2, y2, wd, TFT_WHITE, TFT_BLACK);
 
   x2 = wd;
-  for (y2 = wd; y2 < h; y2 += wd * 4)
-    tft.drawWideLine(x1, y1, x2, y2, wd, TFT_WHITE, TFT_BLACK);
+  for (y2 = wd; y2 < h; y2 += wd * 4) tft.drawWideLine(x1, y1, x2, y2, wd, TFT_WHITE, TFT_BLACK);
 
   delay(5000);
 
@@ -133,8 +131,8 @@ void loop() {
 // =========================================================================
 // Coordinates are returned to caller via the xp and yp pointers
 #define DEG2RAD 0.0174532925
-void getCoord(int16_t x, int16_t y, float* xp1, float* yp1, float* xp2,
-              float* yp2, int16_t r1, int16_t r2, float a) {
+void getCoord(int16_t x, int16_t y, float* xp1, float* yp1, float* xp2, float* yp2, int16_t r1,
+              int16_t r2, float a) {
   float sx = cos((a - 90) * DEG2RAD);
   float sy = sin((a - 90) * DEG2RAD);
   *xp1 = sx * r1 + x;

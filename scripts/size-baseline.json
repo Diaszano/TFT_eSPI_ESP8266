@@ -1,0 +1,22 @@
+{
+  "schema": 1,
+  "profile": {
+    "board": "nodemcuv2",
+    "platform": "4.2.1",
+    "framework": "3.30102.0",
+    "toolchain": "2.100300.220621",
+    "python": "3.14.7",
+    "platformio": "6.1.18",
+    "build_flags": {
+      "board": "nodemcuv2",
+      "board_build.filesystem": "littlefs",
+      "framework": "arduino",
+      "platform": "espressif8266@4.2.1"
+    },
+    "setup_sha256": "3f57d319a4cbb1f0331fe9cb740cda386fd68110d2b76a601b43072e99ce796e"
+  },
+  "resources": {
+    "flash": 325191,
+    "ram": 28724
+  }
+}

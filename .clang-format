@@ -1,2 +1,25 @@
+# Tool: clang-format 23.1.2, matching the frozen pre-commit mirror.
 BasedOnStyle: Google
 Language: Cpp
+Standard: c++11
+ColumnLimit: 100
+IndentWidth: 2
+TabWidth: 2
+UseTab: Never
+SortIncludes:
+  Enabled: false
+IncludeBlocks: Preserve
+IndentPPDirectives: None
+AlignConsecutiveMacros:
+  Enabled: true
+  AcrossEmptyLines: false
+  AcrossComments: false
+AllowShortFunctionsOnASingleLine: InlineOnly
+InsertBraces: false
+RemoveBracesLLVM: false
+QualifierAlignment: Leave
+DerivePointerAlignment: false
+PointerAlignment: Left
+ReflowComments: Never
+LineEnding: LF
+InsertNewlineAtEOF: true

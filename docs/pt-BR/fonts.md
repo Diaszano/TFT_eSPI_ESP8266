@@ -23,6 +23,8 @@ Defina `LOAD_GFXFF` para incluir as FreeFonts do Adafruit GFX. Selecione uma fon
 
 ## Fontes suaves
 
+Fontes personalizadas que antes ficavam em `Fonts/Custom/` na raiz do pacote agora devem ficar em `src/Fonts/Custom/`. Mantenha os includes dos sketches, como `#include <Fonts/Custom/MinhaFonte.h>`, sem alterações.
+
 Fontes suaves usam arquivos `.vlw` e exigem `SMOOTH_FONT`. O exemplo `Font_Demo_1` lê os arquivos do LittleFS. Envie a pasta de dados do exemplo e carregue ou libere a fonte:
 
 ```sh
@@ -35,4 +37,10 @@ tft.drawString("Texto suave", 10, 20);
 tft.unloadFont();
 ```
 
-`Font_Demo_1_Array` demonstra como incorporar os dados da fonte em um array de flash em vez de usar um sistema de arquivos. Para criar arquivos `.vlw`, use o sketch Processing em `extras/Create_Smooth_Font/Create_font`. `Tools/bmp2array4bit` converte imagens BMP indexadas em arrays de paleta e pixels para sprites de 4 bits; essa ferramenta não converte fontes.
+`Font_Demo_1_Array` demonstra como incorporar os dados da fonte em um array de flash em vez de usar um sistema de arquivos. O projeto opcional Processing em `extras/Create_Smooth_Font/Create_font` gera arquivos de fontes suaves `.vlw`.
+
+Fontes no sistema de arquivos são verificadas quanto ao cabeçalho VLW completo, versão 11, métricas de glifo representáveis e bytes de bitmap dentro do arquivo. Se o arquivo for encurtado após o carregamento, o desenho do glifo é interrompido e a fonte é liberada. A sobrecarga que recebe um array em flash não recebe seu tamanho e, portanto, não detecta um array truncado; passe todos os dados da fonte gerada.
+
+## Converter BMP para sprites de 4 bits
+
+Use `Tools/bmp2array4bit` para converter um BMP indexado em arrays de paleta e pixels; a ferramenta não converte fontes. Remova a transparência, converta a imagem para cores indexadas com no máximo 16 cores e exporte sem codificação run-length. Depois execute `python bmp2array4bit.py imagem.bmp -o imagem.c`.

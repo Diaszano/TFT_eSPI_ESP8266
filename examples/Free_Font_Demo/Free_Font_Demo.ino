@@ -70,8 +70,8 @@ void loop() {
   tft.setTextColor(TFT_YELLOW);
   tft.setCursor(xpos, ypos);  // Set cursor near top left corner of screen
 
-  tft.setFreeFont(TT1);  // Select the orginal small TomThumb font
-  tft.println();         // Move cursor down a line
+  tft.setFreeFont(TT1);                        // Select the orginal small TomThumb font
+  tft.println();                               // Move cursor down a line
   tft.print("The really tiny TomThumb font");  // Print the font name onto the
                                                // TFT screen
   tft.println();
@@ -113,7 +113,7 @@ void loop() {
 
   tft.setFreeFont(FSB9);  // Select the font
   tft.drawString("Serif Bold 9pt", xpos, ypos,
-                 GFXFF);  // Draw the text string in the selected GFX free font
+                 GFXFF);          // Draw the text string in the selected GFX free font
   ypos += tft.fontHeight(GFXFF);  // Get the font height and move ypos down
 
   tft.setFreeFont(FSB12);
@@ -152,7 +152,7 @@ void loop() {
 
   tft.setFreeFont(FSB9);  // Select the font
   tft.drawString("Serif Bold 9pt", xpos, ypos,
-                 GFXFF);  // Draw the text string in the selected GFX free font
+                 GFXFF);          // Draw the text string in the selected GFX free font
   ypos += tft.fontHeight(GFXFF);  // Get the font height and move ypos down
 
   tft.setFreeFont(FSB12);

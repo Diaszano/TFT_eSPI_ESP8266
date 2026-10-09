@@ -18,3 +18,10 @@ The library has no touch or DMA API and supports only the ST7789 over SPI. The s
 | `User_Setups/` and `User_Setup_Select.h` selector | Edit `User_Setup.h` or provide setup definitions with `build_flags`. |
 
 The package is named `TFT_eSPI_ESP8266`; sketches continue to include `TFT_eSPI.h` and use `TFT_eSPI`.
+`AA_GRAPHICS` is a deprecated no-op kept for source compatibility. It does not load an extra graphics implementation; smooth fonts remain controlled by `SMOOTH_FONT`.
+
+The compiler-warning gate covers owned source compiled through the pinned ESP8266 PlatformIO profile. Framework and vendor warnings are reported separately; this gate does not claim clang-tidy coverage.
+
+The clang-tidy 22.1.8 target pilot currently fails to parse ESP8266 Xtensa flags and SDK headers. Its compilation database is validated, but no target tidy findings are baselined and no target tidy CI gate is enabled. PlatformIO's ordinary native database omits Unity test sources, so the separate analysis environment compiles one real probe for the pure color helpers. The required native tidy gate covers that probe and `color_conversion.h` only; it does not claim whole-library analysis.
+
+The optional cppcheck 2.11 pilot scans the staged library and reports existing findings; it is not a clean or required gate. Its resolved analyzer package must be reviewed and pinned before any future required use.

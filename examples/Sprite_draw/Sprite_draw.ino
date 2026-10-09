@@ -29,15 +29,14 @@
 #define DELAY 1000
 
 // Width and height of sprite
-#define WIDTH 128
+#define WIDTH  128
 #define HEIGHT 128
 
 #include <TFT_eSPI.h>  // Include the graphics library (this includes the sprite functions)
 
 TFT_eSPI tft = TFT_eSPI();  // Declare object "tft"
 
-TFT_eSprite spr = TFT_eSprite(
-    &tft);  // Declare Sprite object "spr" with pointer to "tft" object
+TFT_eSprite spr(&tft);  // Declare Sprite object "spr" with pointer to "tft" object
 
 void setup() {
   Serial.begin(250000);

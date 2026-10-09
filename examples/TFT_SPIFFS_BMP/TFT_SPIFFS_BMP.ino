@@ -65,8 +65,8 @@ void drawBmp(const char* filename, int16_t x, int16_t y) {
 
   fs::File bmpFS;
 
-  // Open requested file on SD card
-  bmpFS = SPIFFS.open(filename, "r");
+  // Open requested file on LittleFS
+  bmpFS = LittleFS.open(filename, "r");
 
   if (!bmpFS) {
     Serial.print("File not found");
@@ -123,7 +123,7 @@ void drawBmp(const char* filename, int16_t x, int16_t y) {
   bmpFS.close();
 }
 
-// These read 16- and 32-bit types from the SD card file.
+// These read 16- and 32-bit types from the LittleFS file.
 // BMP data is stored little-endian, Arduino is little-endian too.
 // May need to reverse subscript order if porting elsewhere.
 
