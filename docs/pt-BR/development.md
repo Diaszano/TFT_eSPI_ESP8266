@@ -8,6 +8,8 @@ Use Python 3.14.7 para as ferramentas de desenvolvimento. Instale as ferramentas
 
 Use clang-format 23.1.2 dos requisitos bloqueados. `make format-check` verifica fontes C++, Arduino e sketches sem editá-los; execute `make format` somente quando quiser formatar esses arquivos. Tabelas de fontes geradas, dados de inicialização ST7789 e a ferramenta de geração de fontes ficam excluídos. A ordem dos includes é preservada. Depois que a alteração dedicada de formatação for integrada, configure o blame com `git config blame.ignoreRevsFile .git-blame-ignore-revs` usando o SHA final do commit integrado.
 
+Execute `make test-native` para os testes puros de conversão de cores. Eles exercitam somente os auxiliares compartilhados de conversão inteira; não simulam o core ESP8266, PROGMEM, temporização do display, uso de heap ou renderização. Use os exemplos PlatformIO e um dispositivo para essas verificações.
+
 | Alvo | Finalidade |
 | --- | --- |
 | `make build` | Compila todos os exemplos selecionados. |

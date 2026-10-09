@@ -13,6 +13,7 @@
  ****************************************************/
 
 #include "TFT_eSPI.h"
+#include "internal/color_conversion.h"
 
 // ESP8266 SPI layer
 // Select the SPI port to use
@@ -4212,7 +4213,7 @@ void TFT_eSPI::fillRectHGradient(int16_t x, int16_t y, int16_t w, int16_t h, uin
 * value
 ***************************************************************************************/
 uint16_t TFT_eSPI::color565(uint8_t r, uint8_t g, uint8_t b) {
-  return ((r & 0xF8) << 8) | ((g & 0xFC) << 3) | (b >> 3);
+  return tft_espi_internal::rgb888_to_rgb565(r, g, b);
 }
 
 /***************************************************************************************
@@ -4221,7 +4222,7 @@ uint16_t TFT_eSPI::color565(uint8_t r, uint8_t g, uint8_t b) {
 * value
 ***************************************************************************************/
 uint8_t TFT_eSPI::color16to8(uint16_t c) {
-  return ((c & 0xE000) >> 8) | ((c & 0x0700) >> 6) | ((c & 0x0018) >> 3);
+  return tft_espi_internal::rgb565_to_rgb332(c);
 }
 
 /***************************************************************************************
@@ -4229,15 +4230,7 @@ uint8_t TFT_eSPI::color16to8(uint16_t c) {
 ** Description:             convert 8-bit colour to a 16-bit 565 colour value
 ***************************************************************************************/
 uint16_t TFT_eSPI::color8to16(uint8_t color) {
-  uint8_t blue[] = {0, 11, 21, 31};  // blue 2 to 5-bit colour lookup table
-  uint16_t color16 = 0;
-
-  //        =====Green=====     ===============Red==============
-  color16 = (color & 0x1C) << 6 | (color & 0xC0) << 5 | (color & 0xE0) << 8;
-  //        =====Green=====    =======Blue======
-  color16 |= (color & 0x1C) << 3 | blue[color & 0x03];
-
-  return color16;
+  return tft_espi_internal::rgb332_to_rgb565(color);
 }
 
 /***************************************************************************************
