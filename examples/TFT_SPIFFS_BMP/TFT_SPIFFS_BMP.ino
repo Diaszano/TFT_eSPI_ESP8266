@@ -84,17 +84,16 @@ void drawBmp(const char* filename, int16_t x, int16_t y) {
   const uint32_t height = bmpRead32(header + 22);
   const uint32_t imageSize = bmpRead32(header + 34);
   if (dibSize < 40 || width == 0 || height == 0 || (width & 0x80000000U) ||
-      (height & 0x80000000U) || bmpRead16(header + 26) != 1 ||
-      bmpRead16(header + 28) != 24 || bmpRead32(header + 30) != 0) {
+      (height & 0x80000000U) || bmpRead16(header + 26) != 1 || bmpRead16(header + 28) != 24 ||
+      bmpRead32(header + 30) != 0) {
     Serial.println("BMP requires uncompressed 24-bit bottom-up pixels.");
     return;
   }
   const uint64_t stride = (uint64_t(width) * 3 + 3) & ~uint64_t(3);
   const uint64_t pixelBytes = stride * height;
   const uint64_t pixelEnd = uint64_t(offset) + pixelBytes;
-  if (uint64_t(14) + dibSize > offset || pixelEnd > declaredSize ||
-      declaredSize > file.size() || (imageSize != 0 &&
-      (imageSize < pixelBytes || uint64_t(offset) + imageSize > declaredSize))) {
+  if (uint64_t(14) + dibSize > offset || pixelEnd > declaredSize || declaredSize > file.size() ||
+      (imageSize != 0 && (imageSize < pixelBytes || uint64_t(offset) + imageSize > declaredSize))) {
     Serial.println("Invalid or truncated BMP pixel data.");
     return;
   }
@@ -129,8 +128,8 @@ void drawBmp(const char* filename, int16_t x, int16_t y) {
       }
       for (uint32_t index = 0; index < count; ++index) {
         const uint8_t* pixel = bytes + index * 3;
-        pixels[index] = ((uint16_t(pixel[2]) & 0xF8) << 8) |
-                        ((uint16_t(pixel[1]) & 0xFC) << 3) | (pixel[0] >> 3);
+        pixels[index] = ((uint16_t(pixel[2]) & 0xF8) << 8) | ((uint16_t(pixel[1]) & 0xFC) << 3) |
+                        (pixel[0] >> 3);
       }
       tft.pushImage(screenX, screenY, count, 1, pixels);
     }
@@ -138,4 +137,3 @@ void drawBmp(const char* filename, int16_t x, int16_t y) {
   tft.setSwapBytes(oldSwapBytes);
   if (failed) Serial.println("BMP seek or read failed.");
 }
-

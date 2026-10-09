@@ -40,17 +40,22 @@ class File {
     return read(&byte, 1) == 1 ? byte : -1;
   }
   void close() {}
+
  private:
   std::shared_ptr<FileState> state_;
 };
-}
+}  // namespace fs
 struct Filesystem {
   fs::File open(const char*, const char*) { return fs::File(activeFile); }
 } LittleFS;
 struct SerialPort {
   int errors = 0;
-  template <class T> void print(const T&) {}
-  template <class T> void println(const T&) { ++errors; }
+  template <class T>
+  void print(const T&) {}
+  template <class T>
+  void println(const T&) {
+    ++errors;
+  }
 } Serial;
 struct Display {
   bool swap = false;
@@ -68,7 +73,9 @@ struct Display {
     for (int32_t index = 0; index < width; ++index) screen[y * 240 + x + index] = pixels[index];
   }
 } tft;
-uint32_t millis() { return 0; }
+uint32_t millis() {
+  return 0;
+}
 
 // FUNCTIONS UNDER TEST
 
@@ -139,27 +146,43 @@ int main() {
   drawBmp("/missing.bmp", 0, 0);
   assert(Serial.errors == 1 && tft.pushes == 0);
   for (size_t length : {size_t(0), size_t(53), size_t(54), size_t(60)}) {
-    auto data = bitmap(); data.resize(length); rejected(data);
+    auto data = bitmap();
+    data.resize(length);
+    rejected(data);
   }
   for (size_t field : {size_t(18), size_t(22)}) {
     for (uint32_t value : {0U, 0xFFFFFFFFU, 0x7FFFFFFFU}) {
-      auto data = bitmap(); put32(data, field, value); rejected(data);
+      auto data = bitmap();
+      put32(data, field, value);
+      rejected(data);
     }
   }
   for (size_t field : {size_t(2), size_t(10), size_t(14), size_t(34)}) {
-    auto data = bitmap(); put32(data, field, 0xFFFFFFFFU); rejected(data);
+    auto data = bitmap();
+    put32(data, field, 0xFFFFFFFFU);
+    rejected(data);
   }
   for (size_t field : {size_t(26), size_t(28)}) {
-    auto data = bitmap(); put16(data, field, 8); rejected(data);
+    auto data = bitmap();
+    put16(data, field, 8);
+    rejected(data);
   }
-  auto compressed = bitmap(); put32(compressed, 30, 1); rejected(compressed);
-  auto signature = bitmap(); signature[0] = 0; rejected(signature);
-  auto overlapping = bitmap(); put32(overlapping, 10, 53); rejected(overlapping);
+  auto compressed = bitmap();
+  put32(compressed, 30, 1);
+  rejected(compressed);
+  auto signature = bitmap();
+  signature[0] = 0;
+  rejected(signature);
+  auto overlapping = bitmap();
+  put32(overlapping, 10, 53);
+  rejected(overlapping);
   for (bool swap : {false, true}) {
-    reset(bitmap(), swap); activeFile->failSeek = true;
+    reset(bitmap(), swap);
+    activeFile->failSeek = true;
     drawBmp("/seek.bmp", 0, 0);
     assert(tft.pushes == 0 && tft.swap == swap && Serial.errors == 1);
-    reset(bitmap(), swap); activeFile->shortPixels = true;
+    reset(bitmap(), swap);
+    activeFile->shortPixels = true;
     drawBmp("/short.bmp", 0, 0);
     assert(tft.pushes == 0 && tft.swap == swap && Serial.errors == 1);
   }
