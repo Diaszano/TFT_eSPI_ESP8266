@@ -1308,7 +1308,7 @@ class TFT_eSPI : public Print {
                  ///< moment)
 
 #ifdef LOAD_GFXFF
-  GFXfont* gfxFont;  ///< gfxFont value.
+  GFXfont* gfxFont = nullptr;  ///< gfxFont value.
 #endif
 
   /***************************************************************************************
