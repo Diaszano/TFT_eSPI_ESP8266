@@ -3,6 +3,8 @@ import re
 import unittest
 from pathlib import Path
 
+from scripts.check_conventional import is_conventional_branch, is_conventional_commit
+
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -35,6 +37,41 @@ class CIConfigTests(unittest.TestCase):
             ["build", "lint", "arduino-lint", "pio-pack", "pr-title", "docs", "analyze"],
         )
         self.assertTrue(all(check["integration_id"] == 15368 for check in required_checks))
+
+    def test_conventional_ruleset_patterns_and_automation_branches(self):
+        ruleset = json.loads((ROOT / ".github/rulesets/conventional.json").read_text())
+        rules = {rule["type"]: rule["parameters"]["pattern"] for rule in ruleset["rules"]}
+        branch_pattern = re.compile(rules["branch_name_pattern"])
+        commit_pattern = re.compile(rules["commit_message_pattern"])
+
+        self.assertEqual(ruleset["conditions"]["ref_name"]["include"], ["~ALL"])
+        for branch in ("feat/add-display", "fix/st7789-init", "main", "codex/execute-all-plans",
+                       "dependabot/github_actions/actions-08422bfd53", "release-please--branches--main"):
+            self.assertRegex(branch, branch_pattern)
+        for branch in ("feature/add-display", "Feat/add-display", "feat/Add-Display"):
+            self.assertNotRegex(branch, branch_pattern)
+
+        for message in ("feat: add display", "fix(st7789): initialize panel", "refactor!: change API"):
+            self.assertRegex(message, commit_pattern)
+        for message in ("Add display", "Feat: add display", "fix: ", "feat add display"):
+            self.assertNotRegex(message, commit_pattern)
+
+    def test_conventional_branch_and_commit_formats(self):
+        for branch in ("feat/add-display", "fix/st7789-init", "main", "codex/execute-all-plans",
+                       "dependabot/github_actions/actions-08422bfd53", "release-please--branches--main"):
+            self.assertTrue(is_conventional_branch(branch), branch)
+        for branch in ("feature/add-display", "Feat/add-display", "feat/Add-Display"):
+            self.assertFalse(is_conventional_branch(branch), branch)
+
+        for message in ("feat: add display", "fix(st7789): initialize panel", "refactor!: change API"):
+            self.assertTrue(is_conventional_commit(message), message)
+        for message in ("Add display", "Feat: add display", "fix: ", "feat add display"):
+            self.assertFalse(is_conventional_commit(message), message)
+
+    def test_lint_enforces_conventions_on_pull_requests(self):
+        workflow = (ROOT / ".github/workflows/lint.yml").read_text()
+        self.assertIn("fetch-depth: 0", workflow)
+        self.assertIn("scripts/check_conventional.py", workflow)
 
     def test_release_please_manifest_has_root_package(self):
         config = json.loads((ROOT / "release-please-config.json").read_text())
