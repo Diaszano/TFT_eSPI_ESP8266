@@ -11,6 +11,13 @@
     {
       "name": "Bodmer",
       "email": "bodmer@anola.net",
+      "url": "https://github.com/Bodmer",
+      "maintainer": false
+    },
+    {
+      "name": "Lucas Dias (Diaszano)",
+      "email": "61257292+Diaszano@users.noreply.github.com",
+      "url": "https://github.com/Diaszano",
       "maintainer": true
     }
   ],
@@ -20,8 +27,19 @@
   "export": {
     "exclude": [
       ".build",
+      ".pio",
+      ".github",
+      ".git",
+      ".venv",
+      ".superpowers",
       "docs/superpowers",
-      ".github"
+      "test",
+      "scripts",
+      ".pre-commit-config.yaml",
+      ".git-blame-ignore-revs"
     ]
-  }
+  },
+  "examples": [
+    "examples/*"
+  ]
 }
