@@ -20,6 +20,8 @@ Use Python 3.14.7 para as ferramentas de desenvolvimento. Instale as ferramentas
 
 A CI compila os exemplos selecionados com PlatformIO. O workflow de documentação verifica e gera os arquivos; o job de publicação no Pages executa somente em pushes para `main`.
 
+`make size-check` falha se o uso estático de flash ou RAM aumentar ou se o perfil de build mudar. O total de RAM inclui dados inicializados, dados somente leitura e BSS; ele não mede o heap usado em tempo de execução por sprites, fontes ou outras alocações.
+
 ## Adicionar um exemplo
 
 Crie `examples/<Name>/<Name>.ino`, sem espaços em `<Name>`. Mantenha os dados específicos do exemplo nessa pasta e confirme que o sketch compila com a configuração suportada. Execute `make build-<Name>` antes de enviar a alteração e depois `make build` para verificar o conjunto completo.

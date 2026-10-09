@@ -18,7 +18,11 @@ jobs:
           python-version: '3.14.7'
       - uses: actions/cache@1bd1e32a3bdc45362d1e726936510720a7c30a57 # v4.2.0
         with:
-          path: ~/.platformio
+          path: |
+            ~/.platformio/packages
+            ~/.platformio/platforms
           key: ${{ runner.os }}-platformio-${{ hashFiles('scripts/requirements-dev.txt', 'Makefile', 'library.json') }}
       - run: python -m pip install --require-hashes -r scripts/requirements-dev.txt
       - run: make build
+      - name: Check reference flash and RAM
+        run: make size-check

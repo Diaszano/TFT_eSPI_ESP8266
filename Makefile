@@ -2,10 +2,13 @@
 .SECONDEXPANSION:
 
 EXAMPLES := $(notdir $(patsubst %/,%,$(wildcard examples/*/)))
+REF_EXAMPLE ?= TFT_Print_Test
+CHECK_PROFILE ?= default
+SIZE_LABEL ?= current
 JOBS ?= $(shell nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 1)
 VERSION := $(shell python3 -c "import json;print(json.load(open('library.json'))['version'])")
 
-.PHONY: build $(addprefix build-,$(EXAMPLES)) upload uploadfs monitor clean help docs-check docs-api docs setup lint lint-update check-version FORCE
+.PHONY: build $(addprefix build-,$(EXAMPLES)) upload uploadfs monitor clean help docs-check docs-api docs setup lint lint-update check-version size-check FORCE
 
 build: .build/source-inventory.txt
 	@mkdir -p "$${PLATFORMIO_CORE_DIR:-$$HOME/.platformio}"
@@ -77,6 +80,10 @@ lint-update:
 
 check-version:
 	python3 -m unittest -q scripts/test_check_version.py && python3 scripts/check_version.py
+
+size-check: build-$(REF_EXAMPLE)
+	@pio run -d .build/$(REF_EXAMPLE) -e nodemcuv2 -t size > .build/$(REF_EXAMPLE)-size.log
+	@python3 scripts/size_check.py --elf .build/$(REF_EXAMPLE)/.pio/build/nodemcuv2/firmware.elf --log .build/$(REF_EXAMPLE)-size.log --build-log .build/$(REF_EXAMPLE).log --profile $(CHECK_PROFILE) --baseline scripts/size-baseline.json --label $(SIZE_LABEL)
 
 help:
 	@printf '%s\n' 'build: compile all curated examples' 'build-<Nome>: compile one example' 'upload EX=<Nome> [PORT=<port>]: upload one example' 'uploadfs EX=<Nome> [PORT=<port>]: upload example filesystem' 'monitor [PORT=<port>]: open serial monitor' 'clean: remove build files' 'docs-check: validate documentation pairs, links and removed APIs' 'docs-api: generate the Doxygen API reference' 'docs: validate docs and generate the API reference' 'setup: install lint tools and hooks' 'lint: run pre-commit checks and version check' 'lint-update: update pre-commit hook revisions' 'check-version: verify package versions' 'help: show this help'
