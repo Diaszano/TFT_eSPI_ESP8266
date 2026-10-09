@@ -17,7 +17,7 @@
 #include "NotoSansBold15.h"
 
 TFT_eSPI tft = TFT_eSPI();  // Invoke library, pins defined in User_Setup.h
-TFT_eSprite face = TFT_eSprite(&tft);
+TFT_eSprite face(&tft);
 
 #define CLOCK_X_POS 10
 #define CLOCK_Y_POS 10

@@ -18,6 +18,8 @@ class TFT_eSprite : public TFT_eSPI {
  public:
   /// @brief TFT eSprite operation.
   explicit TFT_eSprite(TFT_eSPI* tft);
+  TFT_eSprite(const TFT_eSprite&) = delete;
+  TFT_eSprite& operator=(const TFT_eSprite&) = delete;
   ~TFT_eSprite(void);
 
   // Create a sprite of width x height pixels, return a pointer to the RAM area

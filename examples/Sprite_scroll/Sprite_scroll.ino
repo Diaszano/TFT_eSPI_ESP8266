@@ -24,11 +24,11 @@
 
 TFT_eSPI tft = TFT_eSPI();
 
-TFT_eSprite graph1 = TFT_eSprite(&tft);  // Sprite object graph1
+TFT_eSprite graph1(&tft);  // Sprite object graph1
 
-TFT_eSprite stext1 = TFT_eSprite(&tft);  // Sprite object stext1
+TFT_eSprite stext1(&tft);  // Sprite object stext1
 
-TFT_eSprite stext2 = TFT_eSprite(&tft);  // Sprite object stext2
+TFT_eSprite stext2(&tft);  // Sprite object stext2
 
 int graphVal = 1;
 int delta = 1;

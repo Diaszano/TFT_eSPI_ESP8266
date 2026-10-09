@@ -5,7 +5,7 @@
 
 TFT_eSPI tft = TFT_eSPI();  // Invoke library, pins defined in User_Setup.h
 
-TFT_eSprite spr = TFT_eSprite(&tft);
+TFT_eSprite spr(&tft);
 
 // =========================================================================
 // Setup

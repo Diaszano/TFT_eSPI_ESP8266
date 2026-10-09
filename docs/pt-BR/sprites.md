@@ -4,6 +4,12 @@
 
 Um Sprite é um buffer de imagem na RAM. Desenhe nele com a API gráfica e depois envie-o ao display com `pushSprite()`. Sprites ajudam a reduzir cintilação e a preparar gráficos fora da tela, mas consomem a heap do ESP8266.
 
+`TFT_eSprite` é dono dos próprios buffers de pixels e não pode ser copiado nem receber atribuição. Construa-o diretamente com o display e passe-o a funções auxiliares por referência ou ponteiro:
+
+```cpp
+TFT_eSprite sprite(&tft);
+```
+
 Para um buffer de 240 × 240:
 
 | Profundidade de cor | Bytes por pixel | RAM |

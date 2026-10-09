@@ -26,8 +26,8 @@
 
 TFT_eSPI tft = TFT_eSPI();  // Create object "tft"
 
-TFT_eSprite img = TFT_eSprite(&tft);  // Create Sprite object "img" with pointer to "tft" object
-                                      // the pointer is used by pushSprite() to push it onto the TFT
+TFT_eSprite img(&tft);  // Create Sprite object "img" with pointer to "tft" object
+                        // the pointer is used by pushSprite() to push it onto the TFT
 
 void setup(void) {
   Serial.begin(250000);

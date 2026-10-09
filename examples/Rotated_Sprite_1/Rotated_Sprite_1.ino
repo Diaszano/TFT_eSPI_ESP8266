@@ -34,7 +34,7 @@
 
 TFT_eSPI tft = TFT_eSPI();  // TFT object
 
-TFT_eSprite spr = TFT_eSprite(&tft);  // Sprite object
+TFT_eSprite spr(&tft);  // Sprite object
 
 // =======================================================================================
 // Setup

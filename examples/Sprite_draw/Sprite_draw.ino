@@ -36,7 +36,7 @@
 
 TFT_eSPI tft = TFT_eSPI();  // Declare object "tft"
 
-TFT_eSprite spr = TFT_eSprite(&tft);  // Declare Sprite object "spr" with pointer to "tft" object
+TFT_eSprite spr(&tft);  // Declare Sprite object "spr" with pointer to "tft" object
 
 void setup() {
   Serial.begin(250000);
