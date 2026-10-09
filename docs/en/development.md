@@ -6,6 +6,8 @@ English | [Português (Brasil)](https://github.com/Diaszano/TFT_eSPI_ESP8266/blo
 
 Use Python 3.14.7 for the development toolchain. Install the pinned and hash-locked tools with `python -m pip install --require-hashes -r scripts/requirements-dev.txt`; the build uses ESP8266 platform 4.2.1 and tracks nested library and example inputs so additions, edits, and deletions invalidate cached builds.
 
+The build and CodeQL workflows compile `Colour_Test` once before their parallel build. This serial first build initializes the shared PlatformIO packages before other examples use them concurrently; the locked PlatformIO core and target versions are part of the checked build profile.
+
 Use clang-format 23.1.2 from the locked requirements. `make format-check` checks maintained C++ and Arduino sources without editing them; run `make format` only when you intend to format those files. Generated font tables, ST7789 initialization data and the font-generation tool are excluded. Include order is preserved. After the dedicated formatting change is merged, configure blame with `git config blame.ignoreRevsFile .git-blame-ignore-revs` using the final merged commit SHA.
 
 Run `make test-native` for the pure color conversion tests. They exercise shared integer conversion helpers only; they do not model the ESP8266 core, PROGMEM, display timing, heap use or rendering. Use `make docs-examples` to compile the first C++ examples from both READMEs and Sprite guides against the staged library. Use a device for display checks.

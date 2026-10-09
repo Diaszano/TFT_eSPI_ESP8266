@@ -23,6 +23,7 @@ jobs:
             ~/.platformio/platforms
           key: ${{ runner.os }}-platformio-${{ hashFiles('scripts/requirements-dev.txt', 'Makefile', 'library.json') }}
       - run: python -m pip install --require-hashes -r scripts/requirements-dev.txt
+      - run: make build-Colour_Test
       - run: make build
       - run: make warnings
       - run: make test-compile

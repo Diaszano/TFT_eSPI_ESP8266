@@ -27,5 +27,6 @@ jobs:
         with:
           python-version: '3.14.7'
       - run: python -m pip install --require-hashes -r scripts/requirements-dev.txt
+      - run: make build-Colour_Test
       - run: make build
       - uses: github/codeql-action/analyze@60168efe1c415ce0f5521ea06d5c2062adbeed1b # v3.28.17

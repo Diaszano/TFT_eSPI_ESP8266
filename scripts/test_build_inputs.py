@@ -17,6 +17,9 @@ class BuildInputsTests(unittest.TestCase):
             (self.root / name).write_text("fixture\n")
         (self.root / "Fonts/Custom").mkdir(parents=True)
         (self.root / "Fonts/Custom/Fixture.h").write_text("fixture\n")
+        (self.root / "scripts").mkdir()
+        (self.root / "scripts/requirements-dev.in").write_text("platformio==6.1.18\n")
+        (self.root / "scripts/requirements-dev.txt").write_text("locked\n")
         (self.root / "examples/Fixture").mkdir(parents=True)
         (self.root / "examples/Fixture/helper.h").write_text("fixture\n")
         (self.root / ".build").mkdir()
@@ -67,7 +70,7 @@ class BuildInputsTests(unittest.TestCase):
             "\t@touch $@\n"
             "build: .build/stamp\n"
         )
-        (self.root / "scripts").mkdir()
+        (self.root / "scripts").mkdir(exist_ok=True)
         shutil.copy(pathlib.Path(__file__).with_name("build_inputs.py"), self.root / "scripts/build_inputs.py")
 
         def build():
@@ -78,17 +81,22 @@ class BuildInputsTests(unittest.TestCase):
         build()
         self.assertEqual(counter.read_text().splitlines(), ["build"])
         self.assertEqual(inventory.stat().st_mtime_ns, first_mtime)
-        (self.root / "Fonts/Custom/Fixture.h").write_text("changed\n")
+        (self.root / "scripts/requirements-dev.txt").write_text("changed lock\n")
         build()
         self.assertEqual(counter.read_text().splitlines(), ["build", "build"])
+        build()
+        self.assertEqual(counter.read_text().splitlines(), ["build", "build"])
+        (self.root / "Fonts/Custom/Fixture.h").write_text("changed\n")
+        build()
+        self.assertEqual(counter.read_text().splitlines(), ["build"] * 3)
         (self.root / "Fonts/Custom/Fixture.h").unlink()
         build()
-        self.assertEqual(counter.read_text().splitlines(), ["build", "build", "build"])
+        self.assertEqual(counter.read_text().splitlines(), ["build"] * 4)
         (self.root / "examples/Fixture/helper.h").write_text("changed\n")
         build()
         (self.root / "examples/Fixture/helper.h").unlink()
         build()
-        self.assertEqual(counter.read_text().splitlines(), ["build"] * 5)
+        self.assertEqual(counter.read_text().splitlines(), ["build"] * 6)
 
 
 if __name__ == "__main__":
