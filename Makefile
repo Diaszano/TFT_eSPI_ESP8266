@@ -8,7 +8,7 @@ SIZE_LABEL ?= current
 JOBS ?= $(shell nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 1)
 VERSION := $(shell python3 -c "import json;print(json.load(open('library.json'))['version'])")
 
-.PHONY: build $(addprefix build-,$(EXAMPLES)) upload uploadfs monitor clean help docs-check docs-examples docs-api docs setup lint lint-update check-version size-check format format-check test-native FORCE
+.PHONY: build $(addprefix build-,$(EXAMPLES)) upload uploadfs monitor clean help docs-check docs-examples docs-api docs setup lint lint-update check-version size-check format format-check test-native test-compile FORCE
 
 format:
 	python3 scripts/format.py --write
@@ -18,6 +18,10 @@ format-check:
 
 test-native:
 	pio test -d test -e native
+
+test-compile: .build/pio-library/.stamp
+	@cd /tmp && pio ci --lib=$(CURDIR)/.build/pio-library --board=nodemcuv2 -O "platform=espressif8266@4.2.1" --build-dir=$(CURDIR)/.build/compile/sprite_ownership --keep-build-dir $(CURDIR)/tests/compile/sprite_ownership
+	@cd /tmp && pio ci --lib=$(CURDIR)/.build/pio-library --board=nodemcuv2 -O "platform=espressif8266@4.2.1" -O "build_flags=-DUSER_SETUP_LOADED -DST7789_DRIVER -DTFT_WIDTH=240 -DTFT_HEIGHT=240 -DTFT_MOSI=13 -DTFT_SCLK=14 -DTFT_DC=0 -DTFT_RST=2 -DSPI_FREQUENCY=40000000 -DLOAD_GLCD" --build-dir=$(CURDIR)/.build/compile/minimal_setup --keep-build-dir $(CURDIR)/tests/compile/minimal_setup
 
 build: .build/source-inventory.txt
 	@mkdir -p "$${PLATFORMIO_CORE_DIR:-$$HOME/.platformio}"

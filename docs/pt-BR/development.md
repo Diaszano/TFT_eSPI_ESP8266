@@ -36,6 +36,8 @@ Arduino e PlatformIO compilam `src/TFT_eSPI.cpp` como a única unidade de tradu�
 
 Crie `examples/<Name>/<Name>.ino`, sem espaços em `<Name>`. Mantenha os dados específicos do exemplo nessa pasta e confirme que o sketch compila com a configuração suportada. Execute `make build-<Name>` antes de enviar a alteração e depois `make build` para verificar o conjunto completo.
 
+A CI também executa `make test-native` para conversões puras de cor e `make test-compile` para testar a propriedade do Sprite e uma configuração mínima somente com `LOAD_GLCD`. Essas verificações não substituem os 14 builds de exemplo nem os testes físicos do display.
+
 ## Alterar a documentação
 
 Escreva primeiro o arquivo em inglês em `docs/en/`, adicione a tradução pt-BR com o mesmo nome em `docs/pt-BR/` e atualize o README correspondente se necessário. Execute `make docs` para verificar links e pares de idioma e gerar o HTML do Doxygen.

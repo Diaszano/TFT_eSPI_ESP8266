@@ -8,6 +8,11 @@ ROOT = Path(__file__).resolve().parent.parent
 
 
 class CIConfigTests(unittest.TestCase):
+    def test_lint_workflow_uses_valid_python_module_commands(self):
+        workflow = (ROOT / ".github/workflows/lint.yml").read_text()
+        self.assertNotIn("python -m python -m", workflow)
+        self.assertIn("python -m pip install --require-hashes", workflow)
+
     def test_lint_checks_downloaded_gitleaks_and_working_tree(self):
         workflow = (ROOT / ".github/workflows/lint.yml").read_text()
         self.assertIn('-o "gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"', workflow)

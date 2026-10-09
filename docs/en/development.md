@@ -34,6 +34,8 @@ Arduino and PlatformIO compile `src/TFT_eSPI.cpp` as the library’s only produc
 
 Create `examples/<Name>/<Name>.ino` with no spaces in `<Name>`. Keep example-specific data inside that directory and ensure the sketch builds with the supported setup. Run `make build-<Name>` before submitting, then `make build` to check the complete curated set.
 
+CI also runs `make test-native` for pure color conversions and `make test-compile` for sprite ownership plus a minimal `LOAD_GLCD`-only setup. These checks do not replace the 14 example builds or physical display checks.
+
 ## Documentation changes
 
 Write the English file in `docs/en/` first, add its same-named pt-BR translation in `docs/pt-BR/`, and update the matching README if needed. Run `make docs` to check links and language pairs and generate Doxygen HTML.
