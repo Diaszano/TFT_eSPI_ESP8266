@@ -176,7 +176,15 @@ def run_font_files(root: pathlib.Path) -> None:
         "void TFT_eSprite::drawGlyph(uint16_t code) {",
     )
     methods.append(f'#line {sprite_line} "src/internal/Sprite.inc"\n{sprite_method}')
-    generated = fixture.replace(marker, "\n".join(methods))
+    for path, signature in (
+        ("src/TFT_eSPI.cpp", "int16_t TFT_eSPI::drawString(const char* string, int32_t poX, int32_t poY, uint8_t font) {"),
+        ("src/internal/Smooth_font.inc", "void TFT_eSPI::showFont(uint32_t td) {"),
+        ("src/internal/Sprite.inc", "void TFT_eSprite::printToSprite(char* cbuffer, uint16_t len)"),
+        ("src/internal/Sprite.inc", "int16_t TFT_eSprite::printToSprite(int16_t x, int16_t y, uint16_t index) {"),
+    ):
+        method, line = extract_method((root / path).read_text(), signature)
+        methods.append(f'#line {line} "{path}"\n{method}')
+    generated = fixture.replace(marker, "#define SMOOTH_FONT\n" + "\n".join(methods))
     with tempfile.TemporaryDirectory(prefix="tft-font-files-") as temp:
         source_path = pathlib.Path(temp) / "font_files.cpp"
         binary = pathlib.Path(temp) / "font_files"

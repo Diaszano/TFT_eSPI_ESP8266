@@ -2275,6 +2275,7 @@ int16_t TFT_eSprite::drawChar(uint16_t uniCode, int32_t x, int32_t y, uint8_t fo
 ***************************************************************************************/
 //
 void TFT_eSprite::drawGlyph(uint16_t code) {
+  if (!fontLoaded) return;
   uint16_t fg = textcolor;
   uint16_t bg = textbgcolor;
   bool getBG = false;
@@ -2530,6 +2531,10 @@ void TFT_eSprite::printToSprite(char* cbuffer, uint16_t len)  // String string)
     // Serial.print("Decoded Unicode = 0x");Serial.println(unicode,HEX);
     // Serial.print("n = ");Serial.println(n);
     drawGlyph(unicode);
+    if (!fontLoaded) {
+      if (newSprite) deleteSprite();
+      return;
+    }
   }
 
   if (newSprite) {  // The sprite had to be created so place at TFT cursor
@@ -2543,6 +2548,7 @@ void TFT_eSprite::printToSprite(char* cbuffer, uint16_t len)  // String string)
 ** Description:             Print character in a Sprite, create sprite if needed
 ***************************************************************************************/
 int16_t TFT_eSprite::printToSprite(int16_t x, int16_t y, uint16_t index) {
+  if (!fontLoaded || index >= gFont.gCount) return 0;
   bool newSprite = !_created;
   int16_t sWidth = gWidth[index];
 
@@ -2552,6 +2558,10 @@ int16_t TFT_eSprite::printToSprite(int16_t x, int16_t y, uint16_t index) {
     if (textcolor != textbgcolor) fillSprite(textbgcolor);
 
     drawGlyph(gUnicode[index]);
+    if (!fontLoaded) {
+      deleteSprite();
+      return 0;
+    }
 
     pushSprite(x + gdX[index], y, textbgcolor);
     deleteSprite();
@@ -2560,6 +2570,7 @@ int16_t TFT_eSprite::printToSprite(int16_t x, int16_t y, uint16_t index) {
   else
     drawGlyph(gUnicode[index]);
 
+  if (!fontLoaded) return 0;
   return gxAdvance[index];
 }
 #endif

@@ -79,6 +79,7 @@ class FS {
 
 fs::FS SPIFFS;
 static int write_starts = 0, write_ends = 0, pixel_draws = 0;
+static int sprite_pushes = 0, screen_fills = 0, waits = 0;
 struct SerialPort {
   template <typename T>
   void println(const T&) {}
@@ -89,6 +90,10 @@ uint8_t pgm_read_byte(const uint8_t* pointer) {
 }
 void yield() {
 }
+void delay(uint32_t) { ++waits; }
+enum Datum { TL_DATUM, TC_DATUM, TR_DATUM, ML_DATUM, MC_DATUM, MR_DATUM,
+             BL_DATUM, BC_DATUM, BR_DATUM, L_BASELINE, C_BASELINE, R_BASELINE };
+struct FontData { uint8_t baseline = 0; } fontdata[9];
 
 #define malloc host_test::tracked_malloc
 #define free   host_test::tracked_free
@@ -117,10 +122,23 @@ class TFT_eSPI {
   bool textwrapX = false, textwrapY = false, _fillbg = false;
   uint16_t (*getColor)(int, int) = nullptr;
 
+  uint8_t textsize = 1, textdatum = TL_DATUM;
+  uint16_t padX = 5;
+  int16_t textWidth(const char* text, uint8_t) { return std::strlen(text) * 2; }
+  int16_t fontHeight(uint8_t = 1) { return 4; }
+  int16_t drawChar(uint16_t, int32_t, int32_t, uint8_t) { ++pixel_draws; return 6; }
+  void setCursor(int32_t x, int32_t y) { cursor_x = x; cursor_y = y; }
+  void fillScreen(uint16_t) { ++screen_fills; }
+  uint16_t decodeUTF8(uint8_t* text, uint16_t* offset, uint16_t remaining) {
+    assert(remaining > 0);
+    return text[(*offset)++];
+  }
+  int16_t drawString(const char* text, int32_t x, int32_t y, uint8_t font);
+  void showFont(uint32_t td);
   bool loadMetrics();
   void unloadFont();
   bool readInt32(uint32_t& value);
-  void drawGlyph(uint16_t code);
+  virtual void drawGlyph(uint16_t code);
   void loadFont(const uint8_t array[]);
   void loadFont(String fontName, bool flash);
   bool getUnicodeIndex(uint16_t, uint16_t* index) {
@@ -141,13 +159,17 @@ class TFT_eSPI {
 class TFT_eSprite : public TFT_eSPI {
  public:
   bool _created = false;
+  TFT_eSPI* _tft = nullptr;
+  void printToSprite(char* buffer, uint16_t length);
+  int16_t printToSprite(int16_t x, int16_t y, uint16_t index);
   void* createSprite(int16_t, int16_t) {
     _created = true;
     return this;
   }
   void deleteSprite() { _created = false; }
   void fillSprite(uint16_t) { ++pixel_draws; }
-  void pushSprite(int16_t, int16_t) { ++pixel_draws; }
+  void pushSprite(int16_t, int16_t) { ++sprite_pushes; }
+  void pushSprite(int16_t, int16_t, uint16_t) { ++sprite_pushes; }
   uint16_t readPixel(int, int) { return 0; }
   void drawGlyph(uint16_t code);
 };
@@ -312,4 +334,92 @@ int main() {
   assert(!failed_sprite_seek.fontLoaded && !failed_sprite_seek.fontFile);
   assert(!failed_sprite_seek._created && pixel_draws == 0 && host_test::outstanding == 0);
   SPIFFS.fail_seek_at = 0;
+  const char* filter = std::getenv("TFT_HOST_FONT_CALLER");
+  for (const char* caller : {"draw-string", "show-font", "sprite-buffer", "sprite-index"}) {
+    if (filter && std::strcmp(filter, caller) != 0) continue;
+    for (bool seek_failure : {false, true}) {
+      for (bool created : {false, true}) {
+        TFT_eSPI target;
+        TFT_eSprite subject;
+        subject._tft = &target;
+        subject._created = created;
+        subject.textcolor = subject.textbgcolor = 1;
+        subject._fillbg = created;
+        SPIFFS.data = font_file(11);
+        subject.loadFont(String("font"), true);
+        assert(subject.fontLoaded);
+        if (seek_failure) SPIFFS.fail_seek_at = SPIFFS.seek_count + 1;
+        else SPIFFS.data.resize(52);
+        write_starts = write_ends = pixel_draws = sprite_pushes = screen_fills = waits = 0;
+        if (std::strcmp(caller, "draw-string") == 0)
+          assert(subject.drawString("AA", 0, 0, 1) == 0);
+        else if (std::strcmp(caller, "show-font") == 0)
+          subject.showFont(1);
+        else if (std::strcmp(caller, "sprite-buffer") == 0) {
+          char text[] = "AA";
+          subject.printToSprite(text, 2);
+        } else
+          assert(subject.printToSprite(0, 0, 0) == 0);
+        assert(!subject.fontLoaded && !subject.fontFile);
+        assert(!subject.gUnicode && !subject.gHeight && !subject.gWidth && !subject.gxAdvance);
+        assert(subject._created == created);
+        assert(subject._fillbg == created);
+        assert(sprite_pushes == 0 && host_test::outstanding == 0);
+        assert(write_starts == write_ends);
+        if (std::strcmp(caller, "show-font") == 0) assert(waits == 1 && screen_fills == 2);
+        SPIFFS.fail_seek_at = 0;
+        SPIFFS.data = font_file(11);
+        subject.loadFont(String("font"), true);
+        assert(subject.fontLoaded);
+        assert(subject.drawString("AA", 0, 0, 1) == 4);
+        subject.unloadFont();
+        assert(host_test::outstanding == 0);
+      }
+    }
+  }
+  for (bool seek_failure : {false, true}) {
+    TFT_eSPI subject;
+    SPIFFS.data = font_file(11);
+    subject.loadFont(String("font"), true);
+    if (seek_failure) SPIFFS.fail_seek_at = SPIFFS.seek_count + 1;
+    else SPIFFS.data.resize(52);
+    write_starts = write_ends = 0;
+    assert(subject.drawString("AA", 0, 0, 1) == 0);
+    assert(!subject.fontLoaded && host_test::outstanding == 0);
+    assert(write_starts == write_ends);
+    SPIFFS.fail_seek_at = 0;
+  }
+  TFT_eSPI target;
+  TFT_eSprite unloaded;
+  unloaded._tft = &target;
+  assert(unloaded.printToSprite(0, 0, 0) == 0);
+  unloaded.drawGlyph(65);
+  unloaded.TFT_eSPI::drawGlyph(65);
+  assert(!unloaded._created);
+  SPIFFS.data = font_file(11);
+  unloaded.loadFont(String("font"), true);
+  assert(unloaded.printToSprite(0, 0, unloaded.gFont.gCount) == 0);
+  assert(unloaded.fontLoaded && !unloaded._created);
+  unloaded.unloadFont();
+  for (const char* caller : {"draw-string", "show-font", "sprite-buffer", "sprite-index"}) {
+    TFT_eSPI target;
+    TFT_eSprite subject;
+    subject._tft = &target;
+    SPIFFS.data = font_file(11);
+    subject.loadFont(String("font"), true);
+    sprite_pushes = 0;
+    if (std::strcmp(caller, "draw-string") == 0)
+      assert(subject.drawString("AA", 0, 0, 1) == 4);
+    else if (std::strcmp(caller, "show-font") == 0)
+      subject.showFont(0);
+    else if (std::strcmp(caller, "sprite-buffer") == 0) {
+      char text[] = "AA";
+      subject.printToSprite(text, 2);
+    } else
+      assert(subject.printToSprite(0, 0, 0) == 3);
+    assert(subject.fontLoaded && !subject._created);
+    subject.unloadFont();
+    assert(host_test::outstanding == 0);
+  }
+
 }

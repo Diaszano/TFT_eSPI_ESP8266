@@ -5047,6 +5047,10 @@ int16_t TFT_eSPI::drawString(const char* string, int32_t poX, int32_t poY, uint8
     while (n < len) {
       uint16_t uniCode = decodeUTF8((uint8_t*)string, &n, len - n);
       drawGlyph(uniCode);
+      if (!fontLoaded) {
+        _fillbg = fillbg;
+        return 0;
+      }
     }
     _fillbg = fillbg;  // restore state
     sumX += cwidth;

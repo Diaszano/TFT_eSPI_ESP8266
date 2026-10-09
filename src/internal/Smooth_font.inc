@@ -375,6 +375,7 @@ bool TFT_eSPI::getUnicodeIndex(uint16_t unicode, uint16_t* index) {
 *************************************************************************************x*/
 // Expects file to be open
 void TFT_eSPI::drawGlyph(uint16_t code) {
+  if (!fontLoaded) return;
   uint16_t fg = textcolor;
   uint16_t bg = textbgcolor;
 
@@ -590,6 +591,7 @@ void TFT_eSPI::showFont(uint32_t td) {
 
     setCursor(cursorX, cursorY);
     drawGlyph(gUnicode[i]);
+    if (!fontLoaded) return;
     cursorX += gxAdvance[i];
     yield();
   }
