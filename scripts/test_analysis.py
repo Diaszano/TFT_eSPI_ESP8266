@@ -145,6 +145,69 @@ class AnalysisTests(unittest.TestCase):
                 extra_entry = {**entry, "file": str(extra)}
                 analysis.map_compile_database([entry, extra_entry], stage, root)
 
+    def test_native_database_requires_and_maps_the_real_color_probe(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = pathlib.Path(directory)
+            project = root / "test"
+            source = project / "analysis/color_probe.cpp"
+            source.parent.mkdir(parents=True)
+            source.write_text("int main() {}\\n")
+            entry = {
+                "directory": str(project),
+                "file": "analysis/color_probe.cpp",
+                "arguments": ["g++", "-std=c++11", "-I../src", "-c", "analysis/color_probe.cpp"],
+            }
+            with self.assertRaises(ValueError):
+                analysis.map_native_compile_database([], project, root)
+            mapped = analysis.map_native_compile_database([entry], project, root)
+            self.assertEqual(mapped[0]["file"], str(source))
+            self.assertIn("-I" + str(root / "src"), mapped[0]["arguments"])
+            self.assertEqual(mapped[0]["arguments"][-1], str(source))
+
+    def test_native_baseline_cannot_be_used_for_target_scope(self):
+        native = {**self.baseline, "scope": "native"}
+        with self.assertRaises(ValueError):
+            analysis.compare_findings([self.finding], native, self.profile, scope="target")
+
+    def test_native_profile_fingerprints_host_compiler_and_tidy_config(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = pathlib.Path(directory)
+            (root / "test").mkdir()
+            (root / "test/platformio.ini").write_text("[env:analysis-native]\\n")
+            (root / ".clang-tidy").write_text("Checks: -*\\n")
+            entry = {"arguments": ["g++", "-std=c++11", "-I" + str(root / "src")]}
+            result = subprocess.CompletedProcess([], 0, "g++ (GCC) 13.3.0\n", "")
+            with mock.patch("analysis.subprocess.run", return_value=result):
+                profile = analysis.native_profile(root, entry, "LLVM version 22.1.8", "checks")
+            self.assertEqual(profile["platform"], "native@1.2.1")
+            self.assertEqual(profile["toolchain"], "g++ 13.3.0")
+            self.assertEqual(profile["clang_tidy"], "22.1.8")
+            self.assertNotIn("xtensa", profile["toolchain"].lower())
+
+    def test_native_baseline_detects_seeded_pure_header_warning(self):
+        native_baseline = {
+            "schema": 1,
+            "scope": "native",
+            "profile": self.profile,
+            "findings": [],
+        }
+        result = analysis.compare_findings(
+            [self.finding], native_baseline, self.profile, scope="native"
+        )
+        self.assertEqual(result["new"], [self.finding])
+
+    def test_native_analysis_reports_findings_from_shared_pure_header(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = pathlib.Path(directory)
+            source = root / "src/internal/color_conversion.h"
+            source.parent.mkdir(parents=True)
+            source.write_text("one\nsecond_line();\nthree\n")
+            log = f"{source}:2:1: warning: seeded finding [bugprone-test]\n"
+            owned, vendor = analysis.parse_warnings(log, root, root / ".build/stage", "")
+            self.assertEqual(owned[0]["path"], "src/internal/color_conversion.h")
+            self.assertEqual(owned[0]["check"], "bugprone-test")
+            self.assertEqual(vendor, [])
+
     def test_tidy_parse_errors_fail_even_when_other_findings_are_empty(self):
         self.assertTrue(analysis.tidy_has_parse_error(
             "error: unsupported target flag [clang-diagnostic-error]"

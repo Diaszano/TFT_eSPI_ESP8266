@@ -15,7 +15,7 @@ from typing import Callable
 
 
 _WARNING = re.compile(
-    r"^(?P<path>.+?):(?P<line>\d+):\d+: warning: (?P<message>.*?)(?: \[(?P<check>-W[^]]+)\])?$"
+    r"^(?P<path>.+?):(?P<line>\d+):\d+: warning: (?P<message>.*?)(?: \[(?P<check>[^]]+)\])?$"
 )
 _PROFILE_FIELDS = {"platform", "toolchain", "setup_sha256", "flags"}
 _FINDING_FIELDS = {"path", "check", "message", "context_sha256", "line"}
@@ -35,10 +35,10 @@ def diagnostic_key(finding: dict[str, str | int]) -> tuple[str, str, str, str]:
 
 
 def compare_findings(
-    actual: list[dict], baseline: dict, profile: dict
+    actual: list[dict], baseline: dict, profile: dict, scope: str = "target"
 ) -> dict[str, list[dict]]:
     """Compare owned warnings to an exact target/profile baseline."""
-    if baseline.get("schema") != 1 or baseline.get("scope") != "target":
+    if baseline.get("schema") != 1 or baseline.get("scope") != scope:
         raise ValueError("unsupported diagnostic baseline schema or scope")
     _validate_profile(profile)
     if baseline.get("profile") != profile:
@@ -185,21 +185,93 @@ def map_compile_database(
     return [{"directory": str(directory), "file": str(source), "arguments": mapped}]
 
 
+def map_native_compile_database(
+    entries: list[dict], project: pathlib.Path, root: pathlib.Path
+) -> list[dict]:
+    """Map the real pure-color probe entry and reject missing or duplicate TUs."""
+    project, root = pathlib.Path(project).resolve(), pathlib.Path(root).resolve()
+    source = root / "test/analysis/color_probe.cpp"
+    candidates = []
+    for entry in entries:
+        directory = pathlib.Path(entry["directory"])
+        if not directory.is_absolute():
+            directory = project / directory
+        path = pathlib.Path(entry["file"])
+        if not path.is_absolute():
+            path = directory / path
+        if path.resolve() == (project / "analysis/color_probe.cpp").resolve():
+            candidates.append((entry, directory.resolve()))
+    if len(candidates) != 1:
+        raise ValueError(f"expected one native color probe translation unit, found {len(candidates)}")
+    entry, directory = candidates[0]
+    if not source.is_file() or (project / "analysis/color_probe.cpp").read_bytes() != source.read_bytes():
+        raise ValueError("native analysis probe is missing or stale")
+    arguments = entry.get("arguments")
+    if arguments is None:
+        arguments = shlex.split(entry["command"])
+    mapped = []
+    for argument in arguments:
+        if argument == "analysis/color_probe.cpp" or argument == str(project / "analysis/color_probe.cpp"):
+            mapped.append(str(source))
+        elif argument == "-I../src":
+            mapped.append("-I" + str(root / "src"))
+        else:
+            mapped.append(argument)
+    if str(source) not in mapped:
+        mapped.append(str(source))
+    return [{"directory": str(directory), "file": str(source), "arguments": mapped}]
+
+
 def prepare_compile_database(project: pathlib.Path, root: pathlib.Path, scope: str) -> pathlib.Path:
-    if scope != "target":
-        raise ValueError("only the target compile database is supported by this pilot")
     project, root = pathlib.Path(project).resolve(), pathlib.Path(root).resolve()
     database_path = project / "compile_commands.json"
     entries = json.loads(database_path.read_text())
-    stage = project / "lib/pio-library"
-    mapped = map_compile_database(entries, stage, root)
+    if scope == "target":
+        mapped = map_compile_database(entries, project / "lib/pio-library", root)
+    elif scope == "native":
+        mapped = map_native_compile_database(entries, project, root)
+    else:
+        raise ValueError(f"unsupported compilation database scope: {scope}")
     output = root / ".build/analysis/compile_commands.json"
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(json.dumps(mapped, indent=2) + "\n")
     return output
 
 
-def run_tidy(root: pathlib.Path, executable: str = "clang-tidy") -> int:
+def native_profile(
+    root: pathlib.Path, entry: dict, clang_tidy_version: str, checks: str
+) -> dict:
+    root = pathlib.Path(root).resolve()
+    args = entry.get("arguments") or shlex.split(entry["command"])
+    compiler = shutil.which(args[0]) or args[0]
+    compiler_version = subprocess.run(
+        [compiler, "--version"], capture_output=True, text=True, check=False
+    )
+    if compiler_version.returncode or not compiler_version.stdout.splitlines():
+        raise RuntimeError("cannot identify the native compiler from the compile database")
+    version_match = re.search(r"(\d+\.\d+\.\d+)$", compiler_version.stdout.splitlines()[0])
+    if not version_match:
+        raise RuntimeError("native compiler version format is unknown")
+    settings = root / "test/platformio.ini"
+    config = root / ".clang-tidy"
+    flags = [arg.replace(str(root), "$ROOT") for arg in args if arg.startswith(("-D", "-I", "-std"))]
+    return {
+        "platform": "native@1.2.1",
+        "toolchain": f"{pathlib.Path(compiler).name} {version_match.group(1)}",
+        "setup_sha256": hashlib.sha256(settings.read_bytes()).hexdigest(),
+        "clang_tidy": re.search(r"version ([0-9.]+)", clang_tidy_version).group(1),
+        "config_sha256": hashlib.sha256(config.read_bytes()).hexdigest(),
+        "checks_sha256": hashlib.sha256(checks.encode()).hexdigest(),
+        "flags": flags,
+    }
+
+
+def run_tidy(
+    root: pathlib.Path,
+    scope: str = "target",
+    baseline_path: pathlib.Path | None = None,
+    executable: str = "clang-tidy",
+) -> int:
     root = pathlib.Path(root).resolve()
     database = root / ".build/analysis/compile_commands.json"
     entries = json.loads(database.read_text())
@@ -213,6 +285,14 @@ def run_tidy(root: pathlib.Path, executable: str = "clang-tidy") -> int:
         raise RuntimeError("target pilot requires clang-tidy 22.1.8")
     config = root / ".clang-tidy"
     subprocess.run([executable_path, "--verify-config", f"--config-file={config}"], check=True)
+    checks = subprocess.run(
+        [executable_path, "--list-checks", f"--config-file={config}"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if checks.returncode:
+        raise RuntimeError("cannot enumerate clang-tidy checks")
     source = entries[0]["file"]
     result = subprocess.run(
         [
@@ -227,11 +307,31 @@ def run_tidy(root: pathlib.Path, executable: str = "clang-tidy") -> int:
         text=True,
         check=False,
     )
+    output = result.stdout + result.stderr
     report = root / ".build/analysis/tidy.log"
-    report.write_text(result.stdout + result.stderr)
-    if result.returncode or tidy_has_parse_error(result.stdout + result.stderr):
-        print((result.stdout + result.stderr).rstrip(), file=sys.stderr)
+    report.write_text(output)
+    if result.returncode or tidy_has_parse_error(output):
+        print(output.rstrip(), file=sys.stderr)
         return 1
+    if scope == "native":
+        findings, vendor = parse_warnings(output, root, root / "src", "")
+        if baseline_path is None:
+            raise ValueError("native tidy requires a reviewed native baseline")
+        profile = native_profile(
+            root, entries[0], version.stdout + version.stderr, checks.stdout + checks.stderr
+        )
+        baseline = json.loads(pathlib.Path(baseline_path).read_text())
+        result = compare_findings(findings, baseline, profile, scope="native")
+        (root / ".build/analysis/native-report.json").write_text(
+            json.dumps(
+                {"scope": "native", "profile": profile, "findings": findings, "vendor": vendor, **result},
+                indent=2,
+            )
+            + "\n"
+        )
+        if result["new"] or result["resolved"]:
+            print(f"native findings: {len(findings)}; new: {len(result['new'])}; resolved: {len(result['resolved'])}")
+            return 1
     return 0
 
 
@@ -312,16 +412,25 @@ def parse_warnings(
 def _map_owned_path(
     path: pathlib.Path, root: pathlib.Path, stage: pathlib.Path, example: str
 ) -> tuple[str, pathlib.Path] | None:
-    try:
-        resolved = path.resolve()
-        return "src/" + resolved.relative_to(stage / "src").as_posix(), root / "src" / resolved.relative_to(stage / "src")
-    except ValueError:
-        pass
+    for source_root in (stage / "src", root / "src"):
+        try:
+            resolved = path.resolve()
+            relative = resolved.relative_to(source_root)
+            return "src/" + relative.as_posix(), root / "src" / relative
+        except ValueError:
+            pass
     try:
         resolved = path.resolve()
         relative = resolved.relative_to(root / "examples")
         source = root / "examples" / relative
         return "examples/" + relative.as_posix(), source
+    except ValueError:
+        pass
+    try:
+        resolved = path.resolve()
+        relative = resolved.relative_to(root / "test")
+        source = root / "test" / relative
+        return "test/" + relative.as_posix(), source
     except ValueError:
         pass
     try:
@@ -419,9 +528,10 @@ def main() -> int:
         "prepare", help="validate and map a target compilation database"
     )
     prepare_parser.add_argument("--project", type=pathlib.Path, required=True)
-    prepare_parser.add_argument("--scope", choices=["target"], required=True)
+    prepare_parser.add_argument("--scope", choices=["target", "native"], required=True)
     tidy_parser = subparsers.add_parser("tidy", help="run the pinned target parsing pilot")
-    tidy_parser.add_argument("--scope", choices=["target"], required=True)
+    tidy_parser.add_argument("--scope", choices=["target", "native"], required=True)
+    tidy_parser.add_argument("--baseline", type=pathlib.Path)
     cppcheck_parser = subparsers.add_parser(
         "cppcheck", help="run optional cppcheck on staged library"
     )
@@ -438,7 +548,7 @@ def main() -> int:
             return 0
         if args.command == "tidy":
             root = pathlib.Path(__file__).resolve().parents[1]
-            return run_tidy(root)
+            return run_tidy(root, args.scope, args.baseline)
         if args.command == "cppcheck":
             root = pathlib.Path(__file__).resolve().parents[1]
             return run_cppcheck(args.project, root)

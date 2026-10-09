@@ -18,6 +18,8 @@ Execute `make warnings` para reconstruir os 14 exemplos em `.build/warnings/` co
 
 `make cppcheck` é um piloto opcional do PlatformIO sobre o código-fonte da biblioteca preparada, incluindo os fragmentos `.inc`. O piloto resolveu o cppcheck 2.11 (`tool-cppcheck` 1.21100.230717) e relatou 24 avisos existentes em `.build/analysis/cppcheck.json`. O comando apenas gera um relatório, não tem linha de base e não é executado na CI.
 
+`make tidy-native` executa a verificação obrigatória clang-tidy 22.1.8 somente no probe de conversão de cores e no header compartilhado. Execute `make compiledb-native` para atualizar esse banco nativo; `.clangd` o usa para o probe. Esse escopo host não representa a análise do alvo ESP8266.
+
 | Alvo | Finalidade |
 | --- | --- |
 | `make build` | Compila todos os exemplos selecionados. |
@@ -30,6 +32,8 @@ Execute `make warnings` para reconstruir os 14 exemplos em `.build/warnings/` co
 | `make compiledb` | Valida e mapeia o banco de compilação do alvo. |
 | `make tidy` | Executa o piloto não obrigatório do parser clang-tidy para Xtensa. |
 | `make cppcheck` | Gera o relatório cppcheck opcional do código preparado da biblioteca. |
+| `make compiledb-native` | Prepara o banco nativo do probe de cores. |
+| `make tidy-native` | Verifica somente o probe e o header de conversão de cores. |
 | `make docs-check` | Verifica pares de documentação, links e referências a APIs removidas. |
 | `make docs` | Executa as verificações da documentação e gera a referência da API. |
 | `make help` | Lista os alvos disponíveis. |

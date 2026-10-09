@@ -34,6 +34,7 @@ jobs:
       - run: gitleaks dir . --redact
       - run: python3 -m unittest -q scripts/test_ci_config.py
       - run: make test-native
+      - run: make tidy-native
       - run: make test-host
       - run: python3 -m unittest discover -s scripts -p 'test_*.py' -v
       - run: make check-version

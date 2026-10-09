@@ -16,6 +16,8 @@ Run `make warnings` to rebuild all 14 examples in `.build/warnings/` with `-Wall
 
 `make cppcheck` is an optional PlatformIO pilot over the staged library source, including its `.inc` fragments. The pilot resolved cppcheck 2.11 (`tool-cppcheck` 1.21100.230717) and reported 24 existing findings to `.build/analysis/cppcheck.json`. It is a report only, has no baseline, and does not run in CI.
 
+`make tidy-native` runs the required clang-tidy 22.1.8 check for the pure color-conversion probe and shared header only. Run `make compiledb-native` to refresh that native database; `.clangd` uses it for the probe. This host scope says nothing about parsing the ESP8266 library target.
+
 | Target | Purpose |
 | --- | --- |
 | `make build` | Compile all curated examples. |
@@ -28,6 +30,8 @@ Run `make warnings` to rebuild all 14 examples in `.build/warnings/` with `-Wall
 | `make compiledb` | Validate and map the target compilation database. |
 | `make tidy` | Run the non-gating Xtensa clang-tidy parsing pilot. |
 | `make cppcheck` | Run the optional staged-library cppcheck report. |
+| `make compiledb-native` | Prepare the native color-probe database. |
+| `make tidy-native` | Check the pure color probe and shared header. |
 | `make docs-check` | Check documentation pairs, links and removed API references. |
 | `make docs` | Run the documentation checks and generate the API reference. |
 | `make help` | List available targets. |

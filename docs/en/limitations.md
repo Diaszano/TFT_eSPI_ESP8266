@@ -22,6 +22,6 @@ The package is named `TFT_eSPI_ESP8266`; sketches continue to include `TFT_eSPI.
 
 The compiler-warning gate covers owned source compiled through the pinned ESP8266 PlatformIO profile. Framework and vendor warnings are reported separately; this gate does not claim clang-tidy coverage.
 
-The clang-tidy 22.1.8 target pilot currently fails to parse ESP8266 Xtensa flags and SDK headers. Its compilation database is validated, but no target tidy findings are baselined and no target tidy CI gate is enabled. The native PlatformIO `run -t compiledb` database currently contains Unity itself but not the test translation unit, and `pio test` has no compiledb target; native-only analysis also lacks a complete database.
+The clang-tidy 22.1.8 target pilot currently fails to parse ESP8266 Xtensa flags and SDK headers. Its compilation database is validated, but no target tidy findings are baselined and no target tidy CI gate is enabled. PlatformIO's ordinary native database omits Unity test sources, so the separate analysis environment compiles one real probe for the pure color helpers. The required native tidy gate covers that probe and `color_conversion.h` only; it does not claim whole-library analysis.
 
 The optional cppcheck 2.11 pilot scans the staged library and reports existing findings; it is not a clean or required gate. Its resolved analyzer package must be reviewed and pinned before any future required use.

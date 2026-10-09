@@ -8,7 +8,7 @@ SIZE_LABEL ?= current
 JOBS ?= $(shell nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 1)
 VERSION := $(shell python3 -c "import json;print(json.load(open('library.json'))['version'])")
 
-.PHONY: build $(addprefix build-,$(EXAMPLES)) upload uploadfs monitor clean help docs-check docs-examples docs-api docs setup lint lint-update check-version size-check warnings compiledb tidy cppcheck format format-check test-native test-host test-compile FORCE
+.PHONY: build $(addprefix build-,$(EXAMPLES)) upload uploadfs monitor clean help docs-check docs-examples docs-api docs setup lint lint-update check-version size-check warnings compiledb compiledb-native tidy tidy-native cppcheck format format-check test-native test-host test-compile FORCE
 
 format:
 	python3 scripts/format.py --write
@@ -111,11 +111,18 @@ compiledb: build-TFT_Print_Test
 	pio run -d .build/TFT_Print_Test -e nodemcuv2 -t compiledb
 	python3 scripts/analysis.py prepare --project .build/TFT_Print_Test --scope target
 
+compiledb-native:
+	pio run -d test -e analysis-native -t compiledb
+	python3 scripts/analysis.py prepare --project test --scope native
+
 tidy: compiledb
 	python3 scripts/analysis.py tidy --scope target
+
+tidy-native: compiledb-native
+	python3 scripts/analysis.py tidy --scope native --baseline scripts/analysis-native-baseline.json
 
 cppcheck: build-TFT_Print_Test
 	python3 scripts/analysis.py cppcheck --project .build/TFT_Print_Test
 
 help:
-	@printf '%s\n' 'build: compile all curated examples' 'build-<Nome>: compile one example' 'upload EX=<Nome> [PORT=<port>]: upload one example' 'uploadfs EX=<Nome> [PORT=<port>]: upload example filesystem' 'monitor [PORT=<port>]: open serial monitor' 'clean: remove build files' 'warnings: compare owned compiler warnings across all examples' 'compiledb: prepare the target clang-tidy database' 'tidy: run the target clang-tidy parsing pilot' 'cppcheck: run the optional PlatformIO cppcheck pilot' 'test-host: run source-extracted ASan/UBSan host regressions' 'docs-check: validate documentation pairs, links and removed APIs' 'docs-examples: compile README and Sprite guide examples' 'docs-api: generate the Doxygen API reference' 'docs: validate docs and generate the API reference' 'setup: install lint tools and hooks' 'lint: run pre-commit checks and version check' 'lint-update: update pre-commit hook revisions' 'check-version: verify package versions' 'help: show this help'
+	@printf '%s\n' 'build: compile all curated examples' 'build-<Nome>: compile one example' 'upload EX=<Nome> [PORT=<port>]: upload one example' 'uploadfs EX=<Nome> [PORT=<port>]: upload example filesystem' 'monitor [PORT=<port>]: open serial monitor' 'clean: remove build files' 'warnings: compare owned compiler warnings across all examples' 'compiledb: prepare the target clang-tidy database' 'compiledb-native: prepare the native pure-logic database' 'tidy: run the target clang-tidy parsing pilot' 'tidy-native: analyze pure color helpers on native' 'cppcheck: run the optional PlatformIO cppcheck pilot' 'test-host: run source-extracted ASan/UBSan host regressions' 'docs-check: validate documentation pairs, links and removed APIs' 'docs-examples: compile README and Sprite guide examples' 'docs-api: generate the Doxygen API reference' 'docs: validate docs and generate the API reference' 'setup: install lint tools and hooks' 'lint: run pre-commit checks and version check' 'lint-update: update pre-commit hook revisions' 'check-version: verify package versions' 'help: show this help'
