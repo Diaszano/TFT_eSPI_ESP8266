@@ -39,6 +39,8 @@ tft.unloadFont();
 
 `Font_Demo_1_Array` demonstra como incorporar os dados da fonte em um array de flash em vez de usar um sistema de arquivos. O projeto opcional Processing em `extras/Create_Smooth_Font/Create_font` gera arquivos de fontes suaves `.vlw`.
 
+Fontes no sistema de arquivos são verificadas quanto ao cabeçalho VLW completo, versão 11, métricas de glifo representáveis e bytes de bitmap dentro do arquivo. Se o arquivo for encurtado após o carregamento, o desenho do glifo é interrompido e a fonte é liberada. A sobrecarga que recebe um array em flash não recebe seu tamanho e, portanto, não detecta um array truncado; passe todos os dados da fonte gerada.
+
 ## Converter BMP para sprites de 4 bits
 
 Use `Tools/bmp2array4bit` para converter um BMP indexado em arrays de paleta e pixels; a ferramenta não converte fontes. Remova a transparência, converta a imagem para cores indexadas com no máximo 16 cores e exporte sem codificação run-length. Depois execute `python bmp2array4bit.py imagem.bmp -o imagem.c`.

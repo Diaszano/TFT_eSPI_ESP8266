@@ -1384,7 +1384,7 @@ class TFT_eSPI : public Print {
 
  private:
   bool loadMetrics(void);
-  uint32_t readInt32(void);
+  bool readInt32(uint32_t& value);
 
   uint8_t* fontPtr = nullptr;
 #endif

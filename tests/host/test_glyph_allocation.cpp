@@ -6,13 +6,17 @@ namespace fs {
 enum SeekMode { SeekSet };
 class File {
  public:
+  explicit operator bool() const { return true; }
+  void close() {}
   bool seek(uint32_t, SeekMode) { return true; }
   size_t read(uint8_t*, size_t) { return 0; }
 };
 }  // namespace fs
 
 static int starts = 0, ends = 0, draws = 0;
-void* failed_malloc(size_t) { return nullptr; }
+void* failed_malloc(size_t) {
+  return nullptr;
+}
 #define malloc failed_malloc
 
 struct Metrics {
@@ -21,11 +25,19 @@ struct Metrics {
   int16_t ascent = 2, descent = 0;
   uint16_t maxAscent = 2, maxDescent = 0;
 };
-uint8_t pgm_read_byte(const uint8_t* value) { return *value; }
+uint8_t pgm_read_byte(const uint8_t* value) {
+  return *value;
+}
 
 class TFT_eSPI {
  public:
-  Metrics gFont;
+  struct Metrics {
+    const uint8_t* gArray = nullptr;
+    uint16_t gCount = 1, yAdvance = 4, spaceWidth = 1;
+    int16_t ascent = 2, descent = 0;
+    uint16_t maxAscent = 2, maxDescent = 0;
+  } gFont;
+  uint16_t* gUnicode = nullptr;
   uint8_t* gHeight = nullptr;
   uint8_t* gWidth = nullptr;
   uint8_t* gxAdvance = nullptr;
@@ -40,7 +52,11 @@ class TFT_eSPI {
   uint16_t (*getColor)(int, int) = nullptr;
 
   void drawGlyph(uint16_t code);
-  bool getUnicodeIndex(uint16_t, uint16_t* index) { *index = 0; return true; }
+  void unloadFont();
+  bool getUnicodeIndex(uint16_t, uint16_t* index) {
+    *index = 0;
+    return true;
+  }
   int width() const { return 100; }
   int height() const { return 100; }
   void startWrite() { ++starts; }

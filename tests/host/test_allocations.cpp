@@ -8,12 +8,14 @@ using host_test::allocation_number;
 using host_test::fail_at;
 using host_test::outstanding;
 using host_test::tracked_free;
-#define malloc host_test::tracked_malloc
-#define calloc host_test::tracked_calloc
-#define free host_test::tracked_free
+#define malloc    host_test::tracked_malloc
+#define calloc    host_test::tracked_calloc
+#define free      host_test::tracked_free
 #define TFT_BLACK 0
 
-uint16_t pgm_read_word(const uint16_t* value) { return *value; }
+uint16_t pgm_read_word(const uint16_t* value) {
+  return *value;
+}
 const uint16_t default_4bit_palette[16] = {};
 namespace tft_espi_internal {
 uint32_t sprite_frame2_offset_16bpp(int16_t width, int16_t height) {
@@ -41,7 +43,11 @@ class TFT_eSPI {
   uint32_t values[7] = {65, 2, 2, 3, 2, 0, 0};
   uint32_t value_index = 0;
 
-  uint32_t readInt32() { return values[value_index++]; }
+  bool readInt32(uint32_t& value) {
+    if (value_index >= 7) return false;
+    value = values[value_index++];
+    return true;
+  }
   void yield() {}
   bool loadMetrics();
   void unloadFont();

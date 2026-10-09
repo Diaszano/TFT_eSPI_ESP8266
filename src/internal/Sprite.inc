@@ -2337,9 +2337,12 @@ void TFT_eSprite::drawGlyph(uint16_t code) {
 
 #ifdef FONT_FS_AVAILABLE
     if (fs_font) {
-      fontFile.seek(gBitmap[gNum],
-                    fs::SeekSet);  // This is slow for a significant position shift!
-      pbuffer = (uint8_t*)malloc(gWidth[gNum]);
+      if (!fontFile.seek(gBitmap[gNum], fs::SeekSet)) {
+        unloadFont();
+        if (newSprite) deleteSprite();
+        return;
+      }
+      pbuffer = (uint8_t*)malloc(gWidth[gNum] ? gWidth[gNum] : 1);
       if (pbuffer == nullptr) {
         if (newSprite) deleteSprite();
         return;
@@ -2390,7 +2393,12 @@ void TFT_eSprite::drawGlyph(uint16_t code) {
     for (int32_t y = 0; y < gHeight[gNum]; y++) {
 #ifdef FONT_FS_AVAILABLE
       if (fs_font) {
-        fontFile.read(pbuffer, gWidth[gNum]);
+        if (fontFile.read(pbuffer, gWidth[gNum]) != gWidth[gNum]) {
+          free(pbuffer);
+          unloadFont();
+          if (newSprite) deleteSprite();
+          return;
+        }
       }
 #endif
 
