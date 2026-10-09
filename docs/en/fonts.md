@@ -35,4 +35,8 @@ tft.drawString("Smooth text", 10, 20);
 tft.unloadFont();
 ```
 
-`Font_Demo_1_Array` demonstrates embedding font data in a flash array instead of a filesystem. Creating `.vlw` files is supported by the Processing sketch in `extras/Create_Smooth_Font/Create_font`. `Tools/bmp2array4bit` converts indexed BMP images into palette and pixel arrays for 4-bit sprites; it does not convert fonts.
+`Font_Demo_1_Array` demonstrates embedding font data in a flash array instead of a filesystem. The optional Processing project in `extras/Create_Smooth_Font/Create_font` generates `.vlw` smooth-font files.
+
+## Convert BMP images for four-bit sprites
+
+Use `Tools/bmp2array4bit` to turn an indexed BMP into palette and pixel arrays; it does not convert fonts. Remove transparency, convert the image to indexed color with at most 16 colors, and export without run-length encoding. Then run `python bmp2array4bit.py image.bmp -o image.c`.

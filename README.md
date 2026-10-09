@@ -47,4 +47,4 @@ void loop() {}
 - [Development](docs/en/development.md)
 - [API reference](https://diaszano.github.io/TFT_eSPI_ESP8266/)
 
-This library is based on [Bodmer/TFT_eSPI](https://github.com/Bodmer/TFT_eSPI) 2.5.44. See [license.txt](license.txt) for the license.
+This fork is maintained by Lucas Dias (Diaszano) and is based on [Bodmer/TFT_eSPI](https://github.com/Bodmer/TFT_eSPI) 2.5.44. The package release version is maintained in the library manifests; `TFT_ESPI_VERSION` intentionally identifies the inherited 2.5.44 source baseline. Upstream and contributor notices remain in [license.txt](license.txt).

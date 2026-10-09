@@ -47,4 +47,4 @@ void loop() {}
 - [Desenvolvimento](docs/pt-BR/development.md)
 - [Referência da API](https://diaszano.github.io/TFT_eSPI_ESP8266/)
 
-Esta biblioteca é baseada em [Bodmer/TFT_eSPI](https://github.com/Bodmer/TFT_eSPI) 2.5.44. Consulte a [licença](license.txt).
+Este fork é mantido por Lucas Dias (Diaszano) e baseado em [Bodmer/TFT_eSPI](https://github.com/Bodmer/TFT_eSPI) 2.5.44. A versão de lançamento do pacote é controlada pelos manifests da biblioteca; `TFT_ESPI_VERSION` identifica intencionalmente a base de código herdada 2.5.44. Os avisos do projeto original e dos contribuidores permanecem em [license.txt](license.txt).
