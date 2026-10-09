@@ -1,4 +1,5 @@
 #include <TFT_eSPI.h>
+#include <Extensions/Sprite.h>
 TFT_eSPI display;
 TFT_eSprite sprite(&display);
 void setup() {

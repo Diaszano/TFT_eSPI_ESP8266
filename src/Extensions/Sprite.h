@@ -1,3 +1,6 @@
+// This header is also included by TFT_eSPI.h.
+#pragma once
+
 /// @file
 /// @brief Public sprite API for TFT_eSPI on ESP8266.
 /***************************************************************************************
