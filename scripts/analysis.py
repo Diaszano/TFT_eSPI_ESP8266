@@ -7,6 +7,7 @@ import json
 import pathlib
 import platform
 import re
+import shlex
 import shutil
 import subprocess
 import sys
@@ -131,6 +132,157 @@ def build_warning_profile(
     if not logs:
         raise ValueError("warning profile has no examples")
     return logs
+
+
+def map_compile_database(
+    entries: list[dict], stage: pathlib.Path, root: pathlib.Path
+) -> list[dict]:
+    """Map exactly one byte-identical staged library translation unit to the checkout."""
+    stage, root = pathlib.Path(stage).resolve(), pathlib.Path(root).resolve()
+    candidates = []
+    for entry in entries:
+        directory = pathlib.Path(entry["directory"])
+        if not directory.is_absolute():
+            directory = root / directory
+        source = pathlib.Path(entry["file"])
+        if not source.is_absolute():
+            source = directory / source
+        try:
+            relative = source.resolve().relative_to(stage / "src")
+        except ValueError:
+            continue
+        candidates.append((entry, relative, directory.resolve()))
+    if len(candidates) != 1:
+        raise ValueError(f"expected one staged library translation unit, found {len(candidates)}")
+
+    entry, relative, directory = candidates[0]
+    staged_source, source = stage / "src" / relative, root / "src" / relative
+    if (
+        not source.is_file()
+        or not staged_source.is_file()
+        or source.read_bytes() != staged_source.read_bytes()
+    ):
+        raise ValueError(f"staged library source is missing or stale: {relative}")
+    arguments = entry.get("arguments")
+    if arguments is None:
+        arguments = shlex.split(entry["command"])
+    mapped = []
+    stage_prefix = str(stage) + "/"
+    root_prefix = str(root) + "/"
+    for argument in arguments:
+        if argument == str(source) or argument == str(staged_source):
+            mapped.append(str(source))
+        elif argument.startswith(stage_prefix):
+            mapped.append(root_prefix + argument[len(stage_prefix):])
+        elif argument.startswith("-Ilib/pio-library/"):
+            mapped.append("-I" + str(root / argument[len("-Ilib/pio-library/"):]))
+        elif argument.startswith("lib/pio-library/"):
+            mapped.append(str(root / argument[len("lib/pio-library/"):]))
+        else:
+            mapped.append(argument)
+    if str(source) not in mapped:
+        mapped.append(str(source))
+    return [{"directory": str(directory), "file": str(source), "arguments": mapped}]
+
+
+def prepare_compile_database(project: pathlib.Path, root: pathlib.Path, scope: str) -> pathlib.Path:
+    if scope != "target":
+        raise ValueError("only the target compile database is supported by this pilot")
+    project, root = pathlib.Path(project).resolve(), pathlib.Path(root).resolve()
+    database_path = project / "compile_commands.json"
+    entries = json.loads(database_path.read_text())
+    stage = project / "lib/pio-library"
+    mapped = map_compile_database(entries, stage, root)
+    output = root / ".build/analysis/compile_commands.json"
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text(json.dumps(mapped, indent=2) + "\n")
+    return output
+
+
+def run_tidy(root: pathlib.Path, executable: str = "clang-tidy") -> int:
+    root = pathlib.Path(root).resolve()
+    database = root / ".build/analysis/compile_commands.json"
+    entries = json.loads(database.read_text())
+    executable_path = shutil.which(executable)
+    if not executable_path:
+        raise RuntimeError("clang-tidy 22.1.8 is required for the target pilot")
+    version = subprocess.run(
+        [executable_path, "--version"], capture_output=True, text=True, check=False
+    )
+    if version.returncode or "22.1.8" not in version.stdout + version.stderr:
+        raise RuntimeError("target pilot requires clang-tidy 22.1.8")
+    config = root / ".clang-tidy"
+    subprocess.run([executable_path, "--verify-config", f"--config-file={config}"], check=True)
+    source = entries[0]["file"]
+    result = subprocess.run(
+        [
+            executable_path,
+            "-p",
+            str(database.parent),
+            f"--config-file={config}",
+            "--warnings-as-errors=clang-diagnostic-error",
+            source,
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    report = root / ".build/analysis/tidy.log"
+    report.write_text(result.stdout + result.stderr)
+    if result.returncode or tidy_has_parse_error(result.stdout + result.stderr):
+        print((result.stdout + result.stderr).rstrip(), file=sys.stderr)
+        return 1
+    return 0
+
+
+def tidy_has_parse_error(output: str) -> bool:
+    return "[clang-diagnostic-error]" in output or "Found compiler error(s)." in output
+
+
+def run_cppcheck(
+    project: pathlib.Path,
+    root: pathlib.Path,
+    run: Callable = subprocess.run,
+) -> int:
+    project, root = pathlib.Path(project).resolve(), pathlib.Path(root).resolve()
+    if not (project / "lib/pio-library/src/TFT_eSPI.cpp").is_file():
+        raise ValueError("generated project does not contain the staged library source")
+    analysis_dir = root / ".build/analysis"
+    analysis_dir.mkdir(parents=True, exist_ok=True)
+    config = project / ".pio-analysis.ini"
+    config.write_text(
+        (project / "platformio.ini").read_text().rstrip() + "\ncheck_tool = cppcheck\n"
+    )
+    command = [
+        "pio",
+        "check",
+        "--project-dir",
+        str(project),
+        "--project-conf",
+        str(config),
+        "--environment",
+        "nodemcuv2",
+        "--src-filters",
+        "+<lib/pio-library/>",
+        "--flags",
+        "cppcheck: --enable=warning,performance,portability --std=c++11",
+        "--json-output",
+    ]
+    result = run(command, capture_output=True, text=True, check=False)
+    report = result.stdout or ""
+    try:
+        start = report.index("[")
+        defects = json.JSONDecoder().raw_decode(report[start:])[0]
+        report = json.dumps(defects, indent=2) + "\n"
+    except (ValueError, json.JSONDecodeError):
+        (analysis_dir / "cppcheck.log").write_text(report + (result.stderr or ""))
+        if result.returncode == 0:
+            raise ValueError("PlatformIO cppcheck output did not contain JSON")
+    else:
+        (analysis_dir / "cppcheck.json").write_text(report)
+    if result.returncode:
+        print((report + (result.stderr or "")).rstrip(), file=sys.stderr)
+    return result.returncode
 
 
 def parse_warnings(
@@ -263,15 +415,42 @@ def main() -> int:
     warning_parser.add_argument("--all-examples", action="store_true", required=True)
     warning_parser.add_argument("--flags", required=True)
     warning_parser.add_argument("--baseline", type=pathlib.Path, required=True)
+    prepare_parser = subparsers.add_parser(
+        "prepare", help="validate and map a target compilation database"
+    )
+    prepare_parser.add_argument("--project", type=pathlib.Path, required=True)
+    prepare_parser.add_argument("--scope", choices=["target"], required=True)
+    tidy_parser = subparsers.add_parser("tidy", help="run the pinned target parsing pilot")
+    tidy_parser.add_argument("--scope", choices=["target"], required=True)
+    cppcheck_parser = subparsers.add_parser(
+        "cppcheck", help="run optional cppcheck on staged library"
+    )
+    cppcheck_parser.add_argument("--project", type=pathlib.Path, required=True)
     args = parser.parse_args()
-    if args.command == "warnings":
-        try:
+    try:
+        if args.command == "warnings":
             flags = args.flags.split()
             root = pathlib.Path(__file__).resolve().parents[1]
             return warnings(root, args.baseline, flags)
-        except (OSError, ValueError, RuntimeError, json.JSONDecodeError) as error:
-            print(f"analysis: {error}", file=sys.stderr)
-            return 2
+        if args.command == "prepare":
+            root = pathlib.Path(__file__).resolve().parents[1]
+            print(prepare_compile_database(args.project, root, args.scope))
+            return 0
+        if args.command == "tidy":
+            root = pathlib.Path(__file__).resolve().parents[1]
+            return run_tidy(root)
+        if args.command == "cppcheck":
+            root = pathlib.Path(__file__).resolve().parents[1]
+            return run_cppcheck(args.project, root)
+    except (
+        OSError,
+        ValueError,
+        RuntimeError,
+        json.JSONDecodeError,
+        subprocess.SubprocessError,
+    ) as error:
+        print(f"analysis: {error}", file=sys.stderr)
+        return 2
     return 2
 
 

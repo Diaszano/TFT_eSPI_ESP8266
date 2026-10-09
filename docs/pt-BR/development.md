@@ -14,6 +14,10 @@ Use `make docs-examples` para compilar os primeiros exemplos C++ dos dois README
 
 Execute `make warnings` para reconstruir os 14 exemplos em `.build/warnings/` com `-Wall -Wextra`. A linha de base de avisos próprios é revisada manualmente; novos avisos falham, avisos resolvidos são relatados para remoção e os avisos do framework/core ficam em um relatório separado. Não edite a linha de base automaticamente.
 
+`make compiledb` prepara o banco de compilação Xtensa verificado. `make tidy` executa um piloto opcional do parser clang-tidy 22.1.8 para o alvo; as flags atuais do compilador ESP8266 e os cabeçalhos do SDK geram erros de análise, portanto não é uma verificação obrigatória. Consulte a documentação [LLVM 22.1.8](https://raw.githubusercontent.com/llvm/llvm-project/llvmorg-22.1.8/clang-tools-extra/docs/clang-tidy/index.rst) e [LLVM 23.1.2](https://raw.githubusercontent.com/llvm/llvm-project/llvmorg-23.1.2/clang-tools-extra/docs/clang-tidy/index.rst) para as versões do piloto e da documentação solicitada.
+
+`make cppcheck` é um piloto opcional do PlatformIO sobre o código-fonte da biblioteca preparada, incluindo os fragmentos `.inc`. O piloto resolveu o cppcheck 2.11 (`tool-cppcheck` 1.21100.230717) e relatou 24 avisos existentes em `.build/analysis/cppcheck.json`. O comando apenas gera um relatório, não tem linha de base e não é executado na CI.
+
 | Alvo | Finalidade |
 | --- | --- |
 | `make build` | Compila todos os exemplos selecionados. |
@@ -23,6 +27,9 @@ Execute `make warnings` para reconstruir os 14 exemplos em `.build/warnings/` co
 | `make monitor PORT=<port>` | Abre o monitor serial. |
 | `make clean` | Remove os arquivos gerados de build. |
 | `make warnings` | Reconstrói os exemplos e verifica avisos próprios do compilador. |
+| `make compiledb` | Valida e mapeia o banco de compilação do alvo. |
+| `make tidy` | Executa o piloto não obrigatório do parser clang-tidy para Xtensa. |
+| `make cppcheck` | Gera o relatório cppcheck opcional do código preparado da biblioteca. |
 | `make docs-check` | Verifica pares de documentação, links e referências a APIs removidas. |
 | `make docs` | Executa as verificações da documentação e gera a referência da API. |
 | `make help` | Lista os alvos disponíveis. |

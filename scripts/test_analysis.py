@@ -1,3 +1,4 @@
+import json
 import pathlib
 import subprocess
 import sys
@@ -86,6 +87,102 @@ class AnalysisTests(unittest.TestCase):
             self.assertEqual(owned[0]["path"], "src/internal/Sprite.inc")
             self.assertEqual(owned[0]["check"], "-Wunused-variable")
             self.assertEqual(len(third_party), 1)
+
+    def test_compile_database_maps_one_verified_library_translation_unit(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = pathlib.Path(directory)
+            project = root / ".build/TFT_Print_Test"
+            stage = project / "lib/pio-library"
+            source = root / "src/TFT_eSPI.cpp"
+            staged_source = stage / "src/TFT_eSPI.cpp"
+            source.parent.mkdir(parents=True)
+            staged_source.parent.mkdir(parents=True)
+            source.write_text("int library_source;\n")
+            staged_source.write_text(source.read_text())
+            command = [
+                "xtensa-g++", "-std=gnu++17", "-DUSER_SETUP_LOADED",
+                "-include", "setup file.h", "-Ilib/pio-library/src",
+                "-o", ".pio/file.o", "-c", "lib/pio-library/src/TFT_eSPI.cpp",
+            ]
+            entry = {
+                "directory": str(project),
+                "file": "lib/pio-library/src/TFT_eSPI.cpp",
+                "arguments": command,
+            }
+            mapped = analysis.map_compile_database([entry], stage, root)
+            self.assertEqual(len(mapped), 1)
+            self.assertEqual(mapped[0]["file"], str(source))
+            self.assertEqual(mapped[0]["directory"], str(project))
+            self.assertEqual(mapped[0]["arguments"], [
+                "xtensa-g++", "-std=gnu++17", "-DUSER_SETUP_LOADED",
+                "-include", "setup file.h", "-I" + str(root / "src"),
+                "-o", ".pio/file.o", "-c", str(source),
+            ])
+
+    def test_compile_database_rejects_stale_missing_or_extra_library_sources(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = pathlib.Path(directory)
+            stage = root / ".build/project/lib/pio-library"
+            source = root / "src/TFT_eSPI.cpp"
+            staged = stage / "src/TFT_eSPI.cpp"
+            source.parent.mkdir(parents=True)
+            staged.parent.mkdir(parents=True)
+            source.write_text("int original;\n")
+            staged.write_text("int changed;\n")
+            entry = {
+                "directory": str(root),
+                "file": str(staged),
+                "arguments": ["g++", "-c", str(staged)],
+            }
+            with self.assertRaises(ValueError):
+                analysis.map_compile_database([entry], stage, root)
+            staged.write_text(source.read_text())
+            with self.assertRaises(ValueError):
+                analysis.map_compile_database([], stage, root)
+            with self.assertRaises(ValueError):
+                extra = stage / "src/Sprite.cpp"
+                extra.write_text("int other;\\n")
+                extra_entry = {**entry, "file": str(extra)}
+                analysis.map_compile_database([entry, extra_entry], stage, root)
+
+    def test_tidy_parse_errors_fail_even_when_other_findings_are_empty(self):
+        self.assertTrue(analysis.tidy_has_parse_error(
+            "error: unsupported target flag [clang-diagnostic-error]"
+        ))
+        self.assertTrue(analysis.tidy_has_parse_error("Found compiler error(s)."))
+        self.assertFalse(analysis.tidy_has_parse_error("0 warnings generated."))
+
+    def test_cppcheck_pilot_scans_staged_library_with_explicit_cxx11_argv(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = pathlib.Path(directory)
+            project = root / ".build/TFT_Print_Test"
+            staged = project / "lib/pio-library/src/TFT_eSPI.cpp"
+            staged.parent.mkdir(parents=True)
+            staged.write_text("int library_source;\\n")
+            (project / "platformio.ini").write_text("[env:nodemcuv2]\\nboard = nodemcuv2\\n")
+            calls = []
+
+            def fake_run(command, **kwargs):
+                calls.append((command, kwargs))
+                return subprocess.CompletedProcess(command, 0, stdout="[]\\n", stderr="")
+
+            self.assertEqual(analysis.run_cppcheck(project, root, fake_run), 0)
+            command, kwargs = calls[0]
+            self.assertIn("cppcheck", (project / ".pio-analysis.ini").read_text())
+            self.assertIn("+<lib/pio-library/>", command)
+            self.assertIn("cppcheck: --enable=warning,performance,portability --std=c++11", command)
+            self.assertIn("--json-output", command)
+            self.assertNotIn("--skip-packages", command)
+            self.assertEqual(kwargs["capture_output"], True)
+            self.assertEqual(json.loads((root / ".build/analysis/cppcheck.json").read_text()), [])
+
+    def test_cppcheck_rejects_project_without_staged_library(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = pathlib.Path(directory)
+            project = root / "project"
+            project.mkdir()
+            with self.assertRaises(ValueError):
+                analysis.run_cppcheck(project, root, mock.Mock())
 
     def test_warning_builds_use_fresh_warning_profile_for_all_examples(self):
         with tempfile.TemporaryDirectory() as directory:
