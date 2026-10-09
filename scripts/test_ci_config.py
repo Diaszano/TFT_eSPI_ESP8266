@@ -29,6 +29,12 @@ class CIConfigTests(unittest.TestCase):
         ruleset = json.loads((ROOT / ".github/rulesets/main.json").read_text())
         self.assertEqual(ruleset["target"], "branch")
         self.assertEqual(ruleset["conditions"]["ref_name"]["include"], ["~DEFAULT_BRANCH"])
+        required_checks = next(rule for rule in ruleset["rules"] if rule["type"] == "required_status_checks")["parameters"]["required_status_checks"]
+        self.assertEqual(
+            [check["context"] for check in required_checks],
+            ["build", "lint", "arduino-lint", "pio-pack", "pr-title", "docs", "analyze"],
+        )
+        self.assertTrue(all(check["integration_id"] == 15368 for check in required_checks))
 
     def test_release_please_manifest_has_root_package(self):
         config = json.loads((ROOT / "release-please-config.json").read_text())
