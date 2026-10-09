@@ -91,23 +91,11 @@ void setup() {
 // Loop
 // =========================================================================
 void loop() {
-  // Update time periodically
-  if (targetTime < millis()) {
-    // Update next tick time in 100 milliseconds for smooth movement
-    targetTime = millis() + 100;
-
-    // Increment time by 100 milliseconds
-    time_secs += 0.100;
-
-    // Midnight roll-over
-    if (time_secs >= (60 * 60 * 24)) time_secs = 0;
-
-    // All graphics are drawn in sprite to stop flicker
-    renderFace(time_secs);
-
-    // Request time from NTP server and synchronise the local clock
-    // (clock may pause since this may take >100ms)
+  const uint32_t now = millis();
+  if (static_cast<int32_t>(now - targetTime) >= 0) {
+    targetTime = now + 100;
     syncTime();
+    renderFace(time_secs);
   }
 }
 
