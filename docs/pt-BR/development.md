@@ -10,6 +10,8 @@ Use clang-format 23.1.2 dos requisitos bloqueados. `make format-check` verifica 
 
 Execute `make test-native` para os testes puros de conversão de cores. Eles exercitam somente os auxiliares compartilhados de conversão inteira; não simulam o core ESP8266, PROGMEM, temporização do display, uso de heap ou renderização. Use os exemplos PlatformIO e um dispositivo para essas verificações.
 
+Use `make docs-examples` para compilar os primeiros exemplos C++ dos dois READMEs e dos guias de Sprite usando a biblioteca preparada. Use um dispositivo para as verificações do display.
+
 | Alvo | Finalidade |
 | --- | --- |
 | `make build` | Compila todos os exemplos selecionados. |

@@ -8,6 +8,11 @@ Um Sprite é um buffer de imagem na RAM. Desenhe nele com a API gráfica e depoi
 
 ```cpp
 TFT_eSprite sprite(&tft);
+auto *pixels = sprite.createSprite(120, 40);
+if (pixels == nullptr) {
+  Serial.println("Falha ao alocar o Sprite");
+  return;
+}
 ```
 
 Para um buffer de 240 × 240:
@@ -19,15 +24,7 @@ Para um buffer de 240 × 240:
 | 8 bits | 1 | 57.600 bytes |
 | 16 bits | 2 | 115.200 bytes |
 
-Um ESP8266 costuma ter cerca de 40 KB de heap livre para o sketch. Por isso, Sprites de tela inteira em 8 ou 16 bits não cabem; `createSprite()` retorna `nullptr` quando a alocação falha. Verifique o resultado antes de desenhar:
-
-```cpp
-auto *sprite = tft.createSprite(120, 40);
-if (sprite == nullptr) {
-  Serial.println("Falha ao alocar o Sprite");
-  return;
-}
-```
+Um ESP8266 costuma ter cerca de 40 KB de heap livre para o sketch. Por isso, Sprites de tela inteira em 8 ou 16 bits não cabem; `createSprite()` retorna `nullptr` quando a alocação falha. Verifique o resultado antes de desenhar.
 
 Use um Sprite de área parcial ou escolha profundidade de cor de 4/1 bit quando fizer sentido. Consulte a heap disponível com `ESP.getFreeHeap()` antes de alocar buffers.
 

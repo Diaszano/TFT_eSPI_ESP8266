@@ -8,7 +8,7 @@ Use Python 3.14.7 for the development toolchain. Install the pinned and hash-loc
 
 Use clang-format 23.1.2 from the locked requirements. `make format-check` checks maintained C++ and Arduino sources without editing them; run `make format` only when you intend to format those files. Generated font tables, ST7789 initialization data and the font-generation tool are excluded. Include order is preserved. After the dedicated formatting change is merged, configure blame with `git config blame.ignoreRevsFile .git-blame-ignore-revs` using the final merged commit SHA.
 
-Run `make test-native` for the pure color conversion tests. They exercise shared integer conversion helpers only; they do not model the ESP8266 core, PROGMEM, display timing, heap use or rendering. Use the curated PlatformIO examples and a device for those checks.
+Run `make test-native` for the pure color conversion tests. They exercise shared integer conversion helpers only; they do not model the ESP8266 core, PROGMEM, display timing, heap use or rendering. Use `make docs-examples` to compile the first C++ examples from both READMEs and Sprite guides against the staged library. Use a device for display checks.
 
 | Target | Purpose |
 | --- | --- |
