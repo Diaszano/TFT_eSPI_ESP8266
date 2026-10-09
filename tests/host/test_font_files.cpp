@@ -58,7 +58,10 @@ class File {
     offset += amount;
     return amount;
   }
-  void close() { bytes = nullptr; offset = 0; }
+  void close() {
+    bytes = nullptr;
+    offset = 0;
+  }
 };
 
 class FS {
@@ -81,11 +84,14 @@ struct SerialPort {
   void println(const T&) {}
 };
 SerialPort Serial;
-uint8_t pgm_read_byte(const uint8_t* pointer) { return *pointer; }
-void yield() {}
+uint8_t pgm_read_byte(const uint8_t* pointer) {
+  return *pointer;
+}
+void yield() {
+}
 
 #define malloc host_test::tracked_malloc
-#define free host_test::tracked_free
+#define free   host_test::tracked_free
 
 class TFT_eSPI {
  public:
@@ -135,7 +141,10 @@ class TFT_eSPI {
 class TFT_eSprite : public TFT_eSPI {
  public:
   bool _created = false;
-  void* createSprite(int16_t, int16_t) { _created = true; return this; }
+  void* createSprite(int16_t, int16_t) {
+    _created = true;
+    return this;
+  }
   void deleteSprite() { _created = false; }
   void fillSprite(uint16_t) { ++pixel_draws; }
   void pushSprite(int16_t, int16_t) { ++pixel_draws; }
@@ -152,15 +161,14 @@ static void put32(std::vector<uint8_t>& bytes, uint32_t value) {
   bytes.push_back(static_cast<uint8_t>(value));
 }
 
-static std::vector<uint8_t> font_file(uint32_t version, uint32_t count = 1,
-                                     uint32_t glyphWidth = 2,
-                                     uint32_t glyphHeight = 2, uint32_t unicode = 65,
-                                     uint32_t xAdvance = 3, uint32_t yOffset = 2,
-                                     uint32_t xOffset = 0, uint32_t ascent = 2,
-                                     uint32_t descent = 0) {
+static std::vector<uint8_t> font_file(uint32_t version, uint32_t count = 1, uint32_t glyphWidth = 2,
+                                      uint32_t glyphHeight = 2, uint32_t unicode = 65,
+                                      uint32_t xAdvance = 3, uint32_t yOffset = 2,
+                                      uint32_t xOffset = 0, uint32_t ascent = 2,
+                                      uint32_t descent = 0) {
   std::vector<uint8_t> bytes;
-  const uint32_t values[] = {count, version, 4, 0, ascent, descent, unicode, glyphHeight,
-                             glyphWidth, xAdvance, yOffset, xOffset, 0};
+  const uint32_t values[] = {count,       version,    4,        0,       ascent,  descent, unicode,
+                             glyphHeight, glyphWidth, xAdvance, yOffset, xOffset, 0};
   for (uint32_t value : values) put32(bytes, value);
   bytes.insert(bytes.end(), glyphWidth * glyphHeight, 0xFF);
   return bytes;
