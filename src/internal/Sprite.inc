@@ -876,7 +876,7 @@ uint16_t TFT_eSprite::readPixelValue(int32_t x, int32_t y) {
     // _iheight used)
     if (rotation == 1) {
       uint16_t tx = x;
-      x = _dheight - y - 1;
+      x = _dwidth - y - 1;
       y = tx;
     } else if (rotation == 2) {
       x = _dwidth - x - 1;
@@ -884,7 +884,7 @@ uint16_t TFT_eSprite::readPixelValue(int32_t x, int32_t y) {
     } else if (rotation == 3) {
       uint16_t tx = x;
       x = y;
-      y = _dwidth - tx - 1;
+      y = _dheight - tx - 1;
     }
     // Return 1 or 0
     return (_img8[(x + y * _bitwidth) >> 3] >> (7 - (x & 0x7))) & 0x01;
@@ -936,7 +936,7 @@ uint16_t TFT_eSprite::readPixel(int32_t x, int32_t y) {
   // used)
   if (rotation == 1) {
     uint16_t tx = x;
-    x = _dheight - y - 1;
+    x = _dwidth - y - 1;
     y = tx;
   } else if (rotation == 2) {
     x = _dwidth - x - 1;
@@ -944,7 +944,7 @@ uint16_t TFT_eSprite::readPixel(int32_t x, int32_t y) {
   } else if (rotation == 3) {
     uint16_t tx = x;
     x = y;
-    y = _dwidth - tx - 1;
+    y = _dheight - tx - 1;
   }
 
   uint16_t color = (_img8[(x + y * _bitwidth) >> 3] << (x & 0x7)) & 0x80;

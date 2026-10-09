@@ -281,7 +281,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--case",
-        choices=("scroll", "font-metrics", "allocations", "glyph-allocation", "font-files", "spi-pixels", "all"),
+        choices=("scroll", "font-metrics", "allocations", "glyph-allocation", "font-files", "spi-pixels", "sprite-rotation", "all"),
         default="all",
     )
     args = parser.parse_args()
@@ -298,6 +298,8 @@ def main() -> int:
         run_font_files(root)
     if args.case in ("spi-pixels", "all"):
         run_memory_case(root, "spi-pixels")
+    if args.case in ("sprite-rotation", "all"):
+        run_memory_case(root, "sprite-rotation")
     return 0
 
 
