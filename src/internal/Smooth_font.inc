@@ -168,18 +168,15 @@ void TFT_eSPI::loadMetrics(void) {
   uint32_t bitmapPtr = headerPtr + gFont.gCount * 28;
 
   {
-    gUnicode = (uint16_t*)malloc(
-        gFont.gCount * 2);  // Unicode 16-bit Basic Multilingual Plane (0-FFFF)
+    gUnicode =
+        (uint16_t*)malloc(gFont.gCount * 2);     // Unicode 16-bit Basic Multilingual Plane (0-FFFF)
     gHeight = (uint8_t*)malloc(gFont.gCount);    // Height of glyph
     gWidth = (uint8_t*)malloc(gFont.gCount);     // Width of glyph
     gxAdvance = (uint8_t*)malloc(gFont.gCount);  // xAdvance - to move x cursor
-    gdY = (int16_t*)malloc(
-        gFont.gCount *
-        2);  // offset from bitmap top edge from lowest point in any character
-    gdX = (int8_t*)malloc(
-        gFont.gCount);  // offset for bitmap left edge relative to cursor X
-    gBitmap = (uint32_t*)malloc(gFont.gCount *
-                                4);  // seek pointer to glyph bitmap in the file
+    gdY = (int16_t*)malloc(gFont.gCount *
+                           2);  // offset from bitmap top edge from lowest point in any character
+    gdX = (int8_t*)malloc(gFont.gCount);  // offset for bitmap left edge relative to cursor X
+    gBitmap = (uint32_t*)malloc(gFont.gCount * 4);  // seek pointer to glyph bitmap in the file
   }
 
 #ifdef SHOW_ASCENT_DESCENT
@@ -236,8 +233,7 @@ Serial.print(", maxAscent  = "); Serial.println(gFont.maxAscent); #endif
     // "p", so get maximum glyph descent
     if (((int16_t)gHeight[gNum] - (int16_t)gdY[gNum]) > gFont.maxDescent) {
       // Avoid UTF coding values and characters that tend to give duff values
-      if (((gUnicode[gNum] > 0x20) && (gUnicode[gNum] < 0xA0) &&
-           (gUnicode[gNum] != 0x7F)) ||
+      if (((gUnicode[gNum] > 0x20) && (gUnicode[gNum] < 0xA0) && (gUnicode[gNum] != 0x7F)) ||
           (gUnicode[gNum] > 0xFF)) {
         gFont.maxDescent = gHeight[gNum] - gdY[gNum];
 #ifdef SHOW_ASCENT_DESCENT
@@ -259,8 +255,7 @@ Serial.print(", maxAscent  = "); Serial.println(gFont.maxAscent); #endif
 
   gFont.yAdvance = gFont.maxAscent + gFont.maxDescent;
 
-  gFont.spaceWidth =
-      (gFont.ascent + gFont.descent) * 2 / 7;  // Guess at space width
+  gFont.spaceWidth = (gFont.ascent + gFont.descent) * 2 / 7;  // Guess at space width
 }
 
 /***************************************************************************************
@@ -369,8 +364,7 @@ void TFT_eSPI::drawGlyph(uint16_t code) {
   if (code < 0x21) {
     if (code == 0x20) {
       if (_fillbg)
-        fillRect(bg_cursor_x, cursor_y,
-                 (cursor_x + gFont.spaceWidth) - bg_cursor_x, gFont.yAdvance,
+        fillRect(bg_cursor_x, cursor_y, (cursor_x + gFont.spaceWidth) - bg_cursor_x, gFont.yAdvance,
                  bg);
       cursor_x += gFont.spaceWidth;
       bg_cursor_x = cursor_x;
@@ -443,14 +437,12 @@ void TFT_eSPI::drawGlyph(uint16_t code) {
       }
 
       // Fill any area to left of glyph
-      if (bg_cursor_x < cx)
-        fillRect(bg_cursor_x, cy, cx - bg_cursor_x, gHeight[gNum], textbgcolor);
+      if (bg_cursor_x < cx) fillRect(bg_cursor_x, cy, cx - bg_cursor_x, gHeight[gNum], textbgcolor);
       // Set x position in glyph area where background starts
       if (bg_cursor_x > cx) bx = bg_cursor_x - cx;
       // Fill any area to right of glyph
       if (cx + gWidth[gNum] < cursor_x + gxAdvance[gNum]) {
-        fillRect(cx + gWidth[gNum], cy,
-                 (cursor_x + gxAdvance[gNum]) - (cx + gWidth[gNum]),
+        fillRect(cx + gWidth[gNum], cy, (cursor_x + gxAdvance[gNum]) - (cx + gWidth[gNum]),
                  gHeight[gNum], textbgcolor);
       }
     }
@@ -524,8 +516,7 @@ void TFT_eSPI::drawGlyph(uint16_t code) {
     if (fillwidth > 0) {
       fillheight = (cursor_y + gFont.yAdvance) - (cy + gHeight[gNum]);
       if (fillheight > 0) {
-        fillRect(bg_cursor_x, cy + gHeight[gNum], fillwidth, fillheight,
-                 textbgcolor);
+        fillRect(bg_cursor_x, cy + gHeight[gNum], fillwidth, fillheight, textbgcolor);
       }
     }
 
@@ -534,8 +525,8 @@ void TFT_eSPI::drawGlyph(uint16_t code) {
     endWrite();
   } else {
     // Point code not in font so draw a rectangle and move on cursor
-    drawRect(cursor_x, cursor_y + gFont.maxAscent - gFont.ascent,
-             gFont.spaceWidth, gFont.ascent, fg);
+    drawRect(cursor_x, cursor_y + gFont.maxAscent - gFont.ascent, gFont.spaceWidth, gFont.ascent,
+             fg);
     cursor_x += gFont.spaceWidth + 1;
   }
   bg_cursor_x = cursor_x;

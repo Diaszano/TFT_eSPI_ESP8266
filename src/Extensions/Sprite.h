@@ -80,8 +80,7 @@ class TFT_eSprite : public TFT_eSPI {
 
   // Draw a single character in the GLCD or GFXFF font
   /// @brief drawChar operation.
-  void drawChar(int32_t x, int32_t y, uint16_t c, uint32_t color, uint32_t bg,
-                uint8_t size),
+  void drawChar(int32_t x, int32_t y, uint16_t c, uint32_t color, uint32_t bg, uint8_t size),
 
       // Fill Sprite with a colour
       /// @brief fillSprite operation.
@@ -106,8 +105,7 @@ class TFT_eSprite : public TFT_eSPI {
       // height The colour (optional, black is default) is used to fill the gap
       // after the scroll
       /// @brief setScrollRect operation.
-      setScrollRect(int32_t x, int32_t y, int32_t w, int32_t h,
-                    uint16_t color = TFT_BLACK),
+      setScrollRect(int32_t x, int32_t y, int32_t w, int32_t h, uint16_t color = TFT_BLACK),
       // Scroll the defined zone dx,dy pixels. Negative values left,up, positive
       // right,down dy is optional (default is 0, so no up/down scroll). The
       // sprite coordinate frame does not move because pixels are moved
@@ -141,22 +139,20 @@ class TFT_eSprite : public TFT_eSPI {
   // Push a rotated copy of Sprite to another different Sprite with optional
   // transparent colour
   /// @brief pushRotated operation.
-  bool pushRotated(TFT_eSprite* spr, int16_t angle,
-                   uint32_t transp = 0x00FFFFFF);
+  bool pushRotated(TFT_eSprite* spr, int16_t angle, uint32_t transp = 0x00FFFFFF);
 
   // Get the TFT bounding box for a rotated copy of this Sprite
   /// @brief getRotatedBounds operation.
-  bool getRotatedBounds(int16_t angle, int16_t* min_x, int16_t* min_y,
-                        int16_t* max_x, int16_t* max_y);
+  bool getRotatedBounds(int16_t angle, int16_t* min_x, int16_t* min_y, int16_t* max_x,
+                        int16_t* max_y);
   // Get the destination Sprite bounding box for a rotated copy of this Sprite
   /// @brief getRotatedBounds operation.
-  bool getRotatedBounds(TFT_eSprite* spr, int16_t angle, int16_t* min_x,
-                        int16_t* min_y, int16_t* max_x, int16_t* max_y);
+  bool getRotatedBounds(TFT_eSprite* spr, int16_t angle, int16_t* min_x, int16_t* min_y,
+                        int16_t* max_x, int16_t* max_y);
   // Bounding box support function
   /// @brief getRotatedBounds operation.
-  void getRotatedBounds(int16_t angle, int16_t w, int16_t h, int16_t xp,
-                        int16_t yp, int16_t* min_x, int16_t* min_y,
-                        int16_t* max_x, int16_t* max_y);
+  void getRotatedBounds(int16_t angle, int16_t w, int16_t h, int16_t xp, int16_t yp, int16_t* min_x,
+                        int16_t* min_y, int16_t* max_x, int16_t* max_y);
 
   // Read the colour of a pixel at x,y and return value in 565 format
   /// @brief Reads a pixel from the display.
@@ -169,11 +165,9 @@ class TFT_eSprite : public TFT_eSPI {
 
   // Write an image (colour bitmap) to the sprite.
   /// @brief pushImage operation.
-  void pushImage(int32_t x0, int32_t y0, int32_t w, int32_t h, uint16_t* data,
-                 uint8_t sbpp = 0);
+  void pushImage(int32_t x0, int32_t y0, int32_t w, int32_t h, uint16_t* data, uint8_t sbpp = 0);
   /// @brief pushImage operation.
-  void pushImage(int32_t x0, int32_t y0, int32_t w, int32_t h,
-                 const uint16_t* data);
+  void pushImage(int32_t x0, int32_t y0, int32_t w, int32_t h, const uint16_t* data);
 
   // Push the sprite to the TFT screen, this fn calls pushImage() in the TFT
   // class. Optionally a "transparent" colour can be defined, pixels of that
@@ -185,16 +179,14 @@ class TFT_eSprite : public TFT_eSPI {
 
   // Push a windowed area of the sprite to the TFT at tx, ty
   /// @brief pushSprite operation.
-  bool pushSprite(int32_t tx, int32_t ty, int32_t sx, int32_t sy, int32_t sw,
-                  int32_t sh);
+  bool pushSprite(int32_t tx, int32_t ty, int32_t sx, int32_t sy, int32_t sw, int32_t sh);
 
   // Push the sprite to another sprite at x,y. This fn calls pushImage() in the
   // destination sprite (dspr) class.
   /// @brief pushToSprite operation.
   bool pushToSprite(TFT_eSprite* dspr, int32_t x, int32_t y);
   /// @brief pushToSprite operation.
-  bool pushToSprite(TFT_eSprite* dspr, int32_t x, int32_t y,
-                    uint16_t transparent);
+  bool pushToSprite(TFT_eSprite* dspr, int32_t x, int32_t y, uint16_t transparent);
 
   // Draw a single character in the selected font
   /// @brief drawChar operation.
@@ -241,8 +233,7 @@ class TFT_eSprite : public TFT_eSPI {
   uint8_t* _img8_1;  ///< pointer to frame 1
   uint8_t* _img8_2;  ///< pointer to frame 2
 
-  uint16_t*
-      _colorMap;  ///< color map pointer: 16 entries, used with 4-bit color map.
+  uint16_t* _colorMap;  ///< color map pointer: 16 entries, used with 4-bit color map.
 
   int32_t _sinra;  ///< Sine of rotation angle in fixed point
   int32_t _cosra;  ///< Cosine of rotation angle in fixed point
@@ -253,7 +244,7 @@ class TFT_eSprite : public TFT_eSPI {
   int32_t _xs, _ys, _xe, _ye, _xptr, _yptr;  ///< for setWindow
   int32_t _sx, _sy;                          ///< x,y for scroll zone
   uint32_t _sw, _sh;                         ///< w,h for scroll zone
-  uint32_t _scolor;  ///< gap fill colour for scroll zone
+  uint32_t _scolor;                          ///< gap fill colour for scroll zone
 
   int32_t _iwidth, _iheight;  ///< Sprite memory image bit width and height
                               ///< (swapped during rotations)

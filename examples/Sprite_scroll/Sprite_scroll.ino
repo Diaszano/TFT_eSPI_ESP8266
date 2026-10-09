@@ -43,8 +43,7 @@ void setup() {
   // Create a sprite for the graph
   graph1.setColorDepth(8);
   graph1.createSprite(128, 61);
-  graph1.fillSprite(
-      TFT_BLUE);  // Note: Sprite is filled with black when created
+  graph1.fillSprite(TFT_BLUE);  // Note: Sprite is filled with black when created
 
   // The scroll area is set to the full sprite size upon creation of the sprite
   // but we can change that by defining a smaller area using "setScrollRect()"if
@@ -66,9 +65,8 @@ void setup() {
   stext2.setColorDepth(8);
   stext2.createSprite(80, 16);
   stext2.fillSprite(TFT_DARKGREY);
-  stext2.setScrollRect(
-      0, 0, 40, 16, TFT_DARKGREY);  // Scroll the "Hello" in the first 40 pixels
-  stext2.setTextColor(TFT_WHITE);   // White text, no background
+  stext2.setScrollRect(0, 0, 40, 16, TFT_DARKGREY);  // Scroll the "Hello" in the first 40 pixels
+  stext2.setTextColor(TFT_WHITE);                    // White text, no background
 }
 
 //==========================================================================================
@@ -106,8 +104,7 @@ void loop() {
   // Draw the grid on far right edge of sprite as graph has now moved 1 pixel
   // left
   grid++;
-  if (grid >=
-      10) {  // Draw a vertical line if we have scrolled 10 times (10 pixels)
+  if (grid >= 10) {  // Draw a vertical line if we have scrolled 10 times (10 pixels)
     grid = 0;
     graph1.drawFastVLine(127, 0, 61, TFT_NAVY);  // draw line on graph
   } else {  // Otherwise draw points spaced 10 pixels for the horizontal grid

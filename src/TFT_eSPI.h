@@ -181,12 +181,12 @@
 #if defined(TFT_SPI_OVERLAP)
 #undef TFT_CS
 #define SPI1U_WRITE (SPIUMOSI | SPIUSSE | SPIUCSSETUP | SPIUCSHOLD)
-#define SPI1U_READ (SPIUMOSI | SPIUSSE | SPIUCSSETUP | SPIUCSHOLD | SPIUDUPLEX)
+#define SPI1U_READ  (SPIUMOSI | SPIUSSE | SPIUCSSETUP | SPIUCSHOLD | SPIUDUPLEX)
 #else
 /// @brief SPI1U WRITE configuration constant.
 #define SPI1U_WRITE (SPIUMOSI | SPIUSSE)
 /// @brief SPI1U READ configuration constant.
-#define SPI1U_READ (SPIUMOSI | SPIUSSE | SPIUDUPLEX)
+#define SPI1U_READ  (SPIUMOSI | SPIUSSE | SPIUDUPLEX)
 #endif
 
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -563,14 +563,14 @@ static const uint16_t default_4bit_palette[] PROGMEM = {
 /// @brief setup_t API.
 typedef struct {
   String version = TFT_ESPI_VERSION;  ///< version value.
-  String setup_info;  ///< Setup reference name available to use in a user setup
-  uint32_t setup_id;  ///< ID available to use in a user setup
-  int32_t esp;        ///< Processor code
-  uint8_t trans;      ///< SPI transaction support
-  uint8_t serial;     ///< SPI interface
-  uint8_t port;       ///< SPI port
-  uint8_t overlap;    ///< ESP8266 overlap mode
-  uint8_t interface;  ///< Interface type
+  String setup_info;                  ///< Setup reference name available to use in a user setup
+  uint32_t setup_id;                  ///< ID available to use in a user setup
+  int32_t esp;                        ///< Processor code
+  uint8_t trans;                      ///< SPI transaction support
+  uint8_t serial;                     ///< SPI interface
+  uint8_t port;                       ///< SPI port
+  uint8_t overlap;                    ///< ESP8266 overlap mode
+  uint8_t interface;                  ///< Interface type
 
   uint16_t tft_driver;  ///< Hexadecimal code
   uint16_t tft_width;   ///< Rotation 0 width and height
@@ -643,8 +643,7 @@ class TFT_eSPI : public Print {
   /// @brief Draws a pixel.
   virtual void drawPixel(int32_t x, int32_t y, uint32_t color),
       /// @brief drawChar operation.
-      drawChar(int32_t x, int32_t y, uint16_t c, uint32_t color, uint32_t bg,
-               uint8_t size),
+      drawChar(int32_t x, int32_t y, uint16_t c, uint32_t color, uint32_t bg, uint8_t size),
       /// @brief drawLine operation.
       drawLine(int32_t xs, int32_t ys, int32_t xe, int32_t ye, uint32_t color),
       /// @brief drawFastVLine operation.
@@ -655,8 +654,7 @@ class TFT_eSPI : public Print {
       fillRect(int32_t x, int32_t y, int32_t w, int32_t h, uint32_t color);
 
   /// @brief drawChar operation.
-  virtual int16_t drawChar(uint16_t uniCode, int32_t x, int32_t y,
-                           uint8_t font),
+  virtual int16_t drawChar(uint16_t uniCode, int32_t x, int32_t y, uint8_t font),
       /// @brief drawChar operation.
       drawChar(uint16_t uniCode, int32_t x, int32_t y),
       /// @brief height operation.
@@ -683,10 +681,9 @@ class TFT_eSPI : public Print {
   virtual void end_nin_write();
 
   /// @brief setRotation operation.
-  void setRotation(
-      uint8_t r);  // Set the display image orientation to 0, 1, 2 or 3
-                   /// @brief getRotation operation.
-  uint8_t getRotation(void);  // Read the current rotation
+  void setRotation(uint8_t r);  // Set the display image orientation to 0, 1, 2 or 3
+                                /// @brief getRotation operation.
+  uint8_t getRotation(void);    // Read the current rotation
 
   // Change the origin position from the default top left
   // Note: setRotation, setViewport and resetViewport will revert origin to top
@@ -709,8 +706,7 @@ class TFT_eSPI : public Print {
 
   // Viewport commands, see "Viewport_Demo" sketch
   /// @brief setViewport operation.
-  void setViewport(int32_t x, int32_t y, int32_t w, int32_t h,
-                   bool vpDatum = true);
+  void setViewport(int32_t x, int32_t y, int32_t w, int32_t h, bool vpDatum = true);
   /// @brief checkViewport operation.
   bool checkViewport(int32_t x, int32_t y, int32_t w, int32_t h);
   /// @brief getViewportX operation.
@@ -765,29 +761,26 @@ class TFT_eSPI : public Print {
       /// @brief drawRect operation.
       drawRect(int32_t x, int32_t y, int32_t w, int32_t h, uint32_t color),
       /// @brief drawRoundRect operation.
-      drawRoundRect(int32_t x, int32_t y, int32_t w, int32_t h, int32_t radius,
-                    uint32_t color),
+      drawRoundRect(int32_t x, int32_t y, int32_t w, int32_t h, int32_t radius, uint32_t color),
       /// @brief fillRoundRect operation.
-      fillRoundRect(int32_t x, int32_t y, int32_t w, int32_t h, int32_t radius,
-                    uint32_t color);
+      fillRoundRect(int32_t x, int32_t y, int32_t w, int32_t h, int32_t radius, uint32_t color);
 
   /// @brief fillRectVGradient operation.
-  void fillRectVGradient(int16_t x, int16_t y, int16_t w, int16_t h,
-                         uint32_t color1, uint32_t color2);
+  void fillRectVGradient(int16_t x, int16_t y, int16_t w, int16_t h, uint32_t color1,
+                         uint32_t color2);
   /// @brief fillRectHGradient operation.
-  void fillRectHGradient(int16_t x, int16_t y, int16_t w, int16_t h,
-                         uint32_t color1, uint32_t color2);
+  void fillRectHGradient(int16_t x, int16_t y, int16_t w, int16_t h, uint32_t color1,
+                         uint32_t color2);
 
   /// @brief drawCircle operation.
   void drawCircle(int32_t x, int32_t y, int32_t r, uint32_t color),
       /// @brief drawCircleHelper operation.
-      drawCircleHelper(int32_t x, int32_t y, int32_t r, uint8_t cornername,
-                       uint32_t color),
+      drawCircleHelper(int32_t x, int32_t y, int32_t r, uint8_t cornername, uint32_t color),
       /// @brief fillCircle operation.
       fillCircle(int32_t x, int32_t y, int32_t r, uint32_t color),
       /// @brief fillCircleHelper operation.
-      fillCircleHelper(int32_t x, int32_t y, int32_t r, uint8_t cornername,
-                       int32_t delta, uint32_t color),
+      fillCircleHelper(int32_t x, int32_t y, int32_t r, uint8_t cornername, int32_t delta,
+                       uint32_t color),
 
       /// @brief drawEllipse operation.
       drawEllipse(int16_t x, int16_t y, int32_t rx, int32_t ry, uint16_t color),
@@ -796,11 +789,11 @@ class TFT_eSPI : public Print {
 
       //                 Corner 1               Corner 2               Corner 3
       /// @brief drawTriangle operation.
-      drawTriangle(int32_t x1, int32_t y1, int32_t x2, int32_t y2, int32_t x3,
-                   int32_t y3, uint32_t color),
+      drawTriangle(int32_t x1, int32_t y1, int32_t x2, int32_t y2, int32_t x3, int32_t y3,
+                   uint32_t color),
       /// @brief fillTriangle operation.
-      fillTriangle(int32_t x1, int32_t y1, int32_t x2, int32_t y2, int32_t x3,
-                   int32_t y3, uint32_t color);
+      fillTriangle(int32_t x1, int32_t y1, int32_t x2, int32_t y2, int32_t x3, int32_t y3,
+                   uint32_t color);
 
   // Smooth (anti-aliased) graphics drawing
   // Draw a pixel blended with the background pixel colour (bg_color) specified,
@@ -817,18 +810,17 @@ class TFT_eSPI : public Print {
   // will be clipped to these limits The start angle may be larger than the end
   // angle. Arcs are always drawn clockwise from the start angle.
   /// @brief drawSmoothArc operation.
-  void drawSmoothArc(int32_t x, int32_t y, int32_t r, int32_t ir,
-                     uint32_t startAngle, uint32_t endAngle, uint32_t fg_color,
-                     uint32_t bg_color, bool roundEnds = false);
+  void drawSmoothArc(int32_t x, int32_t y, int32_t r, int32_t ir, uint32_t startAngle,
+                     uint32_t endAngle, uint32_t fg_color, uint32_t bg_color,
+                     bool roundEnds = false);
 
   // As per "drawSmoothArc" except the ends of the arc are NOT anti-aliased,
   // this facilitates dynamic arc length changes with arc segments and ensures
   // clean segment joints. The sides of the arc are anti-aliased by default. If
   // smoothArc is false sides will NOT be anti-aliased
   /// @brief drawArc operation.
-  void drawArc(int32_t x, int32_t y, int32_t r, int32_t ir, uint32_t startAngle,
-               uint32_t endAngle, uint32_t fg_color, uint32_t bg_color,
-               bool smoothArc = true);
+  void drawArc(int32_t x, int32_t y, int32_t r, int32_t ir, uint32_t startAngle, uint32_t endAngle,
+               uint32_t fg_color, uint32_t bg_color, bool smoothArc = true);
 
   // Draw an anti-aliased filled circle at x, y with radius r
   // Note: The thickness of line is 3 pixels to reduce the visible "braiding"
@@ -836,8 +828,7 @@ class TFT_eSPI : public Print {
   //       this means the inner anti-alias zone is always at r-1 and the outer
   //       zone at r+1
   /// @brief drawSmoothCircle operation.
-  void drawSmoothCircle(int32_t x, int32_t y, int32_t r, uint32_t fg_color,
-                        uint32_t bg_color);
+  void drawSmoothCircle(int32_t x, int32_t y, int32_t r, uint32_t fg_color, uint32_t bg_color);
 
   // Draw an anti-aliased filled circle at x, y with radius r
   // If bg_color is not included the background pixel colour will be read from
@@ -850,38 +841,35 @@ class TFT_eSPI : public Print {
   // box defined by x,y and w,h The outer corner radius is r, inner corner
   // radius is ir The inside and outside of the border are anti-aliased
   /// @brief drawSmoothRoundRect operation.
-  void drawSmoothRoundRect(int32_t x, int32_t y, int32_t r, int32_t ir,
-                           int32_t w, int32_t h, uint32_t fg_color,
-                           uint32_t bg_color = 0x00FFFFFF,
+  void drawSmoothRoundRect(int32_t x, int32_t y, int32_t r, int32_t ir, int32_t w, int32_t h,
+                           uint32_t fg_color, uint32_t bg_color = 0x00FFFFFF,
                            uint8_t quadrants = 0xF);
 
   // Draw a filled rounded rectangle , corner radius r and bounding box defined
   // by x,y and w,h
   /// @brief fillSmoothRoundRect operation.
-  void fillSmoothRoundRect(int32_t x, int32_t y, int32_t w, int32_t h,
-                           int32_t radius, uint32_t color,
-                           uint32_t bg_color = 0x00FFFFFF);
+  void fillSmoothRoundRect(int32_t x, int32_t y, int32_t w, int32_t h, int32_t radius,
+                           uint32_t color, uint32_t bg_color = 0x00FFFFFF);
 
   // Draw a small anti-aliased filled circle at ax,ay with radius r (uses
   // drawWideLine) If bg_color is not included the background pixel colour will
   // be read from TFT or sprite
   /// @brief drawSpot operation.
-  void drawSpot(float ax, float ay, float r, uint32_t fg_color,
-                uint32_t bg_color = 0x00FFFFFF);
+  void drawSpot(float ax, float ay, float r, uint32_t fg_color, uint32_t bg_color = 0x00FFFFFF);
 
   // Draw an anti-aliased wide line from ax,ay to bx,by width wd with radiused
   // ends (radius is wd/2) If bg_color is not included the background pixel
   // colour will be read from TFT or sprite
   /// @brief drawWideLine operation.
-  void drawWideLine(float ax, float ay, float bx, float by, float wd,
-                    uint32_t fg_color, uint32_t bg_color = 0x00FFFFFF);
+  void drawWideLine(float ax, float ay, float bx, float by, float wd, uint32_t fg_color,
+                    uint32_t bg_color = 0x00FFFFFF);
 
   // Draw an anti-aliased wide line from ax,ay to bx,by with different width at
   // each end aw, bw and with radiused ends If bg_color is not included the
   // background pixel colour will be read from TFT or sprite
   /// @brief drawWedgeLine operation.
-  void drawWedgeLine(float ax, float ay, float bx, float by, float aw, float bw,
-                     uint32_t fg_color, uint32_t bg_color = 0x00FFFFFF);
+  void drawWedgeLine(float ax, float ay, float bx, float by, float aw, float bw, uint32_t fg_color,
+                     uint32_t bg_color = 0x00FFFFFF);
 
   // Image rendering
   // Swap the byte order for pushImage() and pushPixels() - corrects endianness
@@ -892,21 +880,20 @@ class TFT_eSPI : public Print {
 
   // Draw bitmap
   /// @brief drawBitmap operation.
-  void drawBitmap(int16_t x, int16_t y, const uint8_t* bitmap, int16_t w,
-                  int16_t h, uint16_t fgcolor),
+  void drawBitmap(int16_t x, int16_t y, const uint8_t* bitmap, int16_t w, int16_t h,
+                  uint16_t fgcolor),
       /// @brief drawBitmap operation.
-      drawBitmap(int16_t x, int16_t y, const uint8_t* bitmap, int16_t w,
-                 int16_t h, uint16_t fgcolor, uint16_t bgcolor),
+      drawBitmap(int16_t x, int16_t y, const uint8_t* bitmap, int16_t w, int16_t h,
+                 uint16_t fgcolor, uint16_t bgcolor),
       /// @brief drawXBitmap operation.
-      drawXBitmap(int16_t x, int16_t y, const uint8_t* bitmap, int16_t w,
-                  int16_t h, uint16_t fgcolor),
+      drawXBitmap(int16_t x, int16_t y, const uint8_t* bitmap, int16_t w, int16_t h,
+                  uint16_t fgcolor),
       /// @brief drawXBitmap operation.
-      drawXBitmap(int16_t x, int16_t y, const uint8_t* bitmap, int16_t w,
-                  int16_t h, uint16_t fgcolor, uint16_t bgcolor),
+      drawXBitmap(int16_t x, int16_t y, const uint8_t* bitmap, int16_t w, int16_t h,
+                  uint16_t fgcolor, uint16_t bgcolor),
       /// @brief setBitmapColor operation.
-      setBitmapColor(
-          uint16_t fgcolor,
-          uint16_t bgcolor);  // Define the 2 colours for 1bpp sprites
+      setBitmapColor(uint16_t fgcolor,
+                     uint16_t bgcolor);  // Define the 2 colours for 1bpp sprites
 
   // Set TFT pivot point (use when rendering rotated sprites)
   /// @brief setPivot operation.
@@ -930,37 +917,33 @@ class TFT_eSPI : public Print {
   /// @brief pushImage operation.
   void pushImage(int32_t x, int32_t y, int32_t w, int32_t h, uint16_t* data);
   /// @brief pushImage operation.
-  void pushImage(int32_t x, int32_t y, int32_t w, int32_t h, uint16_t* data,
-                 uint16_t transparent);
+  void pushImage(int32_t x, int32_t y, int32_t w, int32_t h, uint16_t* data, uint16_t transparent);
 
   // These are used to render images stored in FLASH (PROGMEM)
   /// @brief pushImage operation.
-  void pushImage(int32_t x, int32_t y, int32_t w, int32_t h,
-                 const uint16_t* data, uint16_t transparent);
+  void pushImage(int32_t x, int32_t y, int32_t w, int32_t h, const uint16_t* data,
+                 uint16_t transparent);
   /// @brief pushImage operation.
-  void pushImage(int32_t x, int32_t y, int32_t w, int32_t h,
-                 const uint16_t* data);
+  void pushImage(int32_t x, int32_t y, int32_t w, int32_t h, const uint16_t* data);
 
   // These are used by Sprite class pushSprite() member function for 1, 4 and 8
   // bits per pixel (bpp) colours They are not intended to be used with user
   // sketches (but could be) Set bpp8 true for 8bpp sprites, false otherwise.
   // The cmap pointer must be specified for 4bpp
   /// @brief pushImage operation.
-  void pushImage(int32_t x, int32_t y, int32_t w, int32_t h, uint8_t* data,
-                 bool bpp8 = true, uint16_t* cmap = nullptr);
-  /// @brief pushImage operation.
-  void pushImage(int32_t x, int32_t y, int32_t w, int32_t h, uint8_t* data,
-                 uint8_t transparent, bool bpp8 = true,
+  void pushImage(int32_t x, int32_t y, int32_t w, int32_t h, uint8_t* data, bool bpp8 = true,
                  uint16_t* cmap = nullptr);
+  /// @brief pushImage operation.
+  void pushImage(int32_t x, int32_t y, int32_t w, int32_t h, uint8_t* data, uint8_t transparent,
+                 bool bpp8 = true, uint16_t* cmap = nullptr);
   // FLASH version
   /// @brief pushImage operation.
-  void pushImage(int32_t x, int32_t y, int32_t w, int32_t h,
-                 const uint8_t* data, bool bpp8, uint16_t* cmap = nullptr);
+  void pushImage(int32_t x, int32_t y, int32_t w, int32_t h, const uint8_t* data, bool bpp8,
+                 uint16_t* cmap = nullptr);
 
   // Render a 16-bit colour image with a 1bpp mask
   /// @brief pushMaskedImage operation.
-  void pushMaskedImage(int32_t x, int32_t y, int32_t w, int32_t h,
-                       uint16_t* img, uint8_t* mask);
+  void pushMaskedImage(int32_t x, int32_t y, int32_t w, int32_t h, uint16_t* img, uint8_t* mask);
 
   // This next function has been used successfully to dump the TFT screen to a
   // PC for documentation purposes It reads a screen area and returns the 3 RGB
@@ -1004,21 +987,17 @@ class TFT_eSPI : public Print {
                  int32_t y),  // Draw string using current font
 
       /// @brief drawCentreString operation.
-      drawCentreString(
-          const char* string, int32_t x, int32_t y,
-          uint8_t font),  // Deprecated, use setTextDatum() and drawString()
-                          /// @brief drawRightString operation.
-      drawRightString(
-          const char* string, int32_t x, int32_t y,
-          uint8_t font),  // Deprecated, use setTextDatum() and drawString()
-                          /// @brief drawCentreString operation.
-      drawCentreString(
-          const String& string, int32_t x, int32_t y,
-          uint8_t font),  // Deprecated, use setTextDatum() and drawString()
-                          /// @brief drawRightString operation.
-      drawRightString(
-          const String& string, int32_t x, int32_t y,
-          uint8_t font);  // Deprecated, use setTextDatum() and drawString()
+      drawCentreString(const char* string, int32_t x, int32_t y,
+                       uint8_t font),  // Deprecated, use setTextDatum() and drawString()
+                                       /// @brief drawRightString operation.
+      drawRightString(const char* string, int32_t x, int32_t y,
+                      uint8_t font),  // Deprecated, use setTextDatum() and drawString()
+                                      /// @brief drawCentreString operation.
+      drawCentreString(const String& string, int32_t x, int32_t y,
+                       uint8_t font),  // Deprecated, use setTextDatum() and drawString()
+                                       /// @brief drawRightString operation.
+      drawRightString(const String& string, int32_t x, int32_t y,
+                      uint8_t font);  // Deprecated, use setTextDatum() and drawString()
 
   // Text rendering and font handling support functions
   /// @brief setCursor operation.
@@ -1028,10 +1007,9 @@ class TFT_eSPI : public Print {
                 uint8_t font);  // Set cursor and font number for tft.print()
 
   /// @brief getCursorX operation.
-  int16_t getCursorX(
-      void),  // Read current cursor x position (moves with tft.print())
-              /// @brief getCursorY operation.
-      getCursorY(void);  // Read current cursor y position
+  int16_t getCursorX(void),  // Read current cursor x position (moves with tft.print())
+                             /// @brief getCursorY operation.
+      getCursorY(void);      // Read current cursor y position
 
   /// @brief setTextColor operation.
   void setTextColor(uint16_t color),  // Set character (glyph) color only
@@ -1057,31 +1035,27 @@ class TFT_eSPI : public Print {
   uint8_t getTextDatum(void);
 
   /// @brief setTextPadding operation.
-  void setTextPadding(
-      uint16_t x_width);  // Set text padding (background blanking/over-write)
-                          // width in pixels
-                          /// @brief getTextPadding operation.
-  uint16_t getTextPadding(void);  // Get text padding
+  void setTextPadding(uint16_t x_width);  // Set text padding (background blanking/over-write)
+                                          // width in pixels
+                                          /// @brief getTextPadding operation.
+  uint16_t getTextPadding(void);          // Get text padding
 
 #ifdef LOAD_GFXFF
   /// @brief setFreeFont operation.
   void setFreeFont(const GFXfont* f = NULL),  // Select the GFX Free Font
                                               /// @brief setTextFont operation.
-      setTextFont(uint8_t font);  // Set the font number to use in future
+      setTextFont(uint8_t font);              // Set the font number to use in future
 #else
-  void setFreeFont(
-      uint8_t font),  // Not used, historical fix to prevent an error
-      setTextFont(uint8_t font);  // Set the font number to use in future
+  void setFreeFont(uint8_t font),  // Not used, historical fix to prevent an error
+      setTextFont(uint8_t font);   // Set the font number to use in future
 #endif
 
   /// @brief textWidth operation.
-  int16_t textWidth(
-      const char* string,
-      uint8_t font),  // Returns pixel width of string in specified font
-                      /// @brief textWidth operation.
-      textWidth(
-          const char* string),  // Returns pixel width of string in current font
-                                /// @brief textWidth operation.
+  int16_t textWidth(const char* string,
+                    uint8_t font),    // Returns pixel width of string in specified font
+                                      /// @brief textWidth operation.
+      textWidth(const char* string),  // Returns pixel width of string in current font
+                                      /// @brief textWidth operation.
       textWidth(const String& string,
                 uint8_t font),  // As above for String types
                                 /// @brief textWidth operation.
@@ -1109,9 +1083,8 @@ class TFT_eSPI : public Print {
   void setCallback(getColorCallback getCol);
 
   /// @brief fontsLoaded operation.
-  uint16_t fontsLoaded(
-      void);  // Each bit in returned value represents a font type that is
-              // loaded - used for debug/error handling only
+  uint16_t fontsLoaded(void);  // Each bit in returned value represents a font type that is
+                               // loaded - used for debug/error handling only
 
   // Low level read/write
   /// @brief spiwrite operation.
@@ -1162,17 +1135,15 @@ class TFT_eSPI : public Print {
 
   // 16-bit colour alphaBlend with alpha dither (dither reduces colour banding)
   /// @brief alphaBlend operation.
-  uint16_t alphaBlend(uint8_t alpha, uint16_t fgc, uint16_t bgc,
-                      uint8_t dither);
+  uint16_t alphaBlend(uint8_t alpha, uint16_t fgc, uint16_t bgc, uint8_t dither);
   // 24-bit colour alphaBlend with optional alpha dither
   /// @brief alphaBlend24 operation.
-  uint32_t alphaBlend24(uint8_t alpha, uint32_t fgc, uint32_t bgc,
-                        uint8_t dither = 0);
+  uint32_t alphaBlend24(uint8_t alpha, uint32_t fgc, uint32_t bgc, uint8_t dither = 0);
 
   // Bare metal functions
   /// @brief startWrite operation.
-  void startWrite(void);  // Begin SPI transaction
-                          /// @brief writeColor operation.
+  void startWrite(void);                          // Begin SPI transaction
+                                                  /// @brief writeColor operation.
   void writeColor(uint16_t color, uint32_t len);  // Deprecated, use pushBlock()
                                                   /// @brief endWrite operation.
   void endWrite(void);                            // End SPI transaction
@@ -1198,9 +1169,8 @@ class TFT_eSPI : public Print {
   // Used for diagnostic sketch to see library setup adopted by compiler, see
   // Section 7 above
   /// @brief getSetup operation.
-  void getSetup(
-      setup_t& tft_settings);  // Sketch provides the instance to populate
-                               /// @brief verifySetupID operation.
+  void getSetup(setup_t& tft_settings);  // Sketch provides the instance to populate
+                                         /// @brief verifySetupID operation.
   bool verifySetupID(uint32_t id);
 
   // Global variables
@@ -1217,9 +1187,8 @@ class TFT_eSPI : public Print {
       textdatum,     ///< Text reference datum
       rotation;      ///< Display rotation (0-3)
 
-  uint8_t decoderState =
-      0;                   ///< UTF8 decoder state        - not for user access
-  uint16_t decoderBuffer;  ///< Unicode code-point buffer - not for user access
+  uint8_t decoderState = 0;  ///< UTF8 decoder state        - not for user access
+  uint16_t decoderBuffer;    ///< Unicode code-point buffer - not for user access
 
   //--------------------------------------- private
   //------------------------------------//
@@ -1313,14 +1282,14 @@ class TFT_eSPI : public Print {
 
   int32_t cursor_x, cursor_y, padX;  ///< Text cursor x,y and padding setting
   int32_t bg_cursor_x;               ///< Background fill cursor
-  int32_t last_cursor_x;  ///< Previous text cursor position when fill used
+  int32_t last_cursor_x;             ///< Previous text cursor position when fill used
 
   uint32_t fontsloaded;  ///< Bit field of fonts loaded
 
   uint8_t glyph_ab,  ///< Smooth font glyph delta Y (height) above baseline
       glyph_bb;      ///< Smooth font glyph delta Y (height) below baseline
 
-  bool isDigits;  ///< adjust bounding box for numbers to reduce visual jiggling
+  bool isDigits;              ///< adjust bounding box for numbers to reduce visual jiggling
   bool textwrapX, textwrapY;  ///< If set, 'wrap' text at right and optionally
                               ///< bottom edge of display
   bool _swapBytes;            ///< Swap the byte order for TFT pushImage()
@@ -1328,9 +1297,9 @@ class TFT_eSPI : public Print {
   bool _booted;  ///< init() or begin() has already run once
 
   // User sketch manages these via set/getAttribute()
-  bool _cp437;  ///< If set, use correct CP437 charset (default is OFF)
-  bool _utf8;  ///< If set, use UTF-8 decoder in print stream 'write()' function
-               ///< (default ON)
+  bool _cp437;         ///< If set, use correct CP437 charset (default is OFF)
+  bool _utf8;          ///< If set, use UTF-8 decoder in print stream 'write()' function
+                       ///< (default ON)
   bool _psram_enable;  ///< Enable PSRAM use for library functions (TBD) and
                        ///< Sprites
 
@@ -1381,12 +1350,12 @@ class TFT_eSPI : public Print {
     uint16_t gCount;        ///< Total number of characters
     uint16_t yAdvance;      ///< Line advance
     uint16_t spaceWidth;    ///< Width of a space character
-    int16_t ascent;   ///< Height of top of 'd' above baseline, other characters
-                      ///< may be taller
-    int16_t descent;  ///< Offset to bottom of 'p', other characters may have a
-                      ///< larger descent
-    uint16_t maxAscent;   ///< Maximum ascent found in font
-    uint16_t maxDescent;  ///< Maximum descent found in font
+    int16_t ascent;         ///< Height of top of 'd' above baseline, other characters
+                            ///< may be taller
+    int16_t descent;        ///< Offset to bottom of 'p', other characters may have a
+                            ///< larger descent
+    uint16_t maxAscent;     ///< Maximum ascent found in font
+    uint16_t maxDescent;    ///< Maximum descent found in font
   } fontMetrics;
 
   fontMetrics gFont = {nullptr, 0, 0, 0, 0, 0, 0, 0};  ///< gFont value.

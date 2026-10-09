@@ -50,23 +50,23 @@
 #define TFT_INIT_DELAY 0x80  // Not used unless commandlist invoked
 
 // Generic commands used by TFT_eSPI.cpp
-#define TFT_NOP 0x00
+#define TFT_NOP   0x00
 #define TFT_SWRST 0x01
 
-#define TFT_SLPIN 0x10
+#define TFT_SLPIN  0x10
 #define TFT_SLPOUT 0x11
-#define TFT_NORON 0x13
+#define TFT_NORON  0x13
 
-#define TFT_INVOFF 0x20
-#define TFT_INVON 0x21
+#define TFT_INVOFF  0x20
+#define TFT_INVON   0x21
 #define TFT_DISPOFF 0x28
-#define TFT_DISPON 0x29
-#define TFT_CASET 0x2A
-#define TFT_PASET 0x2B
-#define TFT_RAMWR 0x2C
-#define TFT_RAMRD 0x2E
-#define TFT_MADCTL 0x36
-#define TFT_COLMOD 0x3A
+#define TFT_DISPON  0x29
+#define TFT_CASET   0x2A
+#define TFT_PASET   0x2B
+#define TFT_RAMWR   0x2C
+#define TFT_RAMRD   0x2E
+#define TFT_MADCTL  0x36
+#define TFT_COLMOD  0x3A
 
 // Flags for TFT_MADCTL
 // clang-format off

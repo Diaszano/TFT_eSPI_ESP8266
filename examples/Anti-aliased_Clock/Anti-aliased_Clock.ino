@@ -7,7 +7,7 @@
 // Based on a sketch by DavyLandman:
 // https://github.com/Bodmer/TFT_eSPI/issues/905
 
-#define WIFI_SSID "Your_SSID"
+#define WIFI_SSID     "Your_SSID"
 #define WIFI_PASSWORD "Your_Password"
 
 #include <Arduino.h>
@@ -22,12 +22,12 @@ TFT_eSprite face = TFT_eSprite(&tft);
 #define CLOCK_X_POS 10
 #define CLOCK_Y_POS 10
 
-#define CLOCK_FG TFT_SKYBLUE
-#define CLOCK_BG TFT_NAVY
+#define CLOCK_FG   TFT_SKYBLUE
+#define CLOCK_BG   TFT_NAVY
 #define SECCOND_FG TFT_RED
-#define LABEL_FG TFT_GOLD
+#define LABEL_FG   TFT_GOLD
 
-#define CLOCK_R 127.0f / 2.0f  // Clock face radius (float type)
+#define CLOCK_R       127.0f / 2.0f  // Clock face radius (float type)
 #define H_HAND_LENGTH CLOCK_R / 2.0f
 #define M_HAND_LENGTH CLOCK_R / 1.4f
 #define S_HAND_LENGTH CLOCK_R / 1.3f
@@ -39,7 +39,7 @@ TFT_eSprite face = TFT_eSprite(&tft);
 // change every second so we see smooth sub-pixel movement
 #define SECOND_ANGLE 360.0 / 60.0
 #define MINUTE_ANGLE SECOND_ANGLE / 60.0
-#define HOUR_ANGLE MINUTE_ANGLE / 12.0
+#define HOUR_ANGLE   MINUTE_ANGLE / 12.0
 
 // Sprite width and height
 #define FACE_W CLOCK_R * 2 + 1

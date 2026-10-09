@@ -9,4 +9,5 @@ void setup() {
   sprite.fillSprite(TFT_RED);
   sprite.deleteSprite();
 }
-void loop() {}
+void loop() {
+}
