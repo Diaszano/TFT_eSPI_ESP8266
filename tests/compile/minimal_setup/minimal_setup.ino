@@ -11,4 +11,5 @@ void setup() {
   sprite.deleteSprite();
 }
 
-void loop() {}
+void loop() {
+}
