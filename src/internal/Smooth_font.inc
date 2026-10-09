@@ -152,10 +152,9 @@ void TFT_eSPI::loadFont(String fontName, bool flash) {
   gFont.yAdvance = gFont.ascent + gFont.descent;
   gFont.spaceWidth = gFont.yAdvance / 4;  // Guess at space width
 
-  fontLoaded = true;
-
   // Fetch the metrics for each glyph
-  loadMetrics();
+  if (!loadMetrics()) return;
+  fontLoaded = true;
 }
 
 /***************************************************************************************
@@ -163,7 +162,7 @@ void TFT_eSPI::loadFont(String fontName, bool flash) {
 ** Description:             Get the metrics for each glyph and store in RAM
 *************************************************************************************x*/
 // #define SHOW_ASCENT_DESCENT
-void TFT_eSPI::loadMetrics(void) {
+bool TFT_eSPI::loadMetrics(void) {
   uint32_t headerPtr = 24;
   uint32_t bitmapPtr = headerPtr + gFont.gCount * 28;
 
@@ -177,6 +176,11 @@ void TFT_eSPI::loadMetrics(void) {
                            2);  // offset from bitmap top edge from lowest point in any character
     gdX = (int8_t*)malloc(gFont.gCount);  // offset for bitmap left edge relative to cursor X
     gBitmap = (uint32_t*)malloc(gFont.gCount * 4);  // seek pointer to glyph bitmap in the file
+  }
+
+  if (!gUnicode || !gHeight || !gWidth || !gxAdvance || !gdY || !gdX || !gBitmap) {
+    unloadFont();
+    return false;
   }
 
 #ifdef SHOW_ASCENT_DESCENT
@@ -256,6 +260,7 @@ Serial.print(", maxAscent  = "); Serial.println(gFont.maxAscent); #endif
   gFont.yAdvance = gFont.maxAscent + gFont.maxDescent;
 
   gFont.spaceWidth = (gFont.ascent + gFont.descent) * 2 / 7;  // Guess at space width
+  return true;
 }
 
 /***************************************************************************************
@@ -401,6 +406,7 @@ void TFT_eSPI::drawGlyph(uint16_t code) {
     if (fs_font) {
       fontFile.seek(gBitmap[gNum], fs::SeekSet);
       pbuffer = (uint8_t*)malloc(gWidth[gNum]);
+      if (pbuffer == nullptr) return;
     }
 #endif
 

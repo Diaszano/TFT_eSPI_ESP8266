@@ -16,7 +16,7 @@
     "setup_sha256": "3f57d319a4cbb1f0331fe9cb740cda386fd68110d2b76a601b43072e99ce796e"
   },
   "resources": {
-    "flash": 324935,
+    "flash": 324951,
     "ram": 28724
   }
 }

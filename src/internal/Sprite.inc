@@ -74,6 +74,8 @@ void* TFT_eSprite::createSprite(int16_t w, int16_t h, uint8_t frames) {
   _img = (uint16_t*)_img8;
   _img4 = _img8;
 
+  if (!_img8) return nullptr;
+
   if ((_bpp == 16) && (frames > 1)) {
     _img8_2 = _img8 + tft_espi_internal::sprite_frame2_offset_16bpp(w, h);
   }
@@ -89,17 +91,19 @@ void* TFT_eSprite::createSprite(int16_t w, int16_t h, uint8_t frames) {
     _img8_2 = _img8 + ((w >> 3) * h + 1);
   }
 
-  if (_img8) {
-    _created = true;
-    if ((_bpp == 4) && (_colorMap == nullptr)) createPalette(default_4bit_palette);
-
-    rotation = 0;
-    setViewport(0, 0, _dwidth, _dheight);
-    setPivot(_iwidth / 2, _iheight / 2);
-    return _img8_1;
+  _created = true;
+  if ((_bpp == 4) && (_colorMap == nullptr)) {
+    createPalette(default_4bit_palette);
+    if (_colorMap == nullptr) {
+      deleteSprite();
+      return nullptr;
+    }
   }
 
-  return nullptr;
+  rotation = 0;
+  setViewport(0, 0, _dwidth, _dheight);
+  setPivot(_iwidth / 2, _iheight / 2);
+  return _img8_1;
 }
 
 /***************************************************************************************
@@ -196,6 +200,7 @@ void TFT_eSprite::createPalette(uint16_t colorMap[], uint8_t colors) {
 
   // Allocate and clear memory for 16 color map
   if (_colorMap == nullptr) _colorMap = (uint16_t*)calloc(16, sizeof(uint16_t));
+  if (_colorMap == nullptr) return;
 
   if (colors > 16) colors = 16;
 
@@ -219,6 +224,7 @@ void TFT_eSprite::createPalette(const uint16_t colorMap[], uint8_t colors) {
 
   // Allocate and clear memory for 16 color map
   if (_colorMap == nullptr) _colorMap = (uint16_t*)calloc(16, sizeof(uint16_t));
+  if (_colorMap == nullptr) return;
 
   if (colors > 16) colors = 16;
 
@@ -2308,7 +2314,7 @@ void TFT_eSprite::drawGlyph(uint16_t code) {
     bool newSprite = !_created;
 
     if (newSprite) {
-      createSprite(gWidth[gNum], gFont.yAdvance);
+      if (!createSprite(gWidth[gNum], gFont.yAdvance)) return;
       if (fg != bg) fillSprite(bg);
       cursor_x = -gdX[gNum];
       bg_cursor_x = cursor_x;
@@ -2334,6 +2340,10 @@ void TFT_eSprite::drawGlyph(uint16_t code) {
       fontFile.seek(gBitmap[gNum],
                     fs::SeekSet);  // This is slow for a significant position shift!
       pbuffer = (uint8_t*)malloc(gWidth[gNum]);
+      if (pbuffer == nullptr) {
+        if (newSprite) deleteSprite();
+        return;
+      }
     }
 #endif
 
@@ -2500,7 +2510,7 @@ void TFT_eSprite::printToSprite(char* cbuffer, uint16_t len)  // String string)
         sWidth += gFont.spaceWidth + 1;
     }
 
-    createSprite(sWidth, gFont.yAdvance);
+    if (!createSprite(sWidth, gFont.yAdvance)) return;
 
     if (textcolor != textbgcolor) fillSprite(textbgcolor);
   }
@@ -2529,7 +2539,7 @@ int16_t TFT_eSprite::printToSprite(int16_t x, int16_t y, uint16_t index) {
   int16_t sWidth = gWidth[index];
 
   if (newSprite) {
-    createSprite(sWidth, gFont.yAdvance);
+    if (!createSprite(sWidth, gFont.yAdvance)) return gxAdvance[index];
 
     if (textcolor != textbgcolor) fillSprite(textbgcolor);
 

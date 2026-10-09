@@ -8,8 +8,7 @@ import subprocess
 import tempfile
 
 
-def extract_scroll(source: str) -> tuple[str, int]:
-    marker = "void TFT_eSprite::scroll(int16_t dx, int16_t dy) {"
+def extract_method(source: str, marker: str) -> tuple[str, int]:
     start = source.find(marker)
     if start < 0:
         raise ValueError("scroll implementation marker missing")
@@ -60,7 +59,10 @@ def run_scroll(root: pathlib.Path) -> None:
     fixture = (root / "tests/host/test_scroll.cpp").read_text()
     if fixture.count("// FUNCTION UNDER TEST") != 1:
         raise ValueError("expected exactly one unique function insertion marker")
-    implementation, line = extract_scroll((root / "src/internal/Sprite.inc").read_text())
+    implementation, line = extract_method(
+        (root / "src/internal/Sprite.inc").read_text(),
+        "void TFT_eSprite::scroll(int16_t dx, int16_t dy) {",
+    )
     generated = fixture.replace(
         "// FUNCTION UNDER TEST", f'#line {line} "src/internal/Sprite.inc"\n{implementation}'
     )
@@ -75,6 +77,76 @@ def run_scroll(root: pathlib.Path) -> None:
         )
         subprocess.run([str(binary)], check=True)
     print("PASS scroll")
+
+
+def run_allocations(root: pathlib.Path) -> None:
+    compiler = shutil.which("c++")
+    if not compiler:
+        raise RuntimeError("C++ compiler required for host tests")
+    fixture = (root / "tests/host/test_allocations.cpp").read_text()
+    marker = "// FUNCTION UNDER TEST"
+    if fixture.count(marker) != 1:
+        raise ValueError("expected exactly one unique function insertion marker")
+    implementation, line = extract_method(
+        (root / "src/internal/Smooth_font.inc").read_text(),
+        "bool TFT_eSPI::loadMetrics(void) {",
+    )
+    source = (root / "src/internal/Smooth_font.inc").read_text()
+    cleanup, cleanup_line = extract_method(source, "void TFT_eSPI::unloadFont(void) {")
+    sprite_source = (root / "src/internal/Sprite.inc").read_text()
+    sprite_methods = []
+    for signature in (
+        "void* TFT_eSprite::createSprite(int16_t w, int16_t h, uint8_t frames) {",
+        "void* TFT_eSprite::callocSprite(int16_t w, int16_t h, uint8_t frames) {",
+        "void TFT_eSprite::createPalette(uint16_t colorMap[], uint8_t colors) {",
+        "void TFT_eSprite::createPalette(const uint16_t colorMap[], uint8_t colors) {",
+        "void TFT_eSprite::deleteSprite(void) {",
+    ):
+        method, method_line = extract_method(sprite_source, signature)
+        sprite_methods.append(f'#line {method_line} "src/internal/Sprite.inc"\n{method}')
+    generated = fixture.replace(
+        marker,
+        f'#line {line} "src/internal/Smooth_font.inc"\n{implementation}\n'
+        f'#line {cleanup_line} "src/internal/Smooth_font.inc"\n{cleanup}\n'
+        + "\n".join(sprite_methods),
+    )
+    with tempfile.TemporaryDirectory(prefix="tft-allocations-") as temp:
+        source = pathlib.Path(temp) / "allocations.cpp"
+        binary = pathlib.Path(temp) / "allocations"
+        source.write_text(generated)
+        subprocess.run(
+            [compiler, "-std=c++11", "-Wall", "-Wextra", "-fsanitize=address,undefined",
+             "-fno-sanitize-recover=all", "-I", str(root / "tests/host"), str(source), "-o",
+             str(binary)], check=True
+        )
+        subprocess.run([str(binary)], check=True)
+    print("PASS allocations")
+
+
+def run_glyph_allocation(root: pathlib.Path) -> None:
+    compiler = shutil.which("c++")
+    if not compiler:
+        raise RuntimeError("C++ compiler required for host tests")
+    source = (root / "src/internal/Smooth_font.inc").read_text()
+    implementation, line = extract_method(source, "void TFT_eSPI::drawGlyph(uint16_t code) {")
+    fixture = (root / "tests/host/test_glyph_allocation.cpp").read_text()
+    marker = "// FUNCTION UNDER TEST"
+    if fixture.count(marker) != 1:
+        raise ValueError("expected exactly one unique function insertion marker")
+    generated = fixture.replace(
+        marker, f'#define FONT_FS_AVAILABLE\n#line {line} "src/internal/Smooth_font.inc"\n'
+        f"{implementation}"
+    )
+    with tempfile.TemporaryDirectory(prefix="tft-glyph-allocation-") as temp:
+        source_path = pathlib.Path(temp) / "glyph.cpp"
+        binary = pathlib.Path(temp) / "glyph"
+        source_path.write_text(generated)
+        subprocess.run(
+            [compiler, "-std=c++11", "-Wall", "-Wextra", "-fsanitize=address,undefined",
+             "-fno-sanitize-recover=all", str(source_path), "-o", str(binary)], check=True
+        )
+        subprocess.run([str(binary)], check=True)
+    print("PASS glyph-allocation")
 
 
 def run_font_metrics(root: pathlib.Path) -> None:
@@ -116,13 +188,20 @@ def run_font_metrics(root: pathlib.Path) -> None:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--case", choices=("scroll", "font-metrics", "all"), default="all")
+    parser.add_argument(
+        "--case", choices=("scroll", "font-metrics", "allocations", "glyph-allocation", "all"),
+        default="all",
+    )
     args = parser.parse_args()
     root = pathlib.Path(__file__).resolve().parents[2]
     if args.case in ("scroll", "all"):
         run_scroll(root)
     if args.case in ("font-metrics", "all"):
         run_font_metrics(root)
+    if args.case in ("allocations", "all"):
+        run_allocations(root)
+    if args.case in ("glyph-allocation", "all"):
+        run_glyph_allocation(root)
     return 0
 
 
