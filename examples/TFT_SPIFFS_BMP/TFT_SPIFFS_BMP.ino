@@ -24,9 +24,6 @@
 // Invoke TFT library
 TFT_eSPI tft = TFT_eSPI();
 
-uint16_t read16(fs::File& f);
-uint32_t read32(fs::File& f);
-
 //====================================================================================
 //                                    Setup
 //====================================================================================
@@ -59,86 +56,86 @@ void loop() {
 //====================================================================================
 
 // Bodmer's BMP image rendering function
+uint16_t bmpRead16(const uint8_t* data) {
+  return uint16_t(data[0]) | (uint16_t(data[1]) << 8);
+}
+
+uint32_t bmpRead32(const uint8_t* data) {
+  return uint32_t(data[0]) | (uint32_t(data[1]) << 8) | (uint32_t(data[2]) << 16) |
+         (uint32_t(data[3]) << 24);
+}
 
 void drawBmp(const char* filename, int16_t x, int16_t y) {
-  if ((x >= tft.width()) || (y >= tft.height())) return;
-
-  fs::File bmpFS;
-
-  // Open requested file on LittleFS
-  bmpFS = LittleFS.open(filename, "r");
-
-  if (!bmpFS) {
-    Serial.print("File not found");
+  fs::File file = LittleFS.open(filename, "r");
+  if (!file) {
+    Serial.println("BMP file not found.");
     return;
   }
 
-  uint32_t seekOffset;
-  uint16_t w, h, row;
-  uint8_t r, g, b;
-
-  uint32_t startTime = millis();
-
-  if (read16(bmpFS) == 0x4D42) {
-    read32(bmpFS);
-    read32(bmpFS);
-    seekOffset = read32(bmpFS);
-    read32(bmpFS);
-    w = read32(bmpFS);
-    h = read32(bmpFS);
-
-    if ((read16(bmpFS) == 1) && (read16(bmpFS) == 24) && (read32(bmpFS) == 0)) {
-      y += h - 1;
-
-      bool oldSwapBytes = tft.getSwapBytes();
-      tft.setSwapBytes(true);
-      bmpFS.seek(seekOffset);
-
-      uint16_t padding = (4 - ((w * 3) & 3)) & 3;
-      uint8_t lineBuffer[w * 3 + padding];
-
-      for (row = 0; row < h; row++) {
-        bmpFS.read(lineBuffer, sizeof(lineBuffer));
-        uint8_t* bptr = lineBuffer;
-        uint16_t* tptr = (uint16_t*)lineBuffer;
-        // Convert 24 to 16-bit colours
-        for (uint16_t col = 0; col < w; col++) {
-          b = *bptr++;
-          g = *bptr++;
-          r = *bptr++;
-          *tptr++ = ((r & 0xF8) << 8) | ((g & 0xFC) << 3) | (b >> 3);
-        }
-
-        // Push the pixel row to screen, pushImage will crop the line if needed
-        // y is decremented as the BMP image is drawn bottom up
-        tft.pushImage(x, y--, w, 1, (uint16_t*)lineBuffer);
-      }
-      tft.setSwapBytes(oldSwapBytes);
-      Serial.print("Loaded in ");
-      Serial.print(millis() - startTime);
-      Serial.println(" ms");
-    } else
-      Serial.println("BMP format not recognized.");
+  uint8_t header[54];
+  if (file.read(header, sizeof(header)) != sizeof(header) || bmpRead16(header) != 0x4D42) {
+    Serial.println("Invalid BMP header.");
+    return;
   }
-  bmpFS.close();
+  const uint32_t declaredSize = bmpRead32(header + 2);
+  const uint32_t offset = bmpRead32(header + 10);
+  const uint32_t dibSize = bmpRead32(header + 14);
+  const uint32_t width = bmpRead32(header + 18);
+  const uint32_t height = bmpRead32(header + 22);
+  const uint32_t imageSize = bmpRead32(header + 34);
+  if (dibSize < 40 || width == 0 || height == 0 || (width & 0x80000000U) ||
+      (height & 0x80000000U) || bmpRead16(header + 26) != 1 ||
+      bmpRead16(header + 28) != 24 || bmpRead32(header + 30) != 0) {
+    Serial.println("BMP requires uncompressed 24-bit bottom-up pixels.");
+    return;
+  }
+  const uint64_t stride = (uint64_t(width) * 3 + 3) & ~uint64_t(3);
+  const uint64_t pixelBytes = stride * height;
+  const uint64_t pixelEnd = uint64_t(offset) + pixelBytes;
+  if (uint64_t(14) + dibSize > offset || pixelEnd > declaredSize ||
+      declaredSize > file.size() || (imageSize != 0 &&
+      (imageSize < pixelBytes || uint64_t(offset) + imageSize > declaredSize))) {
+    Serial.println("Invalid or truncated BMP pixel data.");
+    return;
+  }
+
+  const int32_t left = x < 0 ? 0 : x;
+  const int32_t top = y < 0 ? 0 : y;
+  const int64_t imageRight = int64_t(x) + width;
+  const int64_t imageBottom = int64_t(y) + height;
+  const int32_t right = imageRight < tft.width() ? int32_t(imageRight) : tft.width();
+  const int32_t bottom = imageBottom < tft.height() ? int32_t(imageBottom) : tft.height();
+  if (left >= right || top >= bottom) return;
+
+  uint8_t bytes[32 * 3];
+  uint16_t pixels[32];
+  const bool oldSwapBytes = tft.getSwapBytes();
+  tft.setSwapBytes(true);
+  bool failed = false;
+  for (int32_t screenY = top; screenY < bottom && !failed; ++screenY) {
+    const uint32_t sourceY = height - 1 - uint32_t(screenY - int32_t(y));
+    const uint32_t sourceX = uint32_t(left - int32_t(x));
+    const uint64_t rowOffset = uint64_t(offset) + stride * sourceY + uint64_t(sourceX) * 3;
+    if (!file.seek(uint32_t(rowOffset))) {
+      failed = true;
+      break;
+    }
+    for (int32_t screenX = left; screenX < right; screenX += 32) {
+      const uint32_t count = uint32_t(right - screenX) < 32 ? uint32_t(right - screenX) : 32;
+      const int bytesToRead = int(count * 3);
+      if (file.read(bytes, bytesToRead) != bytesToRead) {
+        failed = true;
+        break;
+      }
+      for (uint32_t index = 0; index < count; ++index) {
+        const uint8_t* pixel = bytes + index * 3;
+        pixels[index] = ((uint16_t(pixel[2]) & 0xF8) << 8) |
+                        ((uint16_t(pixel[1]) & 0xFC) << 3) | (pixel[0] >> 3);
+      }
+      tft.pushImage(screenX, screenY, count, 1, pixels);
+    }
+  }
+  tft.setSwapBytes(oldSwapBytes);
+  if (failed) Serial.println("BMP seek or read failed.");
 }
 
-// These read 16- and 32-bit types from the LittleFS file.
-// BMP data is stored little-endian, Arduino is little-endian too.
-// May need to reverse subscript order if porting elsewhere.
-
-uint16_t read16(fs::File& f) {
-  uint16_t result;
-  ((uint8_t*)&result)[0] = f.read();  // LSB
-  ((uint8_t*)&result)[1] = f.read();  // MSB
-  return result;
-}
-
-uint32_t read32(fs::File& f) {
-  uint32_t result;
-  ((uint8_t*)&result)[0] = f.read();  // LSB
-  ((uint8_t*)&result)[1] = f.read();
-  ((uint8_t*)&result)[2] = f.read();
-  ((uint8_t*)&result)[3] = f.read();  // MSB
-  return result;
-}
