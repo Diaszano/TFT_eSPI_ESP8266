@@ -227,11 +227,61 @@ def run_font_metrics(root: pathlib.Path) -> None:
     print("PASS font-metrics")
 
 
+def run_memory_case(root: pathlib.Path, case: str) -> None:
+    compiler = shutil.which("c++")
+    if not compiler:
+        raise RuntimeError("C++ compiler required for host tests")
+    signatures = {
+        "spi-pixels": (("src/TFT_eSPI.cpp", "void TFT_eSPI::pushSwapBytePixels(const void* data_in, uint32_t len) {"),),
+        "sprite-rotation": (
+            ("src/internal/Sprite.inc", "uint16_t TFT_eSprite::readPixelValue(int32_t x, int32_t y) {"),
+            ("src/internal/Sprite.inc", "uint16_t TFT_eSprite::readPixel(int32_t x, int32_t y) {"),
+            ("src/internal/Sprite.inc", "void TFT_eSprite::drawPixel(int32_t x, int32_t y, uint32_t color) {"),
+            ("src/internal/Sprite.inc", "void TFT_eSprite::setRotation(uint8_t r) {"),
+        ),
+        "gfx-initialization": (
+            ("src/TFT_eSPI.cpp", "int16_t TFT_eSPI::fontHeight(uint8_t font) {"),
+            ("src/TFT_eSPI.cpp", "int16_t TFT_eSPI::textWidth(const char* string, uint8_t font) {"),
+            ("src/TFT_eSPI.cpp", "int16_t TFT_eSPI::drawString(const char* string, int32_t poX, int32_t poY, uint8_t font) {"),
+        ),
+    }
+    fixture = (root / "tests/host" / ("test_" + case.replace("-", "_") + ".cpp")).read_text()
+    marker = "// FUNCTIONS UNDER TEST"
+    if fixture.count(marker) != 1:
+        raise ValueError("expected exactly one unique function insertion marker")
+    methods = []
+    for path, signature in signatures[case]:
+        method, line = extract_method((root / path).read_text(), signature)
+        methods.append(f'#line {line} "{path}"\n{method}')
+    if case == "spi-pixels":
+        macro = re.search(r"^#define DAT8TO32\(P\).*$", (root / "src/TFT_eSPI.h").read_text(), re.MULTILINE)
+        if not macro:
+            raise ValueError("pixel conversion macro missing")
+        fixture = fixture.replace("// DAT8TO32 UNDER TEST", macro.group(0))
+    if case == "gfx-initialization":
+        declaration = re.search(r"^\s*GFXfont\* gfxFont[^\n]*", (root / "src/TFT_eSPI.h").read_text(), re.MULTILINE)
+        if not declaration:
+            raise ValueError("FreeFont member declaration missing")
+        fixture = fixture.replace("// MEMBER UNDER TEST", declaration.group(0))
+    generated = fixture.replace(marker, "\n".join(methods))
+    with tempfile.TemporaryDirectory(prefix="tft-" + case + "-") as temp:
+        source = pathlib.Path(temp) / "case.cpp"
+        binary = pathlib.Path(temp) / "case"
+        source.write_text(generated)
+        subprocess.run(
+            [compiler, "-std=c++11", "-Wall", "-Wextra", "-fsanitize=address,undefined",
+             "-fno-sanitize-recover=all", "-I", str(root / "tests/host"), str(source), "-o", str(binary)],
+            check=True,
+        )
+        subprocess.run([str(binary)], check=True)
+    print("PASS " + case)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--case",
-        choices=("scroll", "font-metrics", "allocations", "glyph-allocation", "font-files", "all"),
+        choices=("scroll", "font-metrics", "allocations", "glyph-allocation", "font-files", "spi-pixels", "all"),
         default="all",
     )
     args = parser.parse_args()
@@ -244,8 +294,10 @@ def main() -> int:
         run_allocations(root)
     if args.case in ("glyph-allocation", "all"):
         run_glyph_allocation(root)
-    if args.case in ("font-files", "all"):
+    if args.case in ("font-files", "spi-pixels", "all"):
         run_font_files(root)
+    if args.case in ("spi-pixels", "all"):
+        run_memory_case(root, "spi-pixels")
     return 0
 
 

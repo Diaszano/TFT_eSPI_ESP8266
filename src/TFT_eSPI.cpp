@@ -181,7 +181,7 @@ void TFT_eSPI::pushSwapBytePixels(const void* data_in, uint32_t len) {
   uint8_t* data = (uint8_t*)data_in;
   // uint16_t* data = (uint16_t*)data_in;
 
-  uint32_t color[8];
+  uint32_t color[8] = {};
 
   SPI1U1 = (255 << SPILMOSI) | (255 << SPILMISO);
 
@@ -211,11 +211,12 @@ void TFT_eSPI::pushSwapBytePixels(const void* data_in, uint32_t len) {
   if (len) {
     uint32_t i = 0;
     uint32_t bits = (len * 16 - 1);  // bits left to shift - 1
-    len = (len + 1) >> 1;
-    while (len--) {
+    uint32_t pairs = len >> 1;
+    while (pairs--) {
       color[i++] = DAT8TO32(data);
       data += 4;
     }
+    if (len & 1) color[i] = ((uint32_t)data[0] << 8) | data[1];
 
     while (SPI1CMD & SPIBUSY) {
     }
