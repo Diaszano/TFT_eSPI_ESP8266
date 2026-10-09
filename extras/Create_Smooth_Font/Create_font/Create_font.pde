@@ -375,7 +375,21 @@ int lastUnicode  = 0;
 
 PFont myFont;
 
-PrintWriter logOutput;
+String fontIdentifier(String name, int size) {
+  String identifier = name.replaceAll("[^A-Za-z0-9_]", "_");
+  if (identifier.length() == 0 || Character.isDigit(identifier.charAt(0))) {
+    identifier = "font_" + identifier;
+  }
+  return identifier + str(size);
+}
+
+String selectFontName(int number, String[] fonts, String fallback) {
+  if (number == -1) return fallback;
+  if (number < 0 || number >= fonts.length) {
+    throw new IllegalArgumentException("Font number is outside the system font list");
+  }
+  return fonts[number];
+}
 
 void setup() {
   logOutput = createWriter("FontFiles/System_Font_List.txt");
@@ -395,10 +409,9 @@ void setup() {
   logOutput.flush(); // Writes the remaining data to the file
   logOutput.close(); // Finishes the file
 
-  // Set the fontName from the array number or the defined fontName
+  fontName = selectFontName(fontNumber, fontList, fontName);
   if (fontNumber >= 0)
   {
-//    fontName = fontList[fontNumber];
     fontType = "";
   }
 
@@ -541,7 +554,7 @@ void setup() {
 
     output.println("#include <pgmspace.h>");
     output.println();
-    output.println("const uint8_t " + fontName + str(fontSize) + "[] PROGMEM = {");
+    output.println("const uint8_t " + fontIdentifier(fontName, fontSize) + "[] PROGMEM = {");
 
     int i = 0;
     int data = input.read();
