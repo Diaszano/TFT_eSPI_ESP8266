@@ -19,3 +19,5 @@ The library has no touch or DMA API and supports only the ST7789 over SPI. The s
 
 The package is named `TFT_eSPI_ESP8266`; sketches continue to include `TFT_eSPI.h` and use `TFT_eSPI`.
 `AA_GRAPHICS` is a deprecated no-op kept for source compatibility. It does not load an extra graphics implementation; smooth fonts remain controlled by `SMOOTH_FONT`.
+
+The compiler-warning gate covers owned source compiled through the pinned ESP8266 PlatformIO profile. Framework and vendor warnings are reported separately; this gate does not claim clang-tidy coverage.

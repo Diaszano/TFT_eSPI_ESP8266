@@ -12,6 +12,8 @@ Execute `make test-native` para os testes puros de conversão de cores. Eles exe
 
 Use `make docs-examples` para compilar os primeiros exemplos C++ dos dois READMEs e dos guias de Sprite usando a biblioteca preparada. Use um dispositivo para as verificações do display.
 
+Execute `make warnings` para reconstruir os 14 exemplos em `.build/warnings/` com `-Wall -Wextra`. A linha de base de avisos próprios é revisada manualmente; novos avisos falham, avisos resolvidos são relatados para remoção e os avisos do framework/core ficam em um relatório separado. Não edite a linha de base automaticamente.
+
 | Alvo | Finalidade |
 | --- | --- |
 | `make build` | Compila todos os exemplos selecionados. |
@@ -20,6 +22,7 @@ Use `make docs-examples` para compilar os primeiros exemplos C++ dos dois README
 | `make uploadfs EX=<Name> PORT=<port>` | Envia os dados do sistema de arquivos de um exemplo. |
 | `make monitor PORT=<port>` | Abre o monitor serial. |
 | `make clean` | Remove os arquivos gerados de build. |
+| `make warnings` | Reconstrói os exemplos e verifica avisos próprios do compilador. |
 | `make docs-check` | Verifica pares de documentação, links e referências a APIs removidas. |
 | `make docs` | Executa as verificações da documentação e gera a referência da API. |
 | `make help` | Lista os alvos disponíveis. |

@@ -10,6 +10,8 @@ Use clang-format 23.1.2 from the locked requirements. `make format-check` checks
 
 Run `make test-native` for the pure color conversion tests. They exercise shared integer conversion helpers only; they do not model the ESP8266 core, PROGMEM, display timing, heap use or rendering. Use `make docs-examples` to compile the first C++ examples from both READMEs and Sprite guides against the staged library. Use a device for display checks.
 
+Run `make warnings` to rebuild all 14 examples in `.build/warnings/` with `-Wall -Wextra`. The owned-warning baseline is reviewed manually; new findings fail, resolved findings are reported for removal, and framework/core warnings are kept in a separate report. Do not edit the baseline automatically.
+
 | Target | Purpose |
 | --- | --- |
 | `make build` | Compile all curated examples. |
@@ -18,6 +20,7 @@ Run `make test-native` for the pure color conversion tests. They exercise shared
 | `make uploadfs EX=<Name> PORT=<port>` | Upload an example's filesystem data. |
 | `make monitor PORT=<port>` | Open the serial monitor. |
 | `make clean` | Remove generated build files. |
+| `make warnings` | Rebuild examples with owned compiler-warning checks. |
 | `make docs-check` | Check documentation pairs, links and removed API references. |
 | `make docs` | Run the documentation checks and generate the API reference. |
 | `make help` | List available targets. |
