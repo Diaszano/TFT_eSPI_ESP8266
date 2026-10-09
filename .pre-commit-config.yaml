@@ -39,4 +39,4 @@ repos:
       - id: commitlint
         stages: [commit-msg]
         pass_filenames: true
-        additional_dependencies: ['@commitlint/config-conventional']
+        additional_dependencies: ['@commitlint/config-conventional@21.2.3']

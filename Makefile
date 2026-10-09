@@ -4,26 +4,32 @@
 EXAMPLES := $(notdir $(patsubst %/,%,$(wildcard examples/*/)))
 JOBS ?= $(shell nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 1)
 VERSION := $(shell python3 -c "import json;print(json.load(open('library.json'))['version'])")
-LIB_SRC = $(wildcard TFT_eSPI.* User_Setup*.h TFT_Drivers/* Extensions/* Fonts/*.h User_Setups/*)
 
-.PHONY: build $(addprefix build-,$(EXAMPLES)) upload uploadfs monitor clean help docs-check docs-api docs setup lint lint-update check-version
+.PHONY: build $(addprefix build-,$(EXAMPLES)) upload uploadfs monitor clean help docs-check docs-api docs setup lint lint-update check-version FORCE
 
-build:
+build: .build/source-inventory.txt
 	@mkdir -p "$${PLATFORMIO_CORE_DIR:-$$HOME/.platformio}"
 	$(MAKE) --no-print-directory -j$(JOBS) $(EXAMPLES:%=.build/%/.ok)
 
 $(addprefix build-,$(EXAMPLES)): build-%: .build/%/.ok
 
-.build/pio-library/.stamp: $(LIB_SRC) $(wildcard Fonts/*.c Fonts/GFXFF/*.h) library.json library.properties
+.build/source-inventory.txt: FORCE scripts/build_inputs.py
+	@mkdir -p .build
+	@python3 scripts/build_inputs.py library > $@.tmp
+	@python3 scripts/build_inputs.py examples >> $@.tmp
+	@cmp -s $@.tmp $@ || mv $@.tmp $@
+	@rm -f $@.tmp
+
+.build/pio-library/.stamp: .build/source-inventory.txt
 	@rm -rf .build/pio-library
 	@mkdir -p .build/pio-library
 	@cp -R TFT_eSPI.* User_Setup*.h TFT_Drivers Extensions Fonts User_Setups library.json library.properties .build/pio-library/
 	@touch $@
 
-.build/%/.ok: $(LIB_SRC) .build/pio-library/.stamp $$(wildcard examples/$$*/*.ino)
+.build/%/.ok: .build/source-inventory.txt .build/pio-library/.stamp $$(wildcard examples/$$*/*.ino)
 	@rm -rf .build/$*
 	@mkdir -p .build/$*
-	@if pio ci --lib=$(CURDIR)/.build/pio-library --board=nodemcuv2 -O "board_build.filesystem=littlefs" --build-dir $(CURDIR)/.build/$* --keep-build-dir examples/$* > .build/$*.log 2>&1; then \
+	@if pio ci --lib=$(CURDIR)/.build/pio-library --board=nodemcuv2 -O "platform=espressif8266@4.2.1" -O "board_build.filesystem=littlefs" --build-dir $(CURDIR)/.build/$* --keep-build-dir examples/$* > .build/$*.log 2>&1; then \
 		touch $@; echo "OK $*"; \
 	else \
 		tail -n 30 .build/$*.log; echo "FAIL $*"; exit 1; \
@@ -57,7 +63,7 @@ docs-api:
 docs: docs-check docs-api
 
 setup:
-	command -v clang-format || brew install clang-format
+	python3 -m pip install --require-hashes -r scripts/requirements-dev.txt
 	command -v gitleaks || brew install gitleaks
 	pre-commit install --hook-type pre-commit --hook-type commit-msg
 
