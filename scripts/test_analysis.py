@@ -275,6 +275,68 @@ class AnalysisTests(unittest.TestCase):
                 self.assertTrue(build_dir.is_relative_to(root / ".build/warnings"))
                 self.assertTrue(kwargs["capture_output"])
 
+    def test_warning_copy_relative_and_absolute_map_to_owned_source(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = pathlib.Path(directory)
+            source = root / "src/internal/Smooth_font.inc"
+            source.parent.mkdir(parents=True)
+            source.write_text("one\nfontFS = SPIFFS;\nthree\n")
+            project = root / ".build/warnings/Example"
+            for path in ("lib/pio-library/src/internal/Smooth_font.inc",
+                         str(project / "lib/pio-library/src/internal/Smooth_font.inc")):
+                with self.subTest(path=path):
+                    log = f"{path}:2:1: warning: SPIFFS is deprecated [-Wdeprecated-declarations]\n"
+                    owned, vendor = analysis.parse_warnings(log, root, root / ".build/pio-library", "Example")
+                    self.assertEqual(len(owned), 1)
+                    self.assertEqual(owned[0]["path"], "src/internal/Smooth_font.inc")
+                    self.assertEqual(owned[0]["check"], "-Wdeprecated-declarations")
+                    self.assertEqual(vendor, [])
+
+    def test_warning_vendor_stays_vendor_and_new_owned_warning_fails_comparison(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = pathlib.Path(directory)
+            source = root / "src/TFT_eSPI.cpp"
+            source.parent.mkdir(parents=True)
+            source.write_text("int seeded;\n")
+            log = ("lib/pio-library/src/TFT_eSPI.cpp:1:1: warning: seeded [-Wunused-variable]\n"
+                   + f"{root}/.platformio/packages/framework/core.cpp:1:1: warning: vendor [-Wextra]\n")
+            owned, vendor = analysis.parse_warnings(log, root, root / ".build/pio-library", "Example")
+            self.assertEqual(len(owned), 1)
+            self.assertEqual(len(vendor), 1)
+            baseline = {"schema": 1, "scope": "target", "profile": self.profile, "findings": []}
+            delta = analysis.compare_findings(owned, baseline, self.profile)
+            self.assertEqual(delta["new"], owned)
+            self.assertEqual(delta["resolved"], [])
+            with mock.patch("analysis.build_warning_profile", return_value={"Example": log}), \
+                 mock.patch("analysis._warning_profile", return_value=self.profile):
+                (root / "examples/Example").mkdir(parents=True)
+                (root / "examples/Example/Example.ino").write_text("void setup() {}\n")
+                (root / ".build/warnings").mkdir(parents=True)
+                baseline_path = root / "baseline.json"
+                baseline_path.write_text(json.dumps(baseline))
+                self.assertEqual(analysis.warnings(root, baseline_path, ["-Wall", "-Wextra"]), 1)
+
+    def test_missing_owned_source_fails_closed(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = pathlib.Path(directory)
+            with self.assertRaisesRegex(ValueError, "cannot read owned warning source"):
+                analysis.parse_warnings(
+                    "lib/pio-library/src/missing.h:1:1: warning: seeded [-Wextra]",
+                    root, root / ".build/pio-library", "Example")
+
+    def test_generated_ino_and_setup_copy_keep_repository_identity(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = pathlib.Path(directory)
+            (root / "examples/Example").mkdir(parents=True)
+            (root / "examples/Example/Example.ino").write_text("int unused;\n")
+            (root / "User_Setup.h").write_text("int setup_warning;\n")
+            log = ("src/Example.ino.cpp:1:1: warning: sketch [-Wunused-variable]\n"
+                   "lib/pio-library/User_Setup.h:1:1: warning: setup [-Wunused-variable]\n")
+            owned, vendor = analysis.parse_warnings(log, root, root / ".build/pio-library", "Example")
+            self.assertEqual({finding["path"] for finding in owned},
+                             {"examples/Example/Example.ino", "User_Setup.h"})
+            self.assertEqual(vendor, [])
+
 
 if __name__ == "__main__":
     unittest.main()

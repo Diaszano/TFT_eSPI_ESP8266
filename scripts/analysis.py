@@ -412,37 +412,36 @@ def parse_warnings(
 def _map_owned_path(
     path: pathlib.Path, root: pathlib.Path, stage: pathlib.Path, example: str
 ) -> tuple[str, pathlib.Path] | None:
-    for source_root in (stage / "src", root / "src"):
-        try:
-            resolved = path.resolve()
-            relative = resolved.relative_to(source_root)
-            return "src/" + relative.as_posix(), root / "src" / relative
-        except ValueError:
-            pass
-    try:
-        resolved = path.resolve()
-        relative = resolved.relative_to(root / "examples")
-        source = root / "examples" / relative
-        return "examples/" + relative.as_posix(), source
-    except ValueError:
-        pass
-    try:
-        resolved = path.resolve()
-        relative = resolved.relative_to(root / "test")
-        source = root / "test" / relative
-        return "test/" + relative.as_posix(), source
-    except ValueError:
-        pass
-    try:
-        resolved = path.resolve()
-        relative = resolved.relative_to(root / ".build/warnings" / example / "src")
-        generated_name = relative.name.removesuffix(".cpp")
-        candidate = root / "examples" / example / generated_name
-        if candidate.is_file():
-            rel = candidate.relative_to(root)
-            return rel.as_posix(), candidate
-    except ValueError:
-        pass
+    project = root / ".build/warnings" / example
+    candidates = [path.resolve()] if path.is_absolute() else [
+        (project / path).resolve(), (root / path).resolve()
+    ]
+    for resolved in candidates:
+        for library_root in (project / "lib/pio-library", stage, root):
+            try:
+                relative = resolved.relative_to(library_root / "src")
+                return "src/" + relative.as_posix(), root / "src" / relative
+            except ValueError:
+                pass
+            for name in ("User_Setup.h", "User_Setup_Select.h"):
+                if resolved == library_root / name:
+                    return name, root / name
+        for folder in ("examples", "test", "tests"):
+            try:
+                relative = resolved.relative_to(root / folder)
+                return folder + "/" + relative.as_posix(), root / folder / relative
+            except ValueError:
+                pass
+        if example:
+            try:
+                relative = resolved.relative_to(project / "src")
+            except ValueError:
+                continue
+            source = root / "examples" / example / relative
+            if source.suffix == ".cpp" and source.name.endswith(".ino.cpp"):
+                source = source.with_suffix("")
+            if source.is_file():
+                return source.relative_to(root).as_posix(), source
     return None
 
 

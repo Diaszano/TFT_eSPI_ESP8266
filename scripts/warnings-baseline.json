@@ -23,6 +23,24 @@
       "line": 60,
       "owner": "examples/Font_Demo_1 maintainers",
       "rationale": "Existing Windows-style font path literal is parsed as an unknown escape sequence by GCC; unrelated to library sources."
+    },
+    {
+      "path": "src/TFT_eSPI.h",
+      "check": "-Wdeprecated-declarations",
+      "message": "'SPIFFS' is deprecated: SPIFFS has been deprecated. Please consider moving to LittleFS or other filesystems.",
+      "context_sha256": "8892e6a5085017f11ed80326de7a266a7b3c9cad928a9425e67aed9dcce572b8",
+      "line": 1377,
+      "owner": "TFT_eSPI_ESP8266 maintainer",
+      "rationale": "Legacy SPIFFS font access is retained for compatibility with existing installations on ESP8266 core 3.1.2; migrating persisted filesystem data requires a separate approved migration."
+    },
+    {
+      "path": "src/internal/Smooth_font.inc",
+      "check": "-Wdeprecated-declarations",
+      "message": "'SPIFFS' is deprecated: SPIFFS has been deprecated. Please consider moving to LittleFS or other filesystems.",
+      "context_sha256": "f17558c7699f5b59e123a34fa254a05369de1b335351af03bb39b668f50cd6f2",
+      "line": 120,
+      "owner": "TFT_eSPI_ESP8266 maintainer",
+      "rationale": "Legacy SPIFFS font access is retained for compatibility with existing installations on ESP8266 core 3.1.2; migrating persisted filesystem data requires a separate approved migration."
     }
   ]
 }
