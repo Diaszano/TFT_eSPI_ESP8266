@@ -40,7 +40,7 @@ The Arduino package keeps implementation files under `src/`. Edit the package-ro
 | `TFT_MISO` | Undefined | Read pin. Leave undefined for a write-only module. |
 | `TFT_BL`, `TFT_BACKLIGHT_ON` | `5`, `LOW` | Optional backlight pin and active level. |
 | `SPI_FREQUENCY` | `40000000` | SPI write clock in Hz. |
-| `SPI_READ_FREQUENCY` | Controller default | Optional slower SPI read clock when MISO is wired. |
+| `SPI_READ_FREQUENCY` | `10000000` (header default) | Optional slower SPI read clock when MISO is wired. |
 | `TFT_SPI_MODE` | `SPI_MODE3` | SPI mode for the ST7789. |
 | `TFT_SPI_OVERLAP` | Off | Uses the ESP8266 overlap SPI pin arrangement. |
 | `SUPPORT_TRANSACTIONS` | Core-dependent | Enables SPI transactions when supported by the ESP8266 core. |
