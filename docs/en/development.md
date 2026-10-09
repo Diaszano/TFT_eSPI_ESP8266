@@ -4,6 +4,8 @@ English | [Português (Brasil)](https://github.com/Diaszano/TFT_eSPI_ESP8266/blo
 
 ## Make targets
 
+Use Python 3.14.7 for the development toolchain. Install the pinned and hash-locked tools with `python -m pip install --require-hashes -r scripts/requirements-dev.txt`; the build uses ESP8266 platform 4.2.1 and tracks nested library and example inputs so additions, edits, and deletions invalidate cached builds.
+
 | Target | Purpose |
 | --- | --- |
 | `make build` | Compile all curated examples. |

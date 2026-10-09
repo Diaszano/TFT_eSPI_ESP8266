@@ -4,7 +4,7 @@
 
 ## Configuração e verificações
 
-Execute `make setup` uma vez e, antes de abrir um pull request, rode `make build lint docs`.
+Use Python 3.14.7 e instale as ferramentas com hashes fixados usando `python -m pip install --require-hashes -r scripts/requirements-dev.txt`. Execute `make setup` uma vez e, antes de abrir um pull request, rode `make build lint docs`.
 
 ## Branches e commits
 

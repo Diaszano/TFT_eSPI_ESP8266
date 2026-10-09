@@ -4,6 +4,8 @@
 
 ## Alvos do Make
 
+Use Python 3.14.7 para as ferramentas de desenvolvimento. Instale as ferramentas com versões e hashes fixados usando `python -m pip install --require-hashes -r scripts/requirements-dev.txt`; o build usa a plataforma ESP8266 4.2.1 e acompanha entradas aninhadas da biblioteca e dos exemplos para que inclusões, alterações e remoções invalidem builds em cache.
+
 | Alvo | Finalidade |
 | --- | --- |
 | `make build` | Compila todos os exemplos selecionados. |
