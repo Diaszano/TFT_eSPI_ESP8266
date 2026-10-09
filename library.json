@@ -1,6 +1,6 @@
 {
   "name": "TFT_eSPI_ESP8266",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "keywords": "Arduino, TFT, ST7789, SPI, ESP8266, graphics",
   "description": "SPI TFT graphics library for ESP8266 boards with ST7789 displays",
   "repository": {
