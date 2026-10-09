@@ -128,3 +128,8 @@ cppcheck: build-TFT_Print_Test
 
 help:
 	@printf '%s\n' 'build: compile all curated examples' 'build-<Nome>: compile one example' 'upload EX=<Nome> [PORT=<port>]: upload one example' 'uploadfs EX=<Nome> [PORT=<port>]: upload example filesystem' 'monitor [PORT=<port>]: open serial monitor' 'clean: remove build files' 'warnings: compare owned compiler warnings across all examples' 'compiledb: prepare the target clang-tidy database' 'compiledb-native: prepare the native pure-logic database' 'tidy: run the target clang-tidy parsing pilot' 'tidy-native: analyze pure color helpers on native' 'cppcheck: run the optional PlatformIO cppcheck pilot' 'test-host: run source-extracted ASan/UBSan host regressions' 'docs-check: validate documentation pairs, links and removed APIs' 'docs-examples: compile README and Sprite guide examples' 'docs-api: generate the Doxygen API reference' 'docs: validate docs and generate the API reference' 'setup: install lint tools and hooks' 'lint: run pre-commit checks and version check' 'lint-update: update pre-commit hook revisions' 'check-version: verify package versions' 'help: show this help'
+
+.PHONY: build-arduino
+
+build-arduino:
+	python3 scripts/arduino_build.py
