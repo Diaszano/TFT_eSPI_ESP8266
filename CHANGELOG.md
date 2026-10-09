@@ -9,6 +9,21 @@ The hardening changes below were merged after the published v1.0.0 tag. They are
 
 * harden ESP8266 library and tooling ([#5](https://github.com/Diaszano/TFT_eSPI_ESP8266/issues/5)) ([e9e7f2d](https://github.com/Diaszano/TFT_eSPI_ESP8266/commit/e9e7f2d30378babd22427fd9606d7b99bf0d83d0))
 
+## [1.1.0](https://github.com/Diaszano/TFT_eSPI_ESP8266/compare/v1.0.0...v1.1.0) (2026-10-09)
+
+
+### Features
+
+* harden ESP8266 library and tooling ([#5](https://github.com/Diaszano/TFT_eSPI_ESP8266/issues/5)) ([e9e7f2d](https://github.com/Diaszano/TFT_eSPI_ESP8266/commit/e9e7f2d30378babd22427fd9606d7b99bf0d83d0))
+
+
+### Bug Fixes
+
+* **examples:** align display examples with default panel and keep clock responsive ([#11](https://github.com/Diaszano/TFT_eSPI_ESP8266/issues/11)) ([859b415](https://github.com/Diaszano/TFT_eSPI_ESP8266/commit/859b415e9717d9bf64c885d492f4931f035d9413))
+* **firmware:** prevent memory overreads and handle font render errors ([#8](https://github.com/Diaszano/TFT_eSPI_ESP8266/issues/8)) ([4db8288](https://github.com/Diaszano/TFT_eSPI_ESP8266/commit/4db8288751332b0fac1e8a2396ebac40fc2d639b))
+* **release:** allow release versions to advance after initial publication ([#13](https://github.com/Diaszano/TFT_eSPI_ESP8266/issues/13)) ([7fe7ae5](https://github.com/Diaszano/TFT_eSPI_ESP8266/commit/7fe7ae566e0f30f81c0d7a3a80f949cbb2869c35))
+* **tools:** bound bmp parsing pad palettes and honor font selection ([#10](https://github.com/Diaszano/TFT_eSPI_ESP8266/issues/10)) ([e8459ab](https://github.com/Diaszano/TFT_eSPI_ESP8266/commit/e8459ab11305ec5ab7418c3642371c07fb17198f))
+
 ## [1.0.0](https://github.com/Diaszano/TFT_eSPI_ESP8266/releases/tag/v1.0.0) (2026-10-09)
 
 Initial ESP8266/ST7789-only fork release.
