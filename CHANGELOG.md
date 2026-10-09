@@ -10,6 +10,13 @@
 ## [1.0.0](https://github.com/Diaszano/TFT_eSPI_ESP8266/compare/v1.0.0...v1.0.0) (2026-10-09)
 
 
+### Features
+
+* harden ESP8266 library and tooling ([#5](https://github.com/Diaszano/TFT_eSPI_ESP8266/issues/5)) ([e9e7f2d](https://github.com/Diaszano/TFT_eSPI_ESP8266/commit/e9e7f2d30378babd22427fd9606d7b99bf0d83d0))
+
+## [1.0.0](https://github.com/Diaszano/TFT_eSPI_ESP8266/compare/v1.0.0...v1.0.0) (2026-10-09)
+
+
 ### Bug Fixes
 
 * 1168 ([8164629](https://github.com/Diaszano/TFT_eSPI_ESP8266/commit/816462939735c5af70fa2e2f7157c3b3977c4aa4))
