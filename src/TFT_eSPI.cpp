@@ -5569,13 +5569,10 @@ void TFT_eSPI::getSetup(setup_t& tft_settings) {
 
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include "Extensions/Sprite.cpp"
+#include "internal/Sprite.inc"
 
 #ifdef SMOOTH_FONT
-#include "Extensions/Smooth_font.cpp"
+#include "internal/Smooth_font.inc"
 #endif
 
-#ifdef AA_GRAPHICS
-#include "Extensions/AA_graphics.cpp"  // Loaded if SMOOTH_FONT is defined by user
-#endif
 ////////////////////////////////////////////////////////////////////////////////////////

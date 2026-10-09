@@ -26,7 +26,7 @@ $(addprefix build-,$(EXAMPLES)): build-%: .build/%/.ok
 .build/pio-library/.stamp: .build/source-inventory.txt
 	@rm -rf .build/pio-library
 	@mkdir -p .build/pio-library
-	@cp -R TFT_eSPI.* User_Setup*.h TFT_Drivers Extensions Fonts User_Setups library.json library.properties .build/pio-library/
+	@cp -R src User_Setup.h User_Setup_Select.h library.json library.properties .build/pio-library/
 	@touch $@
 
 .build/%/.ok: .build/source-inventory.txt .build/pio-library/.stamp $$(wildcard examples/$$*/*.ino)

@@ -41,5 +41,13 @@
   },
   "examples": [
     "examples/*"
-  ]
+  ],
+  "build": {
+    "srcDir": "src",
+    "includeDir": "src",
+    "srcFilter": [
+      "-<*>",
+      "+<TFT_eSPI.cpp>"
+    ]
+  }
 }

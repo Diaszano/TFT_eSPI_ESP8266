@@ -10,7 +10,7 @@ import package_check
 
 
 REQUIRED = {
-    "TFT_eSPI.cpp", "TFT_eSPI.h", "User_Setup.h", "library.json", "library.properties",
+    "TFT_eSPI.cpp", "TFT_eSPI.h", "User_Setup.h", "User_Setup_Select.h", "library.json", "library.properties",
     "license.txt", "Fonts/GFXFF/license.txt", "examples/TFT_Print_Test/TFT_Print_Test.ino",
     "examples/Font_Demo_1/data/NotoSansBold15.vlw", "examples/Font_Demo_1/data/NotoSansBold36.vlw",
     "examples/TFT_SPIFFS_BMP/data/parrot.bmp",
@@ -22,7 +22,9 @@ class PackageCheckTests(unittest.TestCase):
         package_check.validate_members(REQUIRED, src_layout=False)
 
     def test_src_layout_requires_source_entry_points_and_root_setup(self):
-        members = REQUIRED - {"TFT_eSPI.cpp", "TFT_eSPI.h"} | {"src/TFT_eSPI.cpp", "src/TFT_eSPI.h"}
+        members = REQUIRED - {"TFT_eSPI.cpp", "TFT_eSPI.h"} | {"src/TFT_eSPI.cpp", "src/TFT_eSPI.h", "src/User_Setup.h", "src/User_Setup_Select.h"}
+        members.discard("Fonts/GFXFF/license.txt")
+        members.add("src/Fonts/GFXFF/license.txt")
         package_check.validate_members(members, src_layout=True)
 
     def test_missing_setup_notice_or_data_fails(self):

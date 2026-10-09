@@ -1,4 +1,4 @@
-#include <Fonts/Font64rle.c>
+#include <Fonts/Font64rle.inc>
 
 #define nr_chrs_f64 96
 #define chr_hgt_f64 48

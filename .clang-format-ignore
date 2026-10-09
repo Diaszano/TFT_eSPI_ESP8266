@@ -1,2 +1,2 @@
-Fonts/**
-TFT_Drivers/ST7789_Init.h
+src/Fonts/**
+src/TFT_Drivers/ST7789_Init.h

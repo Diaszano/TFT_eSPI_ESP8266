@@ -7,23 +7,27 @@ import sys
 def library_files(root: pathlib.Path) -> list[str]:
     root = pathlib.Path(root)
     source = root / "src"
-    roots = [source if source.is_dir() else root]
+    source_root = source if source.is_dir() else root
     files = []
-    for path in roots[0].glob("TFT_eSPI.*"):
+    for path in source_root.glob("TFT_eSPI.*"):
         if path.is_file():
             files.append(path)
-    for path in roots[0].glob("User_Setup*.h"):
+    for path in source_root.glob("User_Setup*.h"):
+        if path.is_file():
+            files.append(path)
+    for name in ("User_Setup.h", "User_Setup_Select.h"):
+        path = root / name
         if path.is_file():
             files.append(path)
     for name in ("TFT_Drivers", "Extensions", "Fonts", "User_Setups"):
-        folder = roots[0] / name
+        folder = source_root / name
         if folder.is_dir():
             files.extend(path for path in folder.rglob("*") if path.is_file())
     for name in ("Makefile", "library.json", "library.properties", "keywords.txt", "license.txt", "scripts/requirements-dev.in", "scripts/requirements-dev.txt"):
         path = root / name
         if path.is_file():
             files.append(path)
-    return sorted(path.relative_to(root).as_posix() for path in files)
+    return sorted({path.relative_to(root).as_posix() for path in files})
 
 
 def example_files(root: pathlib.Path) -> list[str]:

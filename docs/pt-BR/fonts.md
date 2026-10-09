@@ -23,6 +23,8 @@ Defina `LOAD_GFXFF` para incluir as FreeFonts do Adafruit GFX. Selecione uma fon
 
 ## Fontes suaves
 
+Fontes personalizadas que antes ficavam em `Fonts/Custom/` na raiz do pacote agora devem ficar em `src/Fonts/Custom/`. Mantenha os includes dos sketches, como `#include <Fonts/Custom/MinhaFonte.h>`, sem alterações.
+
 Fontes suaves usam arquivos `.vlw` e exigem `SMOOTH_FONT`. O exemplo `Font_Demo_1` lê os arquivos do LittleFS. Envie a pasta de dados do exemplo e carregue ou libere a fonte:
 
 ```sh

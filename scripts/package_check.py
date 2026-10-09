@@ -23,10 +23,11 @@ def validate_members(names: set[str], src_layout: bool) -> None:
         if path.parts and path.parts[0] in _TOOL_ARTIFACTS:
             raise ValueError(f"tooling artifact in package: {name}")
     required = {
-        "User_Setup.h", "library.json", "library.properties", "license.txt",
-        "Fonts/GFXFF/license.txt", "examples/TFT_Print_Test/TFT_Print_Test.ino", *_DATA,
+        "User_Setup.h", "User_Setup_Select.h", "library.json", "library.properties", "license.txt",
+        "examples/TFT_Print_Test/TFT_Print_Test.ino", *_DATA,
     }
-    required.update({"src/TFT_eSPI.h", "src/TFT_eSPI.cpp"} if src_layout else {"TFT_eSPI.h", "TFT_eSPI.cpp"})
+    required.add("src/Fonts/GFXFF/license.txt" if src_layout else "Fonts/GFXFF/license.txt")
+    required.update({"src/TFT_eSPI.h", "src/TFT_eSPI.cpp", "src/User_Setup.h", "src/User_Setup_Select.h"} if src_layout else {"TFT_eSPI.h", "TFT_eSPI.cpp"})
     missing = required - names
     if missing:
         raise ValueError(f"package is missing required members: {sorted(missing)}")

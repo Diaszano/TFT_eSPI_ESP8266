@@ -27,6 +27,8 @@ build_flags =
 
 `USER_SETUP_LOADED` tells the library that the sketch provides its setup and prevents the library setup from being included again.
 
+The Arduino package keeps implementation files under `src/`. Edit the package-root `User_Setup.h` as before; the source setup forwarder preserves it, and the root `User_Setup_Select.h` remains a compatibility forwarder for direct includes. The optional project `tft_setup.h` is still loaded before the selector.
+
 ## Supported options
 
 | Option | Default | Purpose |
@@ -46,11 +48,12 @@ build_flags =
 | `TFT_INVERSION_ON` | Off | Enables panel color inversion when required by the module. |
 | `CGRAM_OFFSET` | Off | Applies a display-memory offset for panels that need it. |
 | `LOAD_GLCD` | On | Includes the built-in 6×8 font. |
-| `LOAD_FONT2`, `LOAD_FONT4`, `LOAD_FONT6`, `LOAD_FONT7`, `LOAD_FONT8` | Off | Includes the corresponding built-in font. |
-| `LOAD_GFXFF` | Off | Includes the GFX FreeFonts. |
-| `SMOOTH_FONT` | Off | Enables anti-aliased smooth fonts. |
+| `LOAD_FONT2`, `LOAD_FONT4`, `LOAD_FONT6`, `LOAD_FONT7`, `LOAD_FONT8` | On in the shipped root setup | Includes the corresponding built-in font. |
+| `LOAD_GFXFF` | On in the shipped root setup | Includes the GFX FreeFonts. |
+| `SMOOTH_FONT` | On in the shipped root setup | Enables smooth fonts. |
 | `FONT_FS_AVAILABLE` | Set by smooth-font setup | Enables smooth-font filesystem support. |
-| `USER_SETUP_LOADED` | Off | Uses definitions supplied by the sketch or build flags. |
+| `AA_GRAPHICS` | Deprecated no-op | Retained for compatibility; the absent extension is not loaded. |
+| `USER_SETUP_LOADED` | Off | Uses definitions supplied by the project setup or build flags. |
 | `DISABLE_ALL_LIBRARY_WARNINGS` | Off | Suppresses library warnings where supported by the compiler. |
 
 Change RGB order or inversion one option at a time and run `Colour_Test` to compare the result. `TFT_SPI_OVERLAP` is for boards wired for the ESP8266 overlap mode; it does not select a different controller.

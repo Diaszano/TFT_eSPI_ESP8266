@@ -4,7 +4,7 @@ English | [Português (Brasil)](https://github.com/Diaszano/TFT_eSPI_ESP8266/blo
 
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/Diaszano/TFT_eSPI_ESP8266/badge)](https://scorecard.dev/viewer/?uri=github.com/Diaszano/TFT_eSPI_ESP8266)
 
-TFT_eSPI_ESP8266 is an Arduino graphics library for driving an ST7789 display over SPI from an ESP8266. It keeps the familiar `TFT_eSPI.h` header and `TFT_eSPI` class, with graphics, text, fonts and RAM sprites configured for this target.
+TFT_eSPI_ESP8266 is an Arduino graphics library for driving an ST7789 display over SPI from an ESP8266. It keeps the familiar `TFT_eSPI.h` header and `TFT_eSPI` class, with graphics, text, fonts and RAM sprites configured for this target. The package uses Arduino’s `src/` layout while keeping the same sketch include and editable root `User_Setup.h`.
 
 | Part | Supported target |
 | --- | --- |

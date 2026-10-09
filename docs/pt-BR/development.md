@@ -22,6 +22,10 @@ A CI compila os exemplos selecionados com PlatformIO. O workflow de documentaç�
 
 `make size-check` falha se o uso estático de flash ou RAM aumentar ou se o perfil de build mudar. O total de RAM inclui dados inicializados, dados somente leitura e BSS; ele não mede o heap usado em tempo de execução por sprites, fontes ou outras alocações.
 
+## Estrutura da biblioteca Arduino
+
+Arduino e PlatformIO compilam `src/TFT_eSPI.cpp` como a única unidade de tradução de produção da biblioteca. Sprite, fonte suave, driver e dados das fontes embutidas são fragmentos incluídos; mantenha-os como `.inc` ou headers, nunca como arquivos `.cpp`/`.c` compilados separadamente. O `User_Setup.h` editável permanece na raiz do pacote.
+
 ## Adicionar um exemplo
 
 Crie `examples/<Name>/<Name>.ino`, sem espaços em `<Name>`. Mantenha os dados específicos do exemplo nessa pasta e confirme que o sketch compila com a configuração suportada. Execute `make build-<Name>` antes de enviar a alteração e depois `make build` para verificar o conjunto completo.

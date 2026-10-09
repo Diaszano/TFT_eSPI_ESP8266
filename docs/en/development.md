@@ -22,6 +22,10 @@ CI compiles the curated examples with PlatformIO. The documentation workflow che
 
 `make size-check` fails if static flash or RAM usage grows under a different build profile. Its RAM total covers initialized data, read-only data, and BSS; it does not measure runtime heap use by sprites, fonts, or other allocations.
 
+## Arduino library layout
+
+Arduino and PlatformIO compile `src/TFT_eSPI.cpp` as the library’s only production translation unit. Sprite, smooth-font, driver, and built-in font data files are included fragments; keep them as `.inc` or headers, not separately compiled `.cpp`/`.c` files. The editable `User_Setup.h` stays at the package root.
+
 ## Add an example
 
 Create `examples/<Name>/<Name>.ino` with no spaces in `<Name>`. Keep example-specific data inside that directory and ensure the sketch builds with the supported setup. Run `make build-<Name>` before submitting, then `make build` to check the complete curated set.

@@ -18,3 +18,4 @@ The library has no touch or DMA API and supports only the ST7789 over SPI. The s
 | `User_Setups/` and `User_Setup_Select.h` selector | Edit `User_Setup.h` or provide setup definitions with `build_flags`. |
 
 The package is named `TFT_eSPI_ESP8266`; sketches continue to include `TFT_eSPI.h` and use `TFT_eSPI`.
+`AA_GRAPHICS` is a deprecated no-op kept for source compatibility. It does not load an extra graphics implementation; smooth fonts remain controlled by `SMOOTH_FONT`.

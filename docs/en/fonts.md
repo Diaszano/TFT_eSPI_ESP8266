@@ -23,6 +23,8 @@ Set `LOAD_GFXFF` to include the Adafruit GFX FreeFonts. Select a font with `setF
 
 ## Smooth fonts
 
+Custom fonts previously stored in the package-root `Fonts/Custom/` folder now belong in `src/Fonts/Custom/`. Keep sketch includes such as `#include <Fonts/Custom/MyFont.h>` unchanged.
+
 Smooth fonts use `.vlw` files and require `SMOOTH_FONT`. The `Font_Demo_1` example reads files from LittleFS. Upload its data folder, then load and release the font:
 
 ```sh

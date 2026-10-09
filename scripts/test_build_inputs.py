@@ -26,6 +26,14 @@ class BuildInputsTests(unittest.TestCase):
     def tearDown(self):
         self.temp.cleanup()
 
+    def test_src_layout_keeps_root_setup_and_selector_inputs(self):
+        (self.root / "src").mkdir()
+        (self.root / "src/TFT_eSPI.cpp").write_text("core\n")
+        for name in ("User_Setup.h", "User_Setup_Select.h"):
+            (self.root / name).write_text("setup\n")
+        self.assertIn("User_Setup.h", build_inputs.library_files(self.root))
+        self.assertIn("User_Setup_Select.h", build_inputs.library_files(self.root))
+
     def test_nested_inputs_and_deleted_header(self):
         self.assertIn("Fonts/Custom/Fixture.h", build_inputs.library_files(self.root))
         self.assertIn("examples/Fixture/helper.h", build_inputs.example_files(self.root))
