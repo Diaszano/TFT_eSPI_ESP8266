@@ -13,12 +13,18 @@ struct GFXfont {
   uint16_t first, last;
 };
 
-uint16_t pgm_read_word(const uint16_t* value) { return *value; }
+uint16_t pgm_read_word(const uint16_t* value) {
+  return *value;
+}
 uintptr_t pgm_read_dword(GFXglyph* const* value) {
   return reinterpret_cast<uintptr_t>(*value);
 }
-int8_t pgm_read_byte(const int8_t* value) { return *value; }
-uint8_t pgm_read_byte(const uint8_t* value) { return *value; }
+int8_t pgm_read_byte(const int8_t* value) {
+  return *value;
+}
+uint8_t pgm_read_byte(const uint8_t* value) {
+  return *value;
+}
 
 class TFT_eSPI {
  public:
