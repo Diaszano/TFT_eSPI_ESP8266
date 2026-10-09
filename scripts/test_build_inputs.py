@@ -41,6 +41,13 @@ class BuildInputsTests(unittest.TestCase):
         self.assertNotEqual(before, build_inputs.library_files(self.root))
         self.assertNotIn(".build/ignored.cpp", build_inputs.library_files(self.root))
 
+    def test_src_internal_files_are_build_inputs(self):
+        folder = self.root / "src/internal"
+        folder.mkdir(parents=True)
+        header = folder / "sprite_layout.h"
+        header.write_text("layout\n")
+        self.assertIn("src/internal/sprite_layout.h", build_inputs.library_files(self.root))
+
     @unittest.skipUnless(shutil.which("make"), "GNU Make is required")
     def test_inventory_changes_rebuild_once_and_stays_stable(self):
         inventory = self.root / ".build/source-inventory.txt"

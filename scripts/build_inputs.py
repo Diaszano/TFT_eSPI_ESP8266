@@ -20,7 +20,7 @@ def library_files(root: pathlib.Path) -> list[str]:
         path = root / name
         if path.is_file():
             files.append(path)
-    for name in ("TFT_Drivers", "Extensions", "Fonts", "User_Setups"):
+    for name in ("TFT_Drivers", "Extensions", "Fonts", "User_Setups", "internal"):
         folder = source_root / name
         if folder.is_dir():
             files.extend(path for path in folder.rglob("*") if path.is_file())
