@@ -1,7 +1,9 @@
 #include <cassert>
 #include <cstdint>
 #include <vector>
-struct TFT_eSPI { uint16_t bitmap_fg = 0x1357, bitmap_bg = 0x2468; };
+struct TFT_eSPI {
+  uint16_t bitmap_fg = 0x1357, bitmap_bg = 0x2468;
+};
 class TFT_eSprite {
  public:
   TFT_eSPI* _tft;
@@ -14,8 +16,15 @@ class TFT_eSprite {
   uint16_t* _img = nullptr;
   uint16_t* _colorMap = nullptr;
   TFT_eSprite(TFT_eSPI* display, int w, int h, uint8_t* buffer)
-      : _tft(display), _vpW(w), _vpH(h), _dwidth(w), _dheight(h),
-        _bitwidth((w + 7) & ~7), _iwidth(w), _iheight(h), _img8(buffer) {}
+      : _tft(display),
+        _vpW(w),
+        _vpH(h),
+        _dwidth(w),
+        _dheight(h),
+        _bitwidth((w + 7) & ~7),
+        _iwidth(w),
+        _iheight(h),
+        _img8(buffer) {}
   void resetViewport() {
     _xDatum = _yDatum = _vpX = _vpY = 0;
     _vpW = (rotation & 1) ? _dheight : _dwidth;
@@ -36,8 +45,7 @@ int main() {
       for (uint8_t rotation = 0; rotation < 4; ++rotation) {
         sprite.setRotation(rotation);
         for (int y = 0; y < sprite._vpH; ++y)
-          for (int x = 0; x < sprite._vpW; ++x)
-            sprite.drawPixel(x, y, ((x * 3 + y * 5) % 7) < 3);
+          for (int x = 0; x < sprite._vpW; ++x) sprite.drawPixel(x, y, ((x * 3 + y * 5) % 7) < 3);
         for (int y = 0; y < sprite._vpH; ++y) {
           for (int x = 0; x < sprite._vpW; ++x) {
             const bool expected = ((x * 3 + y * 5) % 7) < 3;

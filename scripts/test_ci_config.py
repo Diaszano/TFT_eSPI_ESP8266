@@ -1,6 +1,7 @@
 import json
 import re
 import unittest
+import yaml
 from pathlib import Path
 
 from scripts.check_conventional import is_conventional_branch, is_conventional_commit
@@ -34,7 +35,7 @@ class CIConfigTests(unittest.TestCase):
         required_checks = next(rule for rule in ruleset["rules"] if rule["type"] == "required_status_checks")["parameters"]["required_status_checks"]
         self.assertEqual(
             [check["context"] for check in required_checks],
-            ["build", "lint", "arduino-lint", "pio-pack", "pr-title", "docs", "analyze"],
+            ["build", "arduino-build", "lint", "arduino-lint", "pio-pack", "pr-title", "docs", "analyze"],
         )
         self.assertTrue(all(check["integration_id"] == 15368 for check in required_checks))
 
@@ -90,6 +91,40 @@ class CIConfigTests(unittest.TestCase):
     def test_pull_request_title_rechecks_after_edit(self):
         workflow = (ROOT / ".github/workflows/lint.yml").read_text()
         self.assertRegex(workflow, r"(?ms)^  pull_request:\n    types:.*\bedited\b")
+
+
+    def test_required_jobs_run_effective_gates(self):
+        workflows = {name: yaml.safe_load((ROOT / f".github/workflows/{name}.yml").read_text())
+                     for name in ("build", "lint")}
+        def runs(workflow, job):
+            return [step["run"] for step in workflows[workflow]["jobs"][job]["steps"] if "run" in step]
+        self.assertIn("make layout-check", runs("build", "build"))
+        self.assertIn("make warnings", runs("build", "build"))
+        self.assertIn("make test-compile", runs("build", "build"))
+        self.assertIn("make format-check", runs("lint", "lint"))
+        self.assertIn("make test-native", runs("lint", "lint"))
+        self.assertIn("make test-host", runs("lint", "lint"))
+        self.assertIn("make tidy-native", runs("lint", "lint"))
+        self.assertIn("make test-python", runs("lint", "lint"))
+        self.assertIn("make package-check", runs("lint", "pio-pack"))
+        self.assertIn("make build-arduino", runs("build", "arduino-build"))
+        for workflow in workflows.values():
+            for job in workflow["jobs"].values():
+                self.assertFalse(job.get("continue-on-error", False))
+                for step in job["steps"]:
+                    self.assertFalse(step.get("continue-on-error", False))
+
+    def test_arduino_download_checks_exact_version_digest_and_core(self):
+        workflow = yaml.safe_load((ROOT / ".github/workflows/build.yml").read_text())
+        job = workflow["jobs"]["arduino-build"]
+        self.assertEqual(job["env"]["ARDUINO_CLI_VERSION"], "1.3.1")
+        self.assertEqual(job["env"]["ARDUINO_CLI_SHA256"],
+                         "376428d7d45be640c00812a71612e1742edc2f5f9ee3742a2d6da7870e079588")
+        commands = "\n".join(step.get("run", "") for step in job["steps"])
+        self.assertIn("sha256sum -c -", commands)
+        self.assertLess(commands.index("sha256sum -c -"), commands.index("tar -xzf"))
+        self.assertIn("esp8266:esp8266@3.1.2", commands)
+        self.assertEqual(job["permissions"], {"contents": "read"})
 
 
 if __name__ == "__main__":

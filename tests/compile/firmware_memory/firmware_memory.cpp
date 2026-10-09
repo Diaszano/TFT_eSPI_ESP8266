@@ -14,8 +14,8 @@ static bool writeFont() {
   if (!file) return false;
   const uint32_t words[] = {1, 11, 4, 0, 2, 0, 65, 2, 2, 3, 2, 0, 0};
   for (uint32_t word : words) {
-    const uint8_t bytes[] = {uint8_t(word >> 24), uint8_t(word >> 16),
-                             uint8_t(word >> 8), uint8_t(word)};
+    const uint8_t bytes[] = {uint8_t(word >> 24), uint8_t(word >> 16), uint8_t(word >> 8),
+                             uint8_t(word)};
     if (file.write(bytes, sizeof(bytes)) != sizeof(bytes)) {
       file.close();
       SPIFFS.remove(fontPath);
@@ -53,7 +53,8 @@ void setup() {
   assert(dynamic->drawString("B", 10, 0, 1) == 6);
   delete dynamic;
   uint16_t pixels[17];
-  for (unsigned i = 0; i < 17; ++i) pixels[i] = i % 3 == 0 ? TFT_RED : i % 3 == 1 ? TFT_GREEN : TFT_BLUE;
+  for (unsigned i = 0; i < 17; ++i)
+    pixels[i] = i % 3 == 0 ? TFT_RED : i % 3 == 1 ? TFT_GREEN : TFT_BLUE;
   display->setSwapBytes(true);
   for (int length : {1, 2, 3, 15, 16, 17}) display->pushImage(0, 10 + length, length, 1, pixels);
   TFT_eSprite sprite(display);
@@ -109,4 +110,6 @@ void setup() {
   display->~TFT_eSPI();
   Serial.println("PASS firmware-memory");
 }
-void loop() { delay(1000); }
+void loop() {
+  delay(1000);
+}

@@ -5,18 +5,18 @@
 
 static uint32_t registers[8], spi_length;
 static std::vector<uint8_t> transmitted;
-#define SPIBUSY 1
+#define SPIBUSY  1
 #define SPILMOSI 0
 #define SPILMISO 16
-#define SPI1U1 spi_length
-#define SPI1W0 registers[0]
-#define SPI1W1 registers[1]
-#define SPI1W2 registers[2]
-#define SPI1W3 registers[3]
-#define SPI1W4 registers[4]
-#define SPI1W5 registers[5]
-#define SPI1W6 registers[6]
-#define SPI1W7 registers[7]
+#define SPI1U1   spi_length
+#define SPI1W0   registers[0]
+#define SPI1W1   registers[1]
+#define SPI1W2   registers[2]
+#define SPI1W3   registers[3]
+#define SPI1W4   registers[4]
+#define SPI1W5   registers[5]
+#define SPI1W6   registers[6]
+#define SPI1W7   registers[7]
 // DAT8TO32 UNDER TEST
 struct Command {
   operator uint32_t() const { return 0; }
