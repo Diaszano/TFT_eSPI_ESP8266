@@ -40,7 +40,7 @@ O pacote Arduino mantém os arquivos de implementação em `src/`. Edite o `User
 | `TFT_MISO` | Não definido | Pino de leitura. Deixe indefinido em módulos somente para escrita. |
 | `TFT_BL`, `TFT_BACKLIGHT_ON` | `5`, `LOW` | Pino opcional do backlight e nível ativo. |
 | `SPI_FREQUENCY` | `40000000` | Clock de escrita SPI em Hz. |
-| `SPI_READ_FREQUENCY` | Não definido | Clock de leitura SPI opcional, mais lento, quando MISO está conectado. |
+| `SPI_READ_FREQUENCY` | `10000000` (padrão do header) | Clock de leitura SPI opcional, mais lento, quando MISO está conectado. |
 | `TFT_SPI_MODE` | `SPI_MODE3` | Modo SPI do ST7789. |
 | `TFT_SPI_OVERLAP` | Desativado | Usa a disposição de pinos SPI overlap do ESP8266. |
 | `SUPPORT_TRANSACTIONS` | Depende do core | Ativa transações SPI quando disponíveis no core ESP8266. |
@@ -48,10 +48,11 @@ O pacote Arduino mantém os arquivos de implementação em `src/`. Edite o `User
 | `TFT_INVERSION_ON` | Desativada | Ativa a inversão de cores do painel quando necessária. |
 | `CGRAM_OFFSET` | Desativada | Aplica deslocamento na memória do display para painéis que precisam dele. |
 | `LOAD_GLCD` | Ativada | Inclui a fonte GLCD embutida. |
-| `LOAD_FONT2`, `LOAD_FONT4`, `LOAD_FONT6`, `LOAD_FONT7`, `LOAD_FONT8` | Desativadas | Incluem a fonte embutida correspondente. |
+| `LOAD_FONT2`, `LOAD_FONT4`, `LOAD_FONT6`, `LOAD_FONT7`, `LOAD_FONT8` | Ativadas na configuração fornecida na raiz | Incluem a fonte embutida correspondente. |
 | `LOAD_GFXFF` | Ativada na configuração fornecida na raiz | Inclui as fontes GFX FreeFonts. |
 | `SMOOTH_FONT` | Ativada na configuração fornecida na raiz | Ativa fontes suaves. |
 | `FONT_FS_AVAILABLE` | Definida pela configuração de fonte suave | Ativa o suporte ao sistema de arquivos para fontes suaves. |
+| `AA_GRAPHICS` | Sem efeito; obsoleta | Mantida por compatibilidade; não carrega uma extensão adicional. |
 | `USER_SETUP_LOADED` | Desativada | Usa definições fornecidas pelo setup do projeto ou pelas opções de build. |
 | `DISABLE_ALL_LIBRARY_WARNINGS` | Desativada | Suprime avisos da biblioteca quando suportado pelo compilador. |
 

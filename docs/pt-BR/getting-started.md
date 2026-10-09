@@ -47,7 +47,7 @@ void setup() {
   tft.init();
   tft.fillScreen(TFT_BLACK);
   tft.setTextColor(TFT_WHITE, TFT_BLACK);
-  tft.drawString("Olá, ESP8266!", 20, 100, 2);
+  tft.drawString("Ola, ESP8266!", 20, 100, 2);
 }
 
 void loop() {}

@@ -1,13 +1,21 @@
 # Changelog
 
-## [1.0.0](https://github.com/Diaszano/TFT_eSPI_ESP8266/compare/v1.0.0...v1.0.0) (2026-10-09)
+## Unreleased
+
+The hardening changes below were merged after the published v1.0.0 tag. They are not part of that release.
 
 
 ### Features
 
 * harden ESP8266 library and tooling ([#5](https://github.com/Diaszano/TFT_eSPI_ESP8266/issues/5)) ([e9e7f2d](https://github.com/Diaszano/TFT_eSPI_ESP8266/commit/e9e7f2d30378babd22427fd9606d7b99bf0d83d0))
 
-## [1.0.0](https://github.com/Diaszano/TFT_eSPI_ESP8266/compare/v1.0.0...v1.0.0) (2026-10-09)
+## [1.0.0](https://github.com/Diaszano/TFT_eSPI_ESP8266/releases/tag/v1.0.0) (2026-10-09)
+
+Initial ESP8266/ST7789-only fork release.
+
+## Inherited upstream history
+
+The entries below originated in Bodmer/TFT_eSPI and do not describe the supported controller set of this fork.
 
 
 ### Bug Fixes

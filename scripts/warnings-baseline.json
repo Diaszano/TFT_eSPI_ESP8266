@@ -16,15 +16,6 @@
   },
   "findings": [
     {
-      "path": "examples/Font_Demo_1/Font_Demo_1.ino",
-      "check": "compiler-warning",
-      "message": "unknown escape sequence: '\\F'",
-      "context_sha256": "fed181707553ef9f4eefa5fe92ae6b676b6bdf4590715a0c9cb1eeea172b201b",
-      "line": 60,
-      "owner": "examples/Font_Demo_1 maintainers",
-      "rationale": "Existing Windows-style font path literal is parsed as an unknown escape sequence by GCC; unrelated to library sources."
-    },
-    {
       "path": "src/TFT_eSPI.h",
       "check": "-Wdeprecated-declarations",
       "message": "'SPIFFS' is deprecated: SPIFFS has been deprecated. Please consider moving to LittleFS or other filesystems.",

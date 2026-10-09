@@ -57,7 +57,7 @@ void setup(void) {
     Serial.println("Flash FS initialisation failed!");
     while (1) yield();  // Stay here twiddling thumbs waiting
   }
-  Serial.println("\n\Flash FS available!");
+  Serial.println("\nFlash FS available!");
 
   bool font_missing = false;
   if (LittleFS.exists("/NotoSansBold15.vlw") == false) font_missing = true;
