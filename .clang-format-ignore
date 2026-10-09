@@ -1,3 +1,4 @@
+User_Setup.h
 src/Fonts/**
 src/TFT_Drivers/ST7789_Init.h
 extras/Create_Smooth_Font/**

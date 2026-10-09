@@ -7,7 +7,7 @@ import subprocess
 import sys
 
 SUFFIXES = {".c", ".cc", ".cpp", ".h", ".hpp", ".ino", ".inc", ".ipp"}
-EXCLUDED = ("src/Fonts/", "src/TFT_Drivers/ST7789_Init.h", "extras/Create_Smooth_Font/")
+EXCLUDED = ("User_Setup.h", "src/Fonts/", "src/TFT_Drivers/ST7789_Init.h", "extras/Create_Smooth_Font/")
 
 
 def selected_files(root: pathlib.Path, paths: list[str] | None = None) -> list[str]:
