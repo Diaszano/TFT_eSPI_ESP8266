@@ -18,8 +18,20 @@ repos:
     rev: a9a8a861f30ed207ead7d5a3b7e8032283ba5da7  # frozen: v23.1.2
     hooks:
       - id: clang-format
-        types_or: [c, c++]
-        files: '\.(c|cpp|h|ino)$'
+        types_or: [file]
+        files: '\.(c|cc|cpp|h|hpp|ino|inc|ipp)$'
+        exclude: '^(src/Fonts/|src/TFT_Drivers/ST7789_Init\.h$|extras/Create_Smooth_Font/)'
+        stages: [manual]
+  - repo: local
+    hooks:
+      - id: format-check
+        name: Verify formatter output without editing files
+        entry: python3 scripts/format.py --check
+        language: system
+        types: [file]
+        files: '\.(c|cc|cpp|h|hpp|ino|inc|ipp)$'
+        exclude: '^(src/Fonts/|src/TFT_Drivers/ST7789_Init\.h$|extras/Create_Smooth_Font/)'
+        stages: [manual]
   - repo: https://github.com/rhysd/actionlint
     rev: 914e7df21a07ef503a81201c76d2b11c789d3fca  # frozen: v1.7.12
     hooks:

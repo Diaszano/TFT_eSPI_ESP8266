@@ -6,6 +6,8 @@
 
 Use Python 3.14.7 para as ferramentas de desenvolvimento. Instale as ferramentas com versões e hashes fixados usando `python -m pip install --require-hashes -r scripts/requirements-dev.txt`; o build usa a plataforma ESP8266 4.2.1 e acompanha entradas aninhadas da biblioteca e dos exemplos para que inclusões, alterações e remoções invalidem builds em cache.
 
+Use clang-format 23.1.2 dos requisitos bloqueados. `make format-check` verifica fontes C++, Arduino e sketches sem editá-los; execute `make format` somente quando quiser formatar esses arquivos. Tabelas de fontes geradas, dados de inicialização ST7789 e a ferramenta de geração de fontes ficam excluídos. A ordem dos includes é preservada. Depois que a alteração dedicada de formatação for integrada, configure o blame com `git config blame.ignoreRevsFile .git-blame-ignore-revs` usando o SHA final do commit integrado.
+
 | Alvo | Finalidade |
 | --- | --- |
 | `make build` | Compila todos os exemplos selecionados. |

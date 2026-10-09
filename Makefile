@@ -8,7 +8,13 @@ SIZE_LABEL ?= current
 JOBS ?= $(shell nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 1)
 VERSION := $(shell python3 -c "import json;print(json.load(open('library.json'))['version'])")
 
-.PHONY: build $(addprefix build-,$(EXAMPLES)) upload uploadfs monitor clean help docs-check docs-api docs setup lint lint-update check-version size-check FORCE
+.PHONY: build $(addprefix build-,$(EXAMPLES)) upload uploadfs monitor clean help docs-check docs-api docs setup lint lint-update check-version size-check format format-check FORCE
+
+format:
+	python3 scripts/format.py --write
+
+format-check:
+	python3 scripts/format.py --check
 
 build: .build/source-inventory.txt
 	@mkdir -p "$${PLATFORMIO_CORE_DIR:-$$HOME/.platformio}"
