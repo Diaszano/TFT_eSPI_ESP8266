@@ -37,10 +37,14 @@ $RECYCLE.BIN/
 # Build output and Arduino debug files
 .build/
 .pio/
+docs/superpowers/
 debug.cfg
 debug_custom.json
 *.svd
 __pycache__/
+*.py[cod]
+.venv/
+venv/
 
 # Local secrets
 .env
@@ -48,6 +52,7 @@ __pycache__/
 !.env.example
 
 # Local AI tools and state
+.superpowers/
 .claude/settings.local.json
 CLAUDE.local.md
 .serena/
