@@ -43,7 +43,7 @@ class PackageCheckTests(unittest.TestCase):
         properties = (root / "library.properties").read_text()
         self.assertIn("author=Bodmer, Lucas Dias (Diaszano)", properties)
         self.assertIn("maintainer=Lucas Dias (Diaszano) <61257292+Diaszano@users.noreply.github.com>", properties)
-        self.assertIn("version=1.0.0", properties)
+        self.assertIn(f"version={manifest['version']}\n", properties)
         authors = {author["name"]: author for author in manifest["authors"]}
         self.assertFalse(authors["Bodmer"]["maintainer"])
         self.assertEqual(authors["Lucas Dias (Diaszano)"]["email"], "61257292+Diaszano@users.noreply.github.com")
