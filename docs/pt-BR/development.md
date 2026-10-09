@@ -40,6 +40,21 @@ Execute `make warnings` para reconstruir os 14 exemplos em `.build/warnings/` co
 | `make docs` | Executa as verificações da documentação e gera a referência da API. |
 | `make help` | Lista os alvos disponíveis. |
 
+### Checagens obrigatórias e diretórios de teste
+
+`make build-arduino` exige o Arduino CLI 1.3.1 e o core ESP8266 3.1.2 instalados localmente. Ele compila todos os 14 exemplos mantidos para `esp8266:esp8266:nodemcuv2` e, em seguida, compila as regressões de sprite-ownership e minimal-setup. Usa esta checkout como biblioteca e grava logs em `.build/arduino/`. O PlatformIO continua obrigatório com `espressif8266@4.2.1`; passar em um compilador não substitui o outro.
+
+Instale o core com:
+
+    arduino-cli core update-index --additional-urls https://arduino.esp8266.com/stable/package_esp8266com_index.json
+    arduino-cli core install esp8266:esp8266@3.1.2 --additional-urls https://arduino.esp8266.com/stable/package_esp8266com_index.json
+
+`make test-python` executa regressões dos scripts. `make layout-check` valida a checkout e a base real de compilação do PlatformIO; `make package-check` cria e valida o pacote real. O CI também exige `make format-check`, Unity, testes host extraídos do fonte com ASan/UBSan e clang-tidy nativo. A formatação é verificada sem reescrever arquivos.
+
+`test/` contém o projeto PlatformIO, testes de cor em Unity e o probe de análise nativa. `tests/` contém regressões host e sketches de compilação de firmware. Esses diretórios atendem runtimes distintos; sua coexistência não é duplicação de cobertura. Sanitizers em host e análise nativa não emulam temporização do ESP8266, PROGMEM ou o display físico.
+
+Diagnósticos de biblioteca na cópia compilada pertencem a este repositório, incluindo depreciações legadas de SPIFFS. Novos diagnósticos próprios reprovam o gate de warnings. Dívidas existentes exigem entrada individual no baseline com proprietário e justificativa específica; findings de framework continuam relatados separadamente. Nunca oculte warnings da biblioteca como saída de vendor nem regenere o baseline sem revisão.
+
 A CI compila os exemplos selecionados com PlatformIO. O workflow de documentação verifica e gera os arquivos; o job de publicação no Pages executa somente em pushes para `main`.
 
 `make size-check` falha se o uso estático de flash ou RAM aumentar ou se o perfil de build mudar. O total de RAM inclui dados inicializados, dados somente leitura e BSS; ele não mede o heap usado em tempo de execução por sprites, fontes ou outras alocações.

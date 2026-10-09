@@ -38,6 +38,21 @@ Run `make warnings` to rebuild all 14 examples in `.build/warnings/` with `-Wall
 | `make docs` | Run the documentation checks and generate the API reference. |
 | `make help` | List available targets. |
 
+### Required checks and test directories
+
+`make build-arduino` requires Arduino CLI 1.3.1 and ESP8266 core 3.1.2 installed locally. It compiles all 14 maintained examples for `esp8266:esp8266:nodemcuv2`, then compiles the sprite-ownership and minimal-setup regressions. It uses this checkout as the library and writes logs to `.build/arduino/`. PlatformIO remains required with `espressif8266@4.2.1`; passing one compiler does not replace the other.
+
+Install the core with:
+
+    arduino-cli core update-index --additional-urls https://arduino.esp8266.com/stable/package_esp8266com_index.json
+    arduino-cli core install esp8266:esp8266@3.1.2 --additional-urls https://arduino.esp8266.com/stable/package_esp8266com_index.json
+
+`make test-python` runs script regressions. `make layout-check` validates the checkout and the actual PlatformIO compile database; `make package-check` creates and validates the actual package. CI also requires `make format-check`, Unity, source-extracted ASan/UBSan host tests and native clang-tidy. Formatting is checked without rewriting files.
+
+`test/` holds the PlatformIO project, Unity color tests and the native analysis probe. `tests/` holds host regressions and firmware compile sketches. These directories serve different runtimes; their existence is not duplicate test coverage. Host sanitizers and native analysis do not emulate ESP8266 timing, PROGMEM or the physical display.
+
+Library diagnostics from the compiled copy belong to this repository, including legacy SPIFFS deprecations. New owned diagnostics fail the warning gate. Existing debt requires an individual baseline entry with an owner and a specific rationale; framework findings remain separately reported. Never hide library warnings as vendor output or regenerate the baseline without review.
+
 CI compiles the curated examples with PlatformIO. The documentation workflow checks and builds the docs; its Pages deploy job runs only for pushes to `main`.
 
 `make size-check` fails if static flash or RAM usage grows under a different build profile. Its RAM total covers initialized data, read-only data, and BSS; it does not measure runtime heap use by sprites, fonts, or other allocations.
