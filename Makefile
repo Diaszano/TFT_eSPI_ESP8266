@@ -20,7 +20,7 @@ test-native:
 	pio test -d test -e native
 
 test-host:
-	python3 tests/host/run.py --case scroll
+	python3 tests/host/run.py
 
 test-compile: .build/pio-library/.stamp
 	@cd /tmp && pio ci --lib=$(CURDIR)/.build/pio-library --board=nodemcuv2 -O "platform=espressif8266@4.2.1" --build-dir=$(CURDIR)/.build/compile/sprite_ownership --keep-build-dir $(CURDIR)/tests/compile/sprite_ownership

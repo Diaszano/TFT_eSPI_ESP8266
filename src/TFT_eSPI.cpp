@@ -5286,7 +5286,7 @@ void TFT_eSPI::setFreeFont(const GFXfont* f) {
 
   glyph_ab = 0;
   glyph_bb = 0;
-  uint16_t numChars = pgm_read_word(&gfxFont->last) - pgm_read_word(&gfxFont->first);
+  uint16_t numChars = pgm_read_word(&gfxFont->last) - pgm_read_word(&gfxFont->first) + 1;
 
   // Find the biggest above and below baseline offsets
   for (uint16_t c = 0; c < numChars; c++) {

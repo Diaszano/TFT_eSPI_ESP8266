@@ -77,12 +77,52 @@ def run_scroll(root: pathlib.Path) -> None:
     print("PASS scroll")
 
 
+def run_font_metrics(root: pathlib.Path) -> None:
+    compiler = shutil.which("c++")
+    if not compiler:
+        raise RuntimeError("C++ compiler required for host tests")
+    marker = "void TFT_eSPI::setFreeFont(const GFXfont* f) {"
+    source_text = (root / "src/TFT_eSPI.cpp").read_text()
+    start = source_text.find(marker)
+    if start < 0:
+        raise ValueError("FreeFont metrics implementation marker missing")
+    open_brace = source_text.find("{", start)
+    depth = 0
+    end = open_brace
+    while end < len(source_text):
+        if source_text[end] == "{":
+            depth += 1
+        elif source_text[end] == "}":
+            depth -= 1
+            if depth == 0:
+                break
+        end += 1
+    implementation = source_text[start : end + 1]
+    fixture = (root / "tests/host/test_font_metrics.cpp").read_text()
+    if fixture.count("// FUNCTION UNDER TEST") != 1:
+        raise ValueError("expected exactly one unique function insertion marker")
+    generated = fixture.replace("// FUNCTION UNDER TEST", implementation)
+    with tempfile.TemporaryDirectory(prefix="tft-font-metrics-") as temp:
+        source = pathlib.Path(temp) / "metrics.cpp"
+        binary = pathlib.Path(temp) / "metrics"
+        source.write_text(generated)
+        subprocess.run(
+            [compiler, "-std=c++11", "-Wall", "-Wextra", "-fsanitize=address,undefined",
+             "-fno-sanitize-recover=all", str(source), "-o", str(binary)], check=True
+        )
+        subprocess.run([str(binary)], check=True)
+    print("PASS font-metrics")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--case", choices=("scroll",), required=True)
+    parser.add_argument("--case", choices=("scroll", "font-metrics", "all"), default="all")
     args = parser.parse_args()
     root = pathlib.Path(__file__).resolve().parents[2]
-    run_scroll(root)
+    if args.case in ("scroll", "all"):
+        run_scroll(root)
+    if args.case in ("font-metrics", "all"):
+        run_font_metrics(root)
     return 0
 
 

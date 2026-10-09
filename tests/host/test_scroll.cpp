@@ -83,9 +83,7 @@ int main() {
 
   sprite.reset(4, 3, 4);
   sprite.scroll(1, 1);
-  const uint16_t diagonal_expected[] = {0, 0, 0, 0,
-                                        0, 1, 2, 3,
-                                        0, 5, 6, 7};
+  const uint16_t diagonal_expected[] = {0, 0, 0, 0, 0, 1, 2, 3, 0, 5, 6, 7};
   check_equal(sprite, diagonal_expected, 12);
 
   sprite.reset(6, 3, 4);
@@ -95,9 +93,8 @@ int main() {
   sprite._sw = 4;
   sprite._sh = 1;
   sprite.scroll(1, 0);
-  const uint16_t margin_expected[] = {90, 91, 92, 93, 94, 95,
-                                      96,  0,  97, 98, 99, 101,
-                                      102, 103, 104, 105, 106, 107};
+  const uint16_t margin_expected[] = {90, 91, 92,  93,  94,  95,  96,  0,   97,
+                                      98, 99, 101, 102, 103, 104, 105, 106, 107};
   check_equal(sprite, margin_expected, 18);
 
   sprite.reset(4, 1, 1);
