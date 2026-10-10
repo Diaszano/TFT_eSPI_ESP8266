@@ -52,10 +52,7 @@ def extract_method(source: str, marker: str) -> tuple[str, int]:
     raise ValueError("unterminated scroll implementation")
 
 
-def run_scroll(root: pathlib.Path) -> None:
-    compiler = shutil.which("c++")
-    if not compiler:
-        raise RuntimeError("C++ compiler required for host tests")
+def run_scroll(root: pathlib.Path, fuzz: bool = False, fuzz_time: int = 60, timeout: int = 5) -> None:
     fixture = (root / "tests/host/test_scroll.cpp").read_text()
     if fixture.count("// FUNCTION UNDER TEST") != 1:
         raise ValueError("expected exactly one unique function insertion marker")
@@ -66,13 +63,82 @@ def run_scroll(root: pathlib.Path) -> None:
     generated = fixture.replace(
         "// FUNCTION UNDER TEST", f'#line {line} "src/internal/Sprite.inc"\n{implementation}'
     )
+
+    if fuzz:
+        compiler = shutil.which("clang++")
+        if not compiler:
+            raise RuntimeError("clang++ compiler required for fuzz target")
+        # Check if compiler supports -fsanitize=fuzzer
+        probe = subprocess.run(
+            [compiler, "-fsanitize=fuzzer", "-x", "c++", "-", "-o", "/dev/null"],
+            input=b'extern "C" int LLVMFuzzerTestOneInput(const unsigned char*, unsigned long) { return 0; }\n',
+            capture_output=True,
+        )
+        if probe.returncode != 0:
+            raise RuntimeError(
+                f"clang++ at {compiler} does not support libFuzzer (-fsanitize=fuzzer): {probe.stderr.decode()}"
+            )
+
+        build_dir = root / ".build/fuzz/scroll"
+        build_dir.mkdir(parents=True, exist_ok=True)
+        corpus_dir = root / "tests/host/corpus/scroll"
+        corpus_dir.mkdir(parents=True, exist_ok=True)
+
+        with tempfile.TemporaryDirectory(prefix="tft-fuzz-") as temp:
+            source = pathlib.Path(temp) / "fuzz_scroll.cpp"
+            binary = pathlib.Path(temp) / "fuzz_scroll"
+            source.write_text(generated)
+            subprocess.run(
+                [
+                    compiler,
+                    "-std=c++11",
+                    "-Wall",
+                    "-Wextra",
+                    "-DFUZZ_TARGET",
+                    "-fsanitize=fuzzer,address,undefined",
+                    "-fno-sanitize-recover=all",
+                    str(source),
+                    "-o",
+                    str(binary),
+                ],
+                check=True,
+            )
+
+            cmd = [
+                str(binary),
+                f"-max_total_time={fuzz_time}",
+                f"-timeout={timeout}",
+                f"-artifact_prefix={build_dir}/",
+                str(build_dir),
+                str(corpus_dir),
+            ]
+            env = dict(subprocess.os.environ)
+            env["ASAN_OPTIONS"] = (
+                f"{env.get('ASAN_OPTIONS', '')}:detect_leaks=0".lstrip(":")
+            )
+            subprocess.run(cmd, env=env, check=True)
+        print("PASS fuzz-scroll")
+        return
+
+    compiler = shutil.which("c++")
+    if not compiler:
+        raise RuntimeError("C++ compiler required for host tests")
     with tempfile.TemporaryDirectory(prefix="tft-host-") as temp:
         source = pathlib.Path(temp) / "scroll.cpp"
         binary = pathlib.Path(temp) / "scroll"
         source.write_text(generated)
         subprocess.run(
-            [compiler, "-std=c++11", "-Wall", "-Wextra", "-fsanitize=address,undefined",
-             "-fno-sanitize-recover=all", str(source), "-o", str(binary)],
+            [
+                compiler,
+                "-std=c++11",
+                "-Wall",
+                "-Wextra",
+                "-fsanitize=address,undefined",
+                "-fno-sanitize-recover=all",
+                str(source),
+                "-o",
+                str(binary),
+            ],
             check=True,
         )
         subprocess.run([str(binary)], check=True)
@@ -292,10 +358,29 @@ def main() -> int:
         choices=("scroll", "font-metrics", "allocations", "glyph-allocation", "font-files", "spi-pixels", "sprite-rotation", "gfx-initialization", "all"),
         default="all",
     )
+    parser.add_argument(
+        "--fuzz",
+        action="store_true",
+        help="Run libFuzzer on supported targets (e.g. scroll)",
+    )
+    parser.add_argument(
+        "--fuzz-time",
+        type=int,
+        default=60,
+        help="Fuzzing duration in seconds (default: 60)",
+    )
+    parser.add_argument(
+        "--fuzz-timeout",
+        type=int,
+        default=5,
+        help="Timeout per input in seconds (default: 5)",
+    )
     args = parser.parse_args()
     root = pathlib.Path(__file__).resolve().parents[2]
+    if args.fuzz and args.case != "scroll":
+        raise ValueError("--fuzz currently only supported for --case scroll")
     if args.case in ("scroll", "all"):
-        run_scroll(root)
+        run_scroll(root, fuzz=args.fuzz, fuzz_time=args.fuzz_time, timeout=args.fuzz_timeout)
     if args.case in ("font-metrics", "all"):
         run_font_metrics(root)
     if args.case in ("allocations", "all"):

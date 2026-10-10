@@ -6,7 +6,7 @@
     "framework": "3.30102.0",
     "toolchain": "2.100300.220621",
     "compiler": "10.3.0",
-    "platformio": "6.1.18",
+    "platformio": "6.2.0",
     "python": "3.14.7",
     "setup_sha256": "3f57d319a4cbb1f0331fe9cb740cda386fd68110d2b76a601b43072e99ce796e",
     "flags": [

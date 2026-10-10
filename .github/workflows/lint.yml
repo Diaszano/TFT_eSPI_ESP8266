@@ -44,6 +44,8 @@ jobs:
       - run: make test-native
       - run: make tidy-native
       - run: make test-host
+      - name: Fuzz scroll smoke test
+        run: python3 tests/host/run.py --case scroll --fuzz --fuzz-time 5 --fuzz-timeout 5
       - name: Verify Java compiler for Processing helper tests
         run: |
           command -v javac

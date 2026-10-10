@@ -1378,7 +1378,7 @@ void TFT_eSprite::scroll(int16_t dx, int16_t dy) {
       fx += w - 1;
     }  // Start from right edge
     while (h--) {  // move pixels one by one
-      for (uint16_t xp = 0; xp < w; xp++) {
+      for (uint32_t xp = 0; xp < w; xp++) {
         if (dx <= 0) drawPixel(tx + xp, ty, readPixelValue(fx + xp, fy));
         if (dx > 0) drawPixel(tx - xp, ty, readPixelValue(fx - xp, fy));
       }
@@ -1396,7 +1396,7 @@ void TFT_eSprite::scroll(int16_t dx, int16_t dy) {
       fx += w - 1;
     }  // Start from right edge
     while (h--) {  // move pixels one by one
-      for (uint16_t xp = 0; xp < w; xp++) {
+      for (uint32_t xp = 0; xp < w; xp++) {
         if (dx <= 0) drawPixel(tx + xp, ty, readPixelValue(fx + xp, fy));
         if (dx > 0) drawPixel(tx - xp, ty, readPixelValue(fx - xp, fy));
       }
