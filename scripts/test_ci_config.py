@@ -126,6 +126,23 @@ class CIConfigTests(unittest.TestCase):
         self.assertIn("esp8266:esp8266@3.1.2", commands)
         self.assertEqual(job["permissions"], {"contents": "read"})
 
+    def test_lint_runs_fuzz_smoke(self):
+        workflow = (ROOT / ".github/workflows/lint.yml").read_text()
+        self.assertIn("python3 tests/host/run.py --case scroll --fuzz", workflow)
+
+    def test_fuzz_workflow_config(self):
+        workflow_text = (ROOT / ".github/workflows/fuzz.yml").read_text()
+        workflow = yaml.safe_load(workflow_text)
+        self.assertEqual(workflow["permissions"], {})
+        job = workflow["jobs"]["fuzz"]
+        self.assertEqual(job["permissions"], {"contents": "read"})
+        steps = job["steps"]
+        step_commands = [s.get("run", "") for s in steps]
+        self.assertTrue(any("python3 tests/host/run.py --case scroll --fuzz" in cmd for cmd in step_commands))
+        self.assertIn("actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08", workflow_text)
+        self.assertIn("schedule:", workflow_text)
+        self.assertIn("workflow_dispatch:", workflow_text)
+
 
 if __name__ == "__main__":
     unittest.main()
