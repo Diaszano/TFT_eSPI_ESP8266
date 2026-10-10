@@ -137,8 +137,8 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
       for (uint32_t x = 0; x < sub_w; ++x) {
         int32_t dst_x = static_cast<int32_t>(x) + dx;
         int32_t dst_y = static_cast<int32_t>(y) + dy;
-        if (dst_x >= 0 && dst_x < static_cast<int32_t>(sub_w) &&
-            dst_y >= 0 && dst_y < static_cast<int32_t>(sub_h)) {
+        if (dst_x >= 0 && dst_x < static_cast<int32_t>(sub_w) && dst_y >= 0 &&
+            dst_y < static_cast<int32_t>(sub_h)) {
           uint32_t orig_idx = (sub_y + y) * w + (sub_x + x);
           uint32_t sub_idx = static_cast<uint32_t>(dst_y) * sub_w + static_cast<uint32_t>(dst_x);
           sub_dest[sub_idx] = original[orig_idx];
