@@ -42,6 +42,11 @@ def compare_findings(
         raise ValueError("unsupported diagnostic baseline schema or scope")
     _validate_profile(profile)
     if baseline.get("profile") != profile:
+        import pprint
+        print("BASELINE PROFILE:", file=sys.stderr)
+        pprint.pprint(baseline.get("profile"), stream=sys.stderr)
+        print("ACTUAL PROFILE:", file=sys.stderr)
+        pprint.pprint(profile, stream=sys.stderr)
         raise ValueError("diagnostic tool or setup profile does not match baseline")
     expected = baseline.get("findings")
     if not isinstance(expected, list):
