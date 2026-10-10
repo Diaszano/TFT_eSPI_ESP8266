@@ -9,6 +9,13 @@ The hardening changes below were merged after the published v1.0.0 tag. They are
 
 * harden ESP8266 library and tooling ([#5](https://github.com/Diaszano/TFT_eSPI_ESP8266/issues/5)) ([e9e7f2d](https://github.com/Diaszano/TFT_eSPI_ESP8266/commit/e9e7f2d30378babd22427fd9606d7b99bf0d83d0))
 
+## [1.1.1](https://github.com/Diaszano/TFT_eSPI_ESP8266/compare/v1.1.0...v1.1.1) (2026-10-10)
+
+
+### Bug Fixes
+
+* **security:** remediate vulnerable dependencies, scroll counters, and add fuzzing ([#17](https://github.com/Diaszano/TFT_eSPI_ESP8266/issues/17)) ([db0fd62](https://github.com/Diaszano/TFT_eSPI_ESP8266/commit/db0fd62209d762f2b01a9e6112f3113e959366d9))
+
 ## [1.1.0](https://github.com/Diaszano/TFT_eSPI_ESP8266/compare/v1.0.0...v1.1.0) (2026-10-09)
 
 
