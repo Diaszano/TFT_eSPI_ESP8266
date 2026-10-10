@@ -6,7 +6,7 @@
     "framework": "3.30102.0",
     "toolchain": "2.100300.220621",
     "python": "3.14.7",
-    "platformio": "6.1.18",
+    "platformio": "6.2.0",
     "build_flags": {
       "board": "nodemcuv2",
       "board_build.filesystem": "littlefs",
