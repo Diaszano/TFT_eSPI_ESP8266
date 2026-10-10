@@ -5,8 +5,9 @@
 
 class TFT_eSprite {
  public:
-  int16_t _sw = 0, _sh = 0, _sx = 0, _sy = 0;
-  uint16_t _scolor = 0;
+  int32_t _sx = 0, _sy = 0;
+  uint32_t _sw = 0, _sh = 0;
+  uint32_t _scolor = 0;
   int32_t _iwidth = 0;
   int _bpp = 4;
   uint16_t words[128] = {};
