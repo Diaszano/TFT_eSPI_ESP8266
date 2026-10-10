@@ -10,6 +10,7 @@
     "checks_sha256": "fa4d3e70f507e97f33f85c2f216ac76bdca23079c61f6dab0733897af697a23c",
     "flags": [
       "-DPLATFORMIO=60200",
+      "-DUNITY_INCLUDE_CONFIG_H",
       "-Ianalysis",
       "-I$ROOT/src"
     ]
