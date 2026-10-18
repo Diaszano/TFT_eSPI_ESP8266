@@ -30,8 +30,8 @@ int main() {
   validation::run_heap_churn(display, output);
   assert(TFT_eSprite::create_calls == 100000);
   assert(TFT_eSprite::delete_calls == 100000);
-  assert(TFT_eSprite::seen_depth[1] && TFT_eSprite::seen_depth[4] &&
-         TFT_eSprite::seen_depth[8] && TFT_eSprite::seen_depth[16]);
+  assert(TFT_eSprite::seen_depth[1] && TFT_eSprite::seen_depth[4] && TFT_eSprite::seen_depth[8] &&
+         TFT_eSprite::seen_depth[16]);
   assert(output.bytes.find("END,HC,100000,") != std::string::npos);
   TFT_eSprite::create_calls = TFT_eSprite::delete_calls = 0;
   TFT_eSprite::fail_at = 100;

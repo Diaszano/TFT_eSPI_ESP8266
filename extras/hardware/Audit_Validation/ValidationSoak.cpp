@@ -19,30 +19,29 @@ bool flush(ValidationPerfEmitter& perf, const char* suite, validation::FrameBatc
   for (uint8_t chunk = 0; chunk < (batch.count + 15) / 16; ++chunk) {
     const uint8_t left = batch.count - chunk * 16;
     if (!perf.samples(suite, *batch_id, chunk, batch.durations_us + chunk * 16,
-                      left < 16 ? left : 16)) return false;
+                      left < 16 ? left : 16))
+      return false;
   }
   ++*batch_id;
   batch.reset();
   return true;
 }
 
-bool checkpoint(ValidationPerfEmitter& perf, uint32_t minute, uint32_t minimum,
-                uint32_t failures) {
-  return perf.mem("FM", minute, ESP.getFreeHeap(), ESP.getMaxFreeBlockSize(),
-                  minimum, failures);
+bool checkpoint(ValidationPerfEmitter& perf, uint32_t minute, uint32_t minimum, uint32_t failures) {
+  return perf.mem("FM", minute, ESP.getFreeHeap(), ESP.getMaxFreeBlockSize(), minimum, failures);
 }
-}
+}  // namespace
 
 namespace validation {
 void run_mixed_soak(uint32_t requested_minutes, TFT_eSPI& tft, Print& log) {
-  if (requested_minutes != 30 && requested_minutes != 480 && requested_minutes != 1440)
-    return;
+  if (requested_minutes != 30 && requested_minutes != 480 && requested_minutes != 1440) return;
   char id[17];
-  snprintf(id, sizeof(id), "M%08lx%04x",
-           static_cast<unsigned long>(ESP.getCycleCount()), run_counter++);
+  snprintf(id, sizeof(id), "M%08lx%04x", static_cast<unsigned long>(ESP.getCycleCount()),
+           run_counter++);
   ValidationPerfEmitter perf(log, id);
-  const char* profile = requested_minutes == 30 ? "fm30" :
-                        requested_minutes == 480 ? "fm8h" : "fm24h";
+  const char* profile = requested_minutes == 30    ? "fm30"
+                        : requested_minutes == 480 ? "fm8h"
+                                                   : "fm24h";
   if (!perf.begin("FM", 0x13579bdfUL, 0, profile)) return;
   uint32_t estimated_sprite;
   if (!estimate_sprite_bytes(32, 32, 16, &estimated_sprite) ||
@@ -123,8 +122,8 @@ void run_mixed_soak(uint32_t requested_minutes, TFT_eSPI& tft, Print& log) {
 
 void run_wifi_latency(TFT_eSPI& tft, Print& log) {
   char id[17];
-  snprintf(id, sizeof(id), "W%08lx%04x",
-           static_cast<unsigned long>(ESP.getCycleCount()), run_counter++);
+  snprintf(id, sizeof(id), "W%08lx%04x", static_cast<unsigned long>(ESP.getCycleCount()),
+           run_counter++);
   ValidationPerfEmitter perf(log, id);
   const char* mode = validation_wifi_mode();
   char profile[32];
@@ -180,4 +179,4 @@ void run_wifi_latency(TFT_eSPI& tft, Print& log) {
   tft.setSwapBytes(false);
   perf.end("LW", observed, elapsed_us, "PASS");
 }
-}
+}  // namespace validation

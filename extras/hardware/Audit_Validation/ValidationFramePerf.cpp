@@ -12,20 +12,21 @@ uint16_t run_counter = 0;
 uint16_t mixed_image[12 * 12];
 
 void new_run_id(char* run_id, size_t size) {
-  snprintf(run_id, size, "F%08lx%04x",
-           static_cast<unsigned long>(ESP.getCycleCount()), run_counter++);
+  snprintf(run_id, size, "F%08lx%04x", static_cast<unsigned long>(ESP.getCycleCount()),
+           run_counter++);
 }
 
-void draw(Scene scene, uint32_t frame, TFT_eSPI& tft, uint16_t* line,
-          uint16_t size, uint8_t position, TFT_eSprite* sprite) {
+void draw(Scene scene, uint32_t frame, TFT_eSPI& tft, uint16_t* line, uint16_t size,
+          uint8_t position, TFT_eSprite* sprite) {
   if (scene == Scene::Fill) {
     tft.fillScreen((frame & 1) ? TFT_BLUE : TFT_RED);
     return;
   }
   if (scene == Scene::Region) {
     const uint16_t visible = position == 2 ? size / 2 : size;
-    const uint16_t origin = position == 0 ? (240 - size) / 2 :
-                            position == 1 ? 240 - size : 240 - visible;
+    const uint16_t origin = position == 0   ? (240 - size) / 2
+                            : position == 1 ? 240 - size
+                                            : 240 - visible;
     tft.startWrite();
     tft.setAddrWindow(origin, origin, visible, visible);
     for (uint16_t row = 0; row < visible; ++row) tft.pushPixels(line, visible);
@@ -47,11 +48,9 @@ bool run_profile(Scene scene, const char* profile, bool cold, TFT_eSPI& tft, Pri
   char run_id[17];
   new_run_id(run_id, sizeof(run_id));
   ValidationPerfEmitter perf(log, run_id);
-  const char* suite = scene == Scene::Region ? "FP2" :
-                      scene == Scene::Mixed ? "FP3" : "FP1";
+  const char* suite = scene == Scene::Region ? "FP2" : scene == Scene::Mixed ? "FP3" : "FP1";
   const uint32_t expected = cold ? 1 : 1000;
-  if (!perf.begin(suite, scene == Scene::Mixed ? 0x13579bdfUL : 0,
-                  expected, profile)) return false;
+  if (!perf.begin(suite, scene == Scene::Mixed ? 0x13579bdfUL : 0, expected, profile)) return false;
   uint16_t line[240];
   uint32_t observed = 0;
   uint64_t elapsed = 0;
@@ -80,7 +79,8 @@ bool run_profile(Scene scene, const char* profile, bool cold, TFT_eSPI& tft, Pri
     for (uint8_t chunk = 0; chunk < (batch.count + 15) / 16; ++chunk) {
       const uint8_t left = batch.count - chunk * 16;
       if (!perf.samples(suite, batch_id, chunk, batch.durations_us + chunk * 16,
-                        left < 16 ? left : 16)) return false;
+                        left < 16 ? left : 16))
+        return false;
     }
     ++batch_id;
     if (validation_poll_control(log, false) == validation::ControlAction::Quit) {
@@ -94,8 +94,7 @@ bool run_profile(Scene scene, const char* profile, bool cold, TFT_eSPI& tft, Pri
 
 namespace validation {
 void prepare_mixed_image() {
-  for (uint16_t i = 0; i < 12 * 12; ++i)
-    mixed_image[i] = (i & 1) ? TFT_GREEN : TFT_BLUE;
+  for (uint16_t i = 0; i < 12 * 12; ++i) mixed_image[i] = (i & 1) ? TFT_GREEN : TFT_BLUE;
 }
 
 void draw_mixed_frame(uint32_t frame, TFT_eSPI& tft, TFT_eSprite& sprite) {
@@ -126,8 +125,8 @@ void run_frame_perf(FrameSuite suite, TFT_eSPI& tft, TFT_eSprite& sprite, Print&
       for (uint8_t position = 0; position < 3; ++position) {
         char profile[32], cold_profile[32];
         snprintf(profile, sizeof(profile), "fp2_%u_%s", sizes[s], positions[position]);
-        snprintf(cold_profile, sizeof(cold_profile), "fp2_%u_%s_cold",
-                 sizes[s], positions[position]);
+        snprintf(cold_profile, sizeof(cold_profile), "fp2_%u_%s_cold", sizes[s],
+                 positions[position]);
         if (!run_profile(Scene::Region, cold_profile, true, tft, log, sizes[s], position)) return;
         if (!run_profile(Scene::Region, profile, false, tft, log, sizes[s], position)) return;
       }
@@ -137,16 +136,14 @@ void run_frame_perf(FrameSuite suite, TFT_eSPI& tft, TFT_eSprite& sprite, Print&
       char run_id[17];
       new_run_id(run_id, sizeof(run_id));
       ValidationPerfEmitter perf(log, run_id);
-      if (perf.begin("FP3", 0x13579bdfUL, 1000, "fp3_mixed"))
-        perf.end("FP3", 0, 0, "SKIP");
+      if (perf.begin("FP3", 0x13579bdfUL, 1000, "fp3_mixed")) perf.end("FP3", 0, 0, "SKIP");
       return;
     }
     prepare_mixed_image();
-    if (run_profile(Scene::Mixed, "fp3_mixed_cold", true, tft, log,
-                    0, 0, &sprite))
+    if (run_profile(Scene::Mixed, "fp3_mixed_cold", true, tft, log, 0, 0, &sprite))
       run_profile(Scene::Mixed, "fp3_mixed", false, tft, log, 0, 0, &sprite);
     tft.setTextFont(1);
     tft.setSwapBytes(false);
   }
 }
-}
+}  // namespace validation

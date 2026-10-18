@@ -21,7 +21,10 @@ class TFT_eSPI {
   void begin_tft_write() {}
   void end_tft_write() {}
   void setWindow(int32_t x0, int32_t y0, int32_t x1, int32_t y1) {
-    wx = x0; wy = y0; ww = x1 - x0 + 1; (void)y1;
+    wx = x0;
+    wy = y0;
+    ww = x1 - x0 + 1;
+    (void)y1;
   }
   void pushBlock(uint32_t color, int32_t count) {
     for (int32_t i = 0; i < count; ++i)
@@ -50,8 +53,7 @@ void run_stateful_case(uint32_t seed, const std::vector<stateful::Operation>& op
       right = std::min(8, op.x + op.w);
       bottom = std::min(8, op.y + op.h);
       valid = right > left && bottom > top;
-    } else if (op.kind == stateful::Kind::Rect ||
-               op.kind == stateful::Kind::HLine) {
+    } else if (op.kind == stateful::Kind::Rect || op.kind == stateful::Kind::HLine) {
       const int h = op.kind == stateful::Kind::HLine ? 1 : op.h;
       if (op.kind == stateful::Kind::HLine)
         actual.drawFastHLine(op.x, op.y, op.w, op.value);
@@ -68,10 +70,10 @@ void run_stateful_case(uint32_t seed, const std::vector<stateful::Operation>& op
       font = 1 + op.value % 8;
       actual.setTextFont(font);
     }
-    if (actual.fb != expected || actual._swapBytes != swap ||
-        actual.textfont != font || actual._vpOoB == valid) {
-      std::fprintf(stderr, "stateful seed=%u failed at operation=%zu kind=%d\n",
-                   seed, index, static_cast<int>(op.kind));
+    if (actual.fb != expected || actual._swapBytes != swap || actual.textfont != font ||
+        actual._vpOoB == valid) {
+      std::fprintf(stderr, "stateful seed=%u failed at operation=%zu kind=%d\n", seed, index,
+                   static_cast<int>(op.kind));
       std::abort();
     }
   }
@@ -81,8 +83,7 @@ int main() {
   const auto first = stateful::generate(123, 80);
   assert(first == stateful::generate(123, 80));
   assert(first != stateful::generate(124, 80));
-  for (uint32_t seed : {1U, 2U, 123U, 456U})
-    run_stateful_case(seed, stateful::generate(seed, 80));
+  for (uint32_t seed : {1U, 2U, 123U, 456U}) run_stateful_case(seed, stateful::generate(seed, 80));
   auto failing = first;
   const stateful::Operation marker = {stateful::Kind::Rect, 0, 0, 1, 1, 0xdead};
   failing.push_back(marker);

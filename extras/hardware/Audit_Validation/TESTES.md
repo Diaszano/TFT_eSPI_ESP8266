@@ -265,4 +265,3 @@ consumption without presenting firmware timers as external evidence.
    A capture without external traces reports `UNAVAILABLE`; missing calibration
    or interval clipping reports `INCOMPARABLE`. Watts are calculated only from
    calibrated, simultaneous voltage and current measurements.
-

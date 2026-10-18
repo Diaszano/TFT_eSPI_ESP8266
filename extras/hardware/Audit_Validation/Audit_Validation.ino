@@ -80,8 +80,7 @@ void validation_dispatch(validation::ValidationCommand command) {
       ValidationPerfEmitter perf(Serial, run_id);
       uint32_t values[16];
       for (uint8_t i = 0; i < 16; ++i) values[i] = i + 1;
-      if (!perf.begin("TI", 0, 16, "sentinel") ||
-          !perf.samples("TI", 0, 0, values, 16) ||
+      if (!perf.begin("TI", 0, 16, "sentinel") || !perf.samples("TI", 0, 0, values, 16) ||
           !perf.end("TI", 16, 0, "PASS"))
         Serial.println("TI,ERROR,EMISSION");
       break;

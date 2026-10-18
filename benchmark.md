@@ -1,12 +1,12 @@
 # Relatório de Benchmark em Hardware Real: TFT_eSPI ESP8266 + ST7789
 
-**Data da Execução:** 18 de Outubro de 2026  
-**Ambiente de Execução:** Bancada Física (Physical Hardware Testbed)  
-**Dispositivo:** NodeMCU ESP-12E (ESP8266EX)  
-**Display:** ST7789 IPS 240×240 SPI  
-**Porta Serial:** `/dev/ttyUSB0` (115200 baud)  
-**Branch / Commit:** `codex/plan-13-validation` (`277b6219`)  
-**Firmware:** `extras/hardware/Audit_Validation/Audit_Validation.ino`  
+**Data da Execução:** 18 de Outubro de 2026
+**Ambiente de Execução:** Bancada Física (Physical Hardware Testbed)
+**Dispositivo:** NodeMCU ESP-12E (ESP8266EX)
+**Display:** ST7789 IPS 240×240 SPI
+**Porta Serial:** `/dev/ttyUSB0` (115200 baud)
+**Branch / Commit:** `codex/plan-13-validation` (`277b6219`)
+**Firmware:** `extras/hardware/Audit_Validation/Audit_Validation.ino`
 
 ---
 

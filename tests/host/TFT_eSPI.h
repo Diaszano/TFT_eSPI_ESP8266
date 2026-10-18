@@ -20,8 +20,8 @@ class TFT_eSPI {
   void startWrite() {}
   void endWrite() {}
   void setAddrWindow(int32_t x, int32_t y, int32_t width, int32_t height) {
-    if (x < 0 || y < 0 || width < 0 || height < 0 ||
-        x + width > 240 || y + height > 240) ++bad_windows;
+    if (x < 0 || y < 0 || width < 0 || height < 0 || x + width > 240 || y + height > 240)
+      ++bad_windows;
     if (width && height) ++windows;
   }
   unsigned bad_windows = 0;

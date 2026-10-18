@@ -9,12 +9,12 @@
 namespace {
 uint16_t run_counter = 0;
 void run_id(char* output, size_t size) {
-  snprintf(output, size, "H%08lx%04x",
-           static_cast<unsigned long>(ESP.getCycleCount()), run_counter++);
+  snprintf(output, size, "H%08lx%04x", static_cast<unsigned long>(ESP.getCycleCount()),
+           run_counter++);
 }
 
-void checkpoint(ValidationPerfEmitter& perf, const char* suite, uint32_t index,
-                uint32_t minimum, uint32_t failures) {
+void checkpoint(ValidationPerfEmitter& perf, const char* suite, uint32_t index, uint32_t minimum,
+                uint32_t failures) {
   perf.mem(suite, index, ESP.getFreeHeap(), ESP.getMaxFreeBlockSize(), minimum, failures);
 }
 
@@ -40,7 +40,7 @@ bool recover(TFT_eSPI& tft) {
   smaller.deleteSprite();
   return true;
 }
-}
+}  // namespace
 
 namespace validation {
 bool heap_lifecycle_step(uint32_t index, TFT_eSPI& tft, uint32_t* allocation_us,
@@ -99,8 +99,7 @@ void run_heap_churn(TFT_eSPI& tft, Print& log) {
       checkpoint(perf, "HC", (i + 1) / 1024, minimum, failures);
       yield();
     }
-    if ((i + 1) % 128 == 0 &&
-        validation_poll_control(log, false) == ControlAction::Quit) {
+    if ((i + 1) % 128 == 0 && validation_poll_control(log, false) == ControlAction::Quit) {
       perf.abort("HC", i + 1, "Q");
       return;
     }
@@ -162,10 +161,11 @@ void run_heap_pressure(TFT_eSPI& tft, Print& log) {
   if (reason == nullptr && recovered) {
     perf.end("HP", completed, elapsed, "PASS");
   } else {
-    const char* result = !recovered ? "RECOVERY_FAIL" :
-                         reason && reason[0] == 'A' ? "ALLOC_FAIL_RECOVERED" :
-                         reason && reason[0] == 'H' ? "HEAP_FLOOR_RECOVERED" : "Q";
+    const char* result = !recovered                   ? "RECOVERY_FAIL"
+                         : reason && reason[0] == 'A' ? "ALLOC_FAIL_RECOVERED"
+                         : reason && reason[0] == 'H' ? "HEAP_FLOOR_RECOVERED"
+                                                      : "Q";
     perf.abort("HP", completed, result);
   }
 }
-}
+}  // namespace validation

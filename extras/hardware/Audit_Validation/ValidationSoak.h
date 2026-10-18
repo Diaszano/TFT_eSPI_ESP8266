@@ -8,6 +8,6 @@
 namespace validation {
 void run_mixed_soak(uint32_t requested_minutes, TFT_eSPI& tft, Print& log);
 void run_wifi_latency(TFT_eSPI& tft, Print& log);
-}
+}  // namespace validation
 
 #endif
