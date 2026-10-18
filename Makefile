@@ -61,7 +61,7 @@ test-hw-build: test-compile
 
 .PHONY: test-hw-perf-offline
 test-hw-perf-offline:
-	python3 -m unittest scripts.test_hw_perf_protocol scripts.test_hw_perf_capture scripts.test_hw_perf_analysis
+	python3 -m unittest scripts.test_hw_perf_protocol scripts.test_hw_perf_capture scripts.test_hw_perf_analysis scripts.test_hw_perf_lab
 
 test-hw-preflight: test-hw-build
 	python3 scripts/hw_validation_preflight.py

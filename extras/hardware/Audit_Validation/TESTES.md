@@ -245,3 +245,24 @@ size and truncation reason. The analysis writes parsed.json,
 measurements.csv, summary.json, and report.md without replacing prior
 artifacts. Missing operator attestation remains synthetic. A firmware PASS
 with a sequence gap remains incomplete transport evidence.
+
+## Laboratory characterization (Plan 13E)
+
+Optional external instruments (oscilloscope, optical sensor, current probe)
+can characterize SPI frequencies, optical display update/tearing, and power
+consumption without presenting firmware timers as external evidence.
+
+1. Each frequency/wiring variant must be an operator-prepared, separately
+   compiled build (`test-hw-preflight`). Never change production defaults or
+   clocks silently.
+2. The operator exports calibrated CSV readings with `timestamp_utc`,
+   `channel`, `value`, and `unit` alongside a `lab-manifest.json` containing
+   instrument ID, calibration factors, and approved capture interval.
+3. Validate offline:
+   ~~~sh
+   python3 -m unittest scripts.test_hw_perf_lab
+   ~~~
+   A capture without external traces reports `UNAVAILABLE`; missing calibration
+   or interval clipping reports `INCOMPARABLE`. Watts are calculated only from
+   calibrated, simultaneous voltage and current measurements.
+
