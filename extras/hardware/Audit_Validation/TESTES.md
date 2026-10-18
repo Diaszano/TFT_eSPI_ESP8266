@@ -190,6 +190,15 @@ floor stop, or Q sends ABORT. The first 16 allocation latencies are samples,
 separate from drawing time. Sprite storage estimates include a conservative
 64-byte allocator margin and runtime heap checks remain authoritative.
 
+HP is a separate opt-in pressure profile. It holds at most four test-owned
+sprites with sides 16/24/32/40 and depths 16/8/4/1 bpp. It checks the
+12,288-byte floor and largest contiguous block before each create, frees
+all owned sprites on every exit, then tries one safe 8×8 sprite and display
+draw as recovery evidence. A low starting heap is SKIP. A create failure
+or Q is incomplete even if recovery succeeds. Deliberate over-allocation
+is skipped because this profile does not assume the sprite API guarantees
+safe failure for an invalid request.
+
 The operator must complete hardware gates H1–H3 in the performance validation
 spec before any upload or real capture. One operator-owned process opens the
 chosen serial port and pipes its raw bytes to the passive capture command.

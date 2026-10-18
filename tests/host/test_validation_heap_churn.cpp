@@ -49,4 +49,34 @@ int main() {
   assert(TFT_eSprite::create_calls == 128);
   assert(TFT_eSprite::delete_calls == 128);
   assert(cancelled.bytes.find("ABORT,HC,128,Q,") != std::string::npos);
+  Serial.input.clear();
+  Serial.position = 0;
+  TFT_eSprite::create_calls = TFT_eSprite::delete_calls = 0;
+  Print pressure;
+  validation::run_heap_pressure(display, pressure);
+  assert(TFT_eSprite::create_calls == 5);
+  assert(TFT_eSprite::delete_calls == 5);
+  assert(pressure.bytes.find("END,HP,4,") != std::string::npos);
+  for (int failure_at : {1, 2, 4}) {
+    TFT_eSprite::create_calls = TFT_eSprite::delete_calls = 0;
+    TFT_eSprite::fail_at = failure_at;
+    Print pressure_failure;
+    validation::run_heap_pressure(display, pressure_failure);
+    assert(TFT_eSprite::delete_calls == failure_at);
+    assert(pressure_failure.bytes.find("ALLOC_FAIL_RECOVERED") != std::string::npos);
+  }
+  TFT_eSprite::fail_at = -1;
+  TFT_eSprite::create_calls = TFT_eSprite::delete_calls = 0;
+  Serial.input = "Q\n";
+  Serial.position = 0;
+  Print pressure_cancelled;
+  validation::run_heap_pressure(display, pressure_cancelled);
+  assert(TFT_eSprite::delete_calls == 2);
+  assert(pressure_cancelled.bytes.find("ABORT,HP,1,Q,") != std::string::npos);
+  Serial.input.clear();
+  Serial.position = 0;
+  ESP.free_heap = 12288;
+  Print pressure_skip;
+  validation::run_heap_pressure(display, pressure_skip);
+  assert(pressure_skip.bytes.find("END,HP,0,0,SKIP,") != std::string::npos);
 }

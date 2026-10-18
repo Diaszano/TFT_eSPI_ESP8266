@@ -17,8 +17,10 @@ inline uint32_t micros() {
 inline void yield() {}
 struct HostESP {
   uint32_t getCycleCount() const { return 12345; }
-  uint32_t getFreeHeap() const { return 50000; }
-  uint32_t getMaxFreeBlockSize() const { return 40000; }
+  uint32_t free_heap = 50000;
+  uint32_t largest_block = 40000;
+  uint32_t getFreeHeap() const { return free_heap; }
+  uint32_t getMaxFreeBlockSize() const { return largest_block; }
 };
 extern HostESP ESP;
 #endif
