@@ -3,6 +3,7 @@
 // replays CASET/RASET/RAMWR into controller RAM and counts SPI transactions. A transfer stays
 // in flight until the code polls SPI1CMD, so a register or DC write that real hardware would
 // race against is reported as a bus violation.
+#include <algorithm>
 #include <cassert>
 #include <climits>
 #include <cstdint>
@@ -170,6 +171,13 @@ const fontinfo fontdata[] = {
     {(const uint8_t*)chrtbl_f32, widtbl_f32, chr_hgt_f32, baseline_f32},
 };
 
+template <typename T>
+static inline void transpose(T& a, T& b) {
+  T t = a;
+  a = b;
+  b = t;
+}
+
 class TFT_eSPI {
  public:
   void begin_tft_write();
@@ -183,6 +191,7 @@ class TFT_eSPI {
   void drawFastVLine(int32_t x, int32_t y, int32_t h, uint32_t color);
   void drawFastHLine(int32_t x, int32_t y, int32_t w, uint32_t color);
   void drawRect(int32_t x, int32_t y, int32_t w, int32_t h, uint32_t color);
+  void drawLine(int32_t x0, int32_t y0, int32_t x1, int32_t y1, uint32_t color);
   void pushImage(int32_t x, int32_t y, int32_t w, int32_t h, uint16_t* data);
   void pushImage(int32_t x, int32_t y, int32_t w, int32_t h, uint16_t* data, uint16_t transp);
   void pushImage(int32_t x, int32_t y, int32_t w, int32_t h, const uint16_t* data);
@@ -274,6 +283,12 @@ const Case kCases[] = {
      [] {
        for (int i = 0; i < 10; ++i) tft.drawChar('0' + i, i * 9, 50, 2);
      }},
+    {"font2 transparent",
+     [] {
+       tft.textbgcolor = tft.textcolor;
+       for (int i = 0; i < 10; ++i) tft.drawChar('0' + i, i * 9, 50, 2);
+       tft.textbgcolor = 0;
+     }},
     {"font4 opaque 10ch",
      [] {
        for (int i = 0; i < 10; ++i) tft.drawChar('0' + i, i * 15, 80, 4);
@@ -316,6 +331,61 @@ void topClips() {
                [](int y) { tft.pushImage(0, y, 100, 20, sprite8, uint8_t(0), false); });
 }
 
+// Reference: the original drawLine Bresenham, plotting every pixel through the viewport.
+void referenceLine(int64_t x0, int64_t y0, int64_t x1, int64_t y1, uint16_t c,
+                   std::vector<uint16_t>& out) {
+  bool steep = (y1 > y0 ? y1 - y0 : y0 - y1) > (x1 > x0 ? x1 - x0 : x0 - x1);
+  if (steep) std::swap(x0, y0), std::swap(x1, y1);
+  if (x0 > x1) std::swap(x0, x1), std::swap(y0, y1);
+  int64_t dx = x1 - x0, dy = y1 > y0 ? y1 - y0 : y0 - y1, err = dx >> 1, ystep = y0 < y1 ? 1 : -1;
+  for (; x0 <= x1; x0++) {
+    int64_t px = (steep ? y0 : x0) + tft._xDatum, py = (steep ? x0 : y0) + tft._yDatum;
+    if (px >= tft._vpX && px < tft._vpW && py >= tft._vpY && py < tft._vpH) out[py * 240 + px] = c;
+    err -= dy;
+    if (err < 0) y0 += ystep, err += dx;
+  }
+}
+
+void lines() {
+  std::vector<uint16_t> want(240 * 240);
+  uint32_t seed = 12345;
+  auto rnd = [&](int32_t span) {
+    seed = seed * 1103515245u + 12345u;
+    return int32_t(seed >> 8) % span;
+  };
+  for (int i = 0; i < 3000; ++i) {
+    // Mostly near the panel, some far away so the clipped start must reproduce Bresenham exactly.
+    const int32_t span = i % 3 == 0 ? 200000 : i % 3 == 1 ? 600 : 260;
+    const int32_t x0 = rnd(span) - span / 2 + 120, y0 = rnd(span) - span / 2 + 120;
+    const int32_t x1 = rnd(span) - span / 2 + 120, y1 = rnd(span) - span / 2 + 120;
+    tft._xDatum = i % 5 == 0 ? 7 : 0, tft._yDatum = i % 5 == 0 ? -3 : 0;
+    sim::reset();
+    std::fill(want.begin(), want.end(), 0);
+    tft.drawLine(x0, y0, x1, y1, 0xBEEF);
+    referenceLine(x0, y0, x1, y1, 0xBEEF, want);
+    for (int y = 0; y < 240; ++y)
+      for (int x = 0; x < 240; ++x)
+        if (sim::ram[y][x] != want[y * 240 + x]) {
+          std::printf("drawLine mismatch (%d,%d)-(%d,%d) at %d,%d\n", x0, y0, x1, y1, x, y);
+          std::abort();
+        }
+  }
+  // Extreme endpoints: defined behaviour and bounded work (each visible pixel at most one run).
+  const int32_t big[] = {INT32_MIN, -100000, -1, 0, 120, 239, 240, 100000, INT32_MAX};
+  for (int32_t datum : {0, 9, INT32_MIN, INT32_MAX})
+    for (int32_t a : big)
+      for (int32_t b : big) {
+        tft._xDatum = tft._yDatum = datum;
+        sim::reset();
+        tft.drawLine(a, b, b, a, 1);
+        tft.drawLine(a, 0, b, 239, 1);
+        tft.drawLine(0, a, 239, b, 1);
+        tft.drawLine(a, a, b, b, 1);
+        assert(sim::transactions < 4 * 3 * 2 * 240 + 64);
+      }
+  tft._xDatum = tft._yDatum = 0;
+}
+
 // Inputs a correct clip rejects or trims; signed-overflow here is caught by UBSan.
 void extremes() {
   const int32_t big[] = {INT32_MIN, INT32_MIN + 1, -1000000,      -1,       0, 1, 239,
@@ -330,11 +400,90 @@ void extremes() {
       // Nothing may ever be written outside the 240x240 panel window.
       assert(sim::bytes <= 4 * 240 * 240 + 64);
     }
+  // Points, outlines and glyphs at extreme positions, also with an origin offset (setOrigin).
+  for (int32_t datum : {0, 7, -7, INT32_MAX, INT32_MIN}) {
+    tft._xDatum = tft._yDatum = datum;
+    for (int32_t a : big)
+      for (int32_t b : big) {
+        sim::reset();
+        tft.drawPixel(a, b, 0xFFFF);
+        tft.drawRect(a, 10, b, 5, 0xFFFF);
+        tft.drawRect(10, a, 5, b, 0xFFFF);
+        tft.drawRect(a, b, b, a, 0xFFFF);
+        tft.drawChar(a, b, 'W', 0xFFFF, 0x0000, 1);
+        tft.drawChar(a, b, 'W', 0xFFFF, 0xFFFF, 3);
+        assert(tft.drawChar('8', a, b, 2) == 8 && tft.drawChar('8', a, b, 4) == 14);
+        tft.textsize = 3;
+        assert(tft.drawChar('8', a, b, 2) == 24 && tft.drawChar('8', a, b, 4) == 42);
+        tft.textsize = 1;
+        assert(sim::bytes <= 8 * 240 * 240);
+      }
+  }
+  tft._xDatum = tft._yDatum = 0;
+  // pushImage never reads the source when the clip leaves nothing, and stays in the window otherwise.
+  for (int32_t a : big)
+    for (int32_t b : {INT32_MIN, -1, 0, 1, INT32_MAX}) {
+      // Only spans that end before the panel or start after it are guaranteed empty.
+      const int64_t end = (int64_t)a + b;
+      if (b > 0 && end > 0 && a < 240) continue;
+      sim::reset();
+      tft.pushImage(a, 10, b, 1, (const uint16_t*)nullptr);
+      tft.pushImage(10, a, 1, b, (uint16_t*)nullptr);
+      tft.pushImage(a, a, b, b, (const uint8_t*)nullptr, true);
+      assert(sim::bytes == 0);
+    }
+  sim::reset();
+  tft.pushImage(230, 230, INT32_MAX, 1, image);  // reads only the visible 10 pixels
+  assert(sim::ram[230][239] == image[9] && sim::ram[230][229] == 0);
+  // drawPixel through an origin: exact position, and nothing when the sum leaves int32_t.
+  tft._xDatum = 5, tft._yDatum = -5;
+  tft.addr_row = tft.addr_col = 0xFFFF;
+  sim::reset();
+  tft.drawPixel(10, 20, 0x00F0);
+  tft.drawPixel(INT32_MAX, 20, 0x00F1);
+  assert(sim::ram[15][15] == 0x00F0 && sim::bytes == 13);  // CASET 5 + RASET 5 + RAMWR 1 + pixel 2
+  tft._xDatum = tft._yDatum = 0;
+  // A glyph whose origin cancels a large position still lands on the panel.
+  tft._xDatum = -(1 << 29), tft._yDatum = 0;
+  sim::reset();
+  tft.drawChar((1 << 29) + 3, 4, 'A', 0xFFFF, 0x0000, 1);
+  assert(sim::bytes > 0 && sim::ram[4 + 7][3 + 5] == 0x0000);
+  tft._xDatum = 0;
+  // drawRect in normal range: 4 edges, corners included, interior untouched; clipped at the panel edge.
+  sim::reset();
+  tft.drawRect(230, 5, 20, 4, 0x0F0F);
+  assert(sim::ram[5][230] == 0x0F0F && sim::ram[8][239] == 0x0F0F && sim::ram[6][231] == 0);
+  assert(sim::ram[8][230] == 0x0F0F && sim::ram[6][230] == 0x0F0F);
   sim::reset();
   tft.fillRect(100, 100, INT32_MAX, INT32_MAX, 0x0001);
   assert(sim::ram[100][100] == 1 && sim::ram[239][239] == 1 && sim::ram[99][99] == 0);
   assert(sim::ram[100][240] == 0 && sim::ram[240][100] == 0);
 }
+
+// Transparent text over a blank panel writes exactly the foreground pixels, so it must equal
+// opaque text with a zero background at every text size.
+void transparentEquivalence() {
+  const auto draw = [&](bool transparent, int size) {
+    sim::reset();
+    tft.textsize = size;
+    tft.textbgcolor = transparent ? tft.textcolor : 0;
+    for (int i = 0; i < 4; ++i) tft.drawChar('0' + i, i * 15 * size, 80, 4);
+    tft.textsize = 1;
+    tft.textbgcolor = 0;
+  };
+  uint16_t a[240][240], b[240][240];
+  for (int size : {1, 2, 3}) {
+    draw(true, size);
+    std::memcpy(a, sim::ram, sizeof(a));
+    draw(false, size);
+    std::memcpy(b, sim::ram, sizeof(b));
+    if (std::memcmp(a, b, sizeof(a))) {
+      std::printf("transparent != opaque at size %d\n", size);
+      std::abort();
+    }
+  }
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -370,6 +519,6 @@ int main(int argc, char** argv) {
                   (unsigned long long)ramwr, (unsigned long long)ram);
   }
   tft.rowstart = 0;
-  if (!table) extremes(), topClips();
+  if (!table) extremes(), topClips(), lines(), transparentEquivalence();
   std::puts("PASS render-stream");
 }

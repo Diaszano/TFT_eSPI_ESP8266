@@ -572,6 +572,7 @@ RENDER_SIGNATURES = (
     "void TFT_eSPI::drawFastVLine(int32_t x, int32_t y, int32_t h, uint32_t color) {",
     "void TFT_eSPI::drawFastHLine(int32_t x, int32_t y, int32_t w, uint32_t color) {",
     "void TFT_eSPI::drawRect(int32_t x, int32_t y, int32_t w, int32_t h, uint32_t color) {",
+    "void TFT_eSPI::drawLine(int32_t x0, int32_t y0, int32_t x1, int32_t y1, uint32_t color) {",
     "void TFT_eSPI::pushImage(int32_t x, int32_t y, int32_t w, int32_t h, uint16_t* data) {",
     "void TFT_eSPI::pushImage(int32_t x, int32_t y, int32_t w, int32_t h, uint16_t* data,\n",
     "void TFT_eSPI::pushImage(int32_t x, int32_t y, int32_t w, int32_t h, const uint16_t* data) {",
@@ -593,7 +594,9 @@ def run_render_stream(root: pathlib.Path, table: bool = False) -> None:
     header = (root / "src/TFT_eSPI.h").read_text()
     macros = header[header.index("#define CMD_BITS 8") : header.index("#ifndef tft_Write_16N")]
     macros += re.search(r"^#define DAT8TO32\(P\).*$", header, re.MULTILINE).group(0) + "\n"
-    clip = source[source.index("#ifndef SPI_BUSY_CHECK") : source.index("/****", source.index("#define PI_CLIP"))]
+    clip = '#include "internal/clip.h"\n' + source[source.index("#ifndef SPI_BUSY_CHECK") : source.index("/****", source.index("#define PI_CLIP"))]
+    line_helper = source.index("// drawLine helper:")
+    clip += source[line_helper : source.index("/****", line_helper)]
     methods = []
     for signature in RENDER_SIGNATURES:
         method, line = extract_method(source, signature)
@@ -619,11 +622,136 @@ def run_render_stream(root: pathlib.Path, table: bool = False) -> None:
         subprocess.run([str(binary)] + (["--table"] if table else []), check=True)
 
 
+SPRITE_STACK_SIGNATURES = (
+    "bool TFT_eSprite::pushRotated(int16_t angle, uint32_t transp) {",
+    "bool TFT_eSprite::pushRotated(TFT_eSprite* spr, int16_t angle, uint32_t transp) {",
+    "bool TFT_eSprite::getRotatedBounds(int16_t angle, int16_t* min_x, int16_t* min_y, int16_t* max_x,",
+    "bool TFT_eSprite::getRotatedBounds(TFT_eSprite* spr, int16_t angle, int16_t* min_x, int16_t* min_y,",
+    "void TFT_eSprite::getRotatedBounds(int16_t angle, int16_t w, int16_t h, int16_t xp, int16_t yp,",
+    "bool TFT_eSprite::pushToSprite(TFT_eSprite* dspr, int32_t x, int32_t y, uint16_t transp) {",
+)
+
+
+def run_sprite_stack(root: pathlib.Path, print_golden: bool = False) -> None:
+    """Check sprite-to-sprite and rotated pushes against golden output with bounded runs."""
+    compiler = shutil.which("c++")
+    if not compiler:
+        raise RuntimeError("C++ compiler required for host tests")
+    source = (root / "src/internal/Sprite.inc").read_text()
+    methods = []
+    for signature in SPRITE_STACK_SIGNATURES:
+        method, line = extract_method(source, signature)
+        methods.append(f'#line {line} "src/internal/Sprite.inc"\n{method}')
+    fixture = (root / "tests/host/test_sprite_stack.cpp").read_text()
+    if fixture.count("// FUNCTIONS UNDER TEST") != 1:
+        raise ValueError("expected exactly one unique function insertion marker")
+    generated = fixture.replace("// FUNCTIONS UNDER TEST", "\n".join(methods))
+    with tempfile.TemporaryDirectory(prefix="tft-sprite-stack-") as temp:
+        source_path = pathlib.Path(temp) / "sprite_stack.cpp"
+        binary = pathlib.Path(temp) / "sprite_stack"
+        source_path.write_text(generated)
+        subprocess.run(
+            [compiler, "-std=c++17", "-Wall", "-Wextra", "-Wno-vla-cxx-extension", "-fsanitize=address,undefined",
+             "-fno-sanitize-recover=all", str(source_path), "-o", str(binary)], check=True
+        )
+        subprocess.run([str(binary)] + (["--print"] if print_golden else []), check=True)
+
+
+def run_sprite_clip(root: pathlib.Path, print_golden: bool = False) -> None:
+    """Drive sprite fills and lines with extreme coordinates over an exactly sized heap image."""
+    compiler = shutil.which("c++")
+    if not compiler:
+        raise RuntimeError("C++ compiler required for host tests")
+    source = (root / "src/internal/Sprite.inc").read_text()
+    clip = root / "src/internal/clip.h"
+    helpers = clip.read_text().replace("#pragma once", "") + "\n" if clip.exists() else ""
+    methods = []
+    for signature in (
+        "void TFT_eSprite::drawFastVLine(int32_t x, int32_t y, int32_t h, uint32_t color) {",
+        "void TFT_eSprite::drawFastHLine(int32_t x, int32_t y, int32_t w, uint32_t color) {",
+        "void TFT_eSprite::fillRect(int32_t x, int32_t y, int32_t w, int32_t h, uint32_t color) {",
+    ):
+        method, line = extract_method(source, signature)
+        methods.append(f'#line {line} "src/internal/Sprite.inc"\n{method}')
+    fixture = (root / "tests/host/test_sprite_clip.cpp").read_text()
+    if fixture.count("// FUNCTIONS UNDER TEST") != 1:
+        raise ValueError("expected exactly one unique function insertion marker")
+    generated = fixture.replace("// FUNCTIONS UNDER TEST", helpers + "\n".join(methods))
+    with tempfile.TemporaryDirectory(prefix="tft-sprite-clip-") as temp:
+        source_path = pathlib.Path(temp) / "sprite_clip.cpp"
+        binary = pathlib.Path(temp) / "sprite_clip"
+        source_path.write_text(generated)
+        subprocess.run(
+            [compiler, "-std=c++17", "-Wall", "-Wextra",
+             "-fsanitize=address" if print_golden else "-fsanitize=address,undefined",
+             "-fno-sanitize-recover=all", str(source_path), "-o", str(binary)], check=True
+        )
+        subprocess.run([str(binary)] + (["--print"] if print_golden else []), check=True)
+
+
+def run_sprite_text(root: pathlib.Path, print_golden: bool = False) -> None:
+    """Draw sprite glyphs over an exactly sized heap image with extreme coordinates."""
+    compiler = shutil.which("c++")
+    if not compiler:
+        raise RuntimeError("C++ compiler required for host tests")
+    source = (root / "src/internal/Sprite.inc").read_text()
+    methods = []
+    for signature in (
+        "void TFT_eSprite::drawChar(int32_t x, int32_t y, uint16_t c, uint32_t color, uint32_t bg,",
+        "int16_t TFT_eSprite::drawChar(uint16_t uniCode, int32_t x, int32_t y, uint8_t font) {",
+    ):
+        method, line = extract_method(source, signature)
+        methods.append(f'#line {line} "src/internal/Sprite.inc"\n{method.replace("uint32_t flash_address", "uintptr_t flash_address")}')
+    fixture = (root / "tests/host/test_sprite_text.cpp").read_text()
+    if fixture.count("// FUNCTIONS UNDER TEST") != 1:
+        raise ValueError("expected exactly one unique function insertion marker")
+    generated = fixture.replace("// FUNCTIONS UNDER TEST", "\n".join(methods))
+    with tempfile.TemporaryDirectory(prefix="tft-sprite-text-") as temp:
+        source_path = pathlib.Path(temp) / "sprite_text.cpp"
+        binary = pathlib.Path(temp) / "sprite_text"
+        source_path.write_text(generated)
+        subprocess.run(
+            [compiler, "-std=c++17", "-Wall", "-Wextra", "-Wno-unused-parameter",
+             "-fsanitize=address" if print_golden else "-fsanitize=address,undefined",
+             "-fno-sanitize-recover=all", "-I", str(root / "src"), str(source_path), "-o", str(binary)],
+            check=True,
+        )
+        subprocess.run([str(binary)] + (["--print"] if print_golden else []), check=True)
+
+
+def run_sprite_crop(root: pathlib.Path) -> None:
+    """Drive the cropped pushSprite/setWindow window arithmetic with extreme coordinates."""
+    compiler = shutil.which("c++")
+    if not compiler:
+        raise RuntimeError("C++ compiler required for host tests")
+    source = (root / "src/internal/Sprite.inc").read_text()
+    methods = []
+    for signature in (
+        "void TFT_eSprite::setWindow(int32_t x0, int32_t y0, int32_t x1, int32_t y1) {",
+        "bool TFT_eSprite::pushSprite(int32_t tx, int32_t ty, int32_t sx, int32_t sy, int32_t sw,",
+    ):
+        method, line = extract_method(source, signature)
+        methods.append(f'#line {line} "src/internal/Sprite.inc"\n{method}')
+    fixture = (root / "tests/host/test_sprite_crop.cpp").read_text()
+    if fixture.count("// FUNCTIONS UNDER TEST") != 1:
+        raise ValueError("expected exactly one unique function insertion marker")
+    generated = fixture.replace("// FUNCTIONS UNDER TEST", "\n".join(methods))
+    with tempfile.TemporaryDirectory(prefix="tft-sprite-crop-") as temp:
+        source_path = pathlib.Path(temp) / "sprite_crop.cpp"
+        binary = pathlib.Path(temp) / "sprite_crop"
+        source_path.write_text(generated)
+        subprocess.run(
+            [compiler, "-std=c++17", "-Wall", "-Wextra", "-fsanitize=address,undefined",
+             "-fno-sanitize-recover=all", str(source_path), "-o", str(binary)], check=True
+        )
+        subprocess.run([str(binary)], check=True)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--case",
-        choices=("scroll", "font-metrics", "allocations", "glyph-allocation", "font-files", "spi-pixels", "sprite-rotation", "sprite-clipping", "text-clipping", "gfx-initialization", "clipping", "image-clipping", "extreme-coordinates", "validation-unit", "stateful-graphics", "render-stream", "all"),
+        choices=("scroll", "font-metrics", "allocations", "glyph-allocation", "font-files", "spi-pixels", "sprite-rotation", "sprite-clipping", "text-clipping", "gfx-initialization", "clipping", "image-clipping", "extreme-coordinates", "validation-unit", "stateful-graphics", "render-stream", "sprite-stack", "sprite-clip", "sprite-text", "sprite-crop", "all"),
         default="all",
     )
     parser.add_argument(
@@ -685,6 +813,14 @@ def main() -> int:
         run_stateful_graphics(root)
     if args.case in ("render-stream", "all"):
         run_render_stream(root, table=args.table)
+    if args.case in ("sprite-stack", "all"):
+        run_sprite_stack(root, print_golden=args.table)
+    if args.case in ("sprite-clip", "all"):
+        run_sprite_clip(root, print_golden=args.table)
+    if args.case in ("sprite-text", "all"):
+        run_sprite_text(root, print_golden=args.table)
+    if args.case in ("sprite-crop", "all"):
+        run_sprite_crop(root)
     return 0
 
 
