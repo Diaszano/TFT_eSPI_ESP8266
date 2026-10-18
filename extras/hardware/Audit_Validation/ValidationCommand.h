@@ -17,14 +17,32 @@ enum class ValidationCommandKind : uint8_t {
   Rotation,
   Next,
   Quit,
+  TelemetryIntegrity,
+  FrameFull,
+  FramePartial,
+  FrameMixed,
+  HeapChurn,
+  HeapPressure,
+  FrameMixedLong30,
+  FrameMixedLong8H,
+  FrameMixedLong24H,
+  LatencyWifi,
   Unknown
 };
+
+enum class ControlAction : uint8_t { None, Next, Quit, Busy };
 
 struct ValidationCommand {
   ValidationCommandKind kind;
   uint8_t visual_case;
   uint8_t rotation;
 };
+
+inline ControlAction control_action(ValidationCommand command, bool allow_next) {
+  if (command.kind == ValidationCommandKind::Quit) return ControlAction::Quit;
+  if (allow_next && command.kind == ValidationCommandKind::Next) return ControlAction::Next;
+  return ControlAction::Busy;
+}
 
 inline ValidationCommand parse_validation_command(const char* line);
 
@@ -81,6 +99,26 @@ inline ValidationCommand parse_validation_command(const char* line) {
     command.kind = ValidationCommandKind::Next;
   else if (strcmp(line, "Q") == 0)
     command.kind = ValidationCommandKind::Quit;
+  else if (strcmp(line, "TI") == 0)
+    command.kind = ValidationCommandKind::TelemetryIntegrity;
+  else if (strcmp(line, "FP1") == 0)
+    command.kind = ValidationCommandKind::FrameFull;
+  else if (strcmp(line, "FP2") == 0)
+    command.kind = ValidationCommandKind::FramePartial;
+  else if (strcmp(line, "FP3") == 0)
+    command.kind = ValidationCommandKind::FrameMixed;
+  else if (strcmp(line, "HC") == 0)
+    command.kind = ValidationCommandKind::HeapChurn;
+  else if (strcmp(line, "HP") == 0)
+    command.kind = ValidationCommandKind::HeapPressure;
+  else if (strcmp(line, "FM") == 0)
+    command.kind = ValidationCommandKind::FrameMixedLong30;
+  else if (strcmp(line, "FM8H") == 0)
+    command.kind = ValidationCommandKind::FrameMixedLong8H;
+  else if (strcmp(line, "FM24H") == 0)
+    command.kind = ValidationCommandKind::FrameMixedLong24H;
+  else if (strcmp(line, "LW") == 0)
+    command.kind = ValidationCommandKind::LatencyWifi;
   return command;
 }
 

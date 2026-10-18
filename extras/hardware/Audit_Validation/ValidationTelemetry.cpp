@@ -16,6 +16,27 @@
 #define SPI_FREQUENCY 0
 #endif
 
+#if defined(ESP8266)
+extern "C" {
+#include <user_interface.h>
+}
+#endif
+
+const char* validation_wifi_mode() {
+#if defined(ESP8266)
+  const uint8_t mode = wifi_get_opmode();
+  if (mode == 0) return "off";
+  if (mode == 1) {
+    if (wifi_station_get_connect_status() == 5) return "sta";
+    return "on";
+  }
+  if (mode == 2 || mode == 3) return "ap";
+  return "unknown";
+#else
+  return host_wifi_mode_value();
+#endif
+}
+
 void validation_emit_run(Print& out) {
   out.print("RUN,");
   out.print(millis());
@@ -34,7 +55,9 @@ void validation_emit_run(Print& out) {
   out.print(ESP.getCpuFreqMHz() * 1000000UL);
   out.print(',');
   out.print(SPI_FREQUENCY);
-  out.print(",off,");
+  out.print(',');
+  out.print(validation_wifi_mode());
+  out.print(',');
 #if defined(VALIDATION_DIRTY_TREE) && VALIDATION_DIRTY_TREE
   out.print("dirty,");
 #else

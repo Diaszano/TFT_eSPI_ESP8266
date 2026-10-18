@@ -150,3 +150,118 @@ python3 simulator/tools/generate_visual_guide.py --out .build/simulator/renders
 
 - **O que comprova:** documenta de forma determinística no host a aparência esperada das cenas `S1`–`S4` renderizadas pelo código de produção no simulador, facilitando a inspeção humana lado a lado com o ST7789 físico.
 - **O que NÃO comprova:** o vídeo é gerado pelo simulador (`Simulator-generated reference — not physical hardware footage`), **não** é filmagem do hardware físico, **não** substitui a inspeção visual humana no painel ST7789 (`Physical visual review is required`) e **não** valida fiação SPI, temporização do ESP8266, backlight, óptica do display nem consumo de heap. Além disso, por usar compressão H.264 (`yuv420p`) com perdas, o arquivo MP4 é apenas um artefato de apresentação e **nunca** deve ser usado como referência golden exata de pixels (para verificação exata de pixels, use `frame.rgb565` e `frame.png`).
+# PERF offline capture and analysis
+
+New suites are opt-in. Sending TI emits a 16-value protocol sentinel; it is
+never a hardware speed measurement. During a running suite, Q stops the suite
+at a cooperative checkpoint, N advances only visual review, and other
+complete commands receive BUSY.
+
+FP1 records separate scanline RGB565 transfers (57,600 pixels and 115,200
+payload bytes per warm frame) and the optimized fillScreen path. FP2 records
+8, 32, 64, and 120 square-pixel regions at center and bottom-right edge,
+plus explicitly clipped half-width/half-height cases. Each scene has a
+separate cold frame and 1,000 warm frames. Preparation of scanline pixels
+is outside the timed interval; address-window setup and all display writes
+are inside it. The reported elapsed window sums measured frame intervals,
+excluding serial output and cooperative control checks. Q is checked after
+each batch of at most 128 frames.
+
+FP3 draws two text regions, three primitives, a fixed 12×12 cropped RGB565
+image, background repair, and a moving 32×32 sprite with seed 324508639.
+The sprite and image buffer are prepared before timing. A missing sprite
+produces SKIP; it is not a successful frame run. The sketch restores Font 1
+and the default non-swapped pixel order after the mixed scene.
+
+Physical comparisons use at least five distinct, operator-attested boots per
+revision with 1,000 intact warm frames per scene. The board, supply, display,
+rotation, CPU/SPI clocks, Wi-Fi condition, scene, and seed must match across
+revisions. Store the baseline content SHA-256 with its operator and UTC
+approval. Without that approval, results are informational and no regression
+verdict is issued; a configured budget can flag a regression candidate but
+does not by itself fail a release.
+
+HC requests 100,000 create/draw/delete cycles using a fixed seed, sprite
+sides 8/16/24/32 and depths 1/4/8/16 bpp. It checks the 12,288-byte free
+heap floor and largest block before each create. MEM checkpoints occur at
+start, every 1,024 completed cycles and after cleanup. Q is polled every
+128 cycles. The run reports actual completed cycles; an allocation failure,
+floor stop, or Q sends ABORT. The first 16 allocation latencies are samples,
+separate from drawing time. Sprite storage estimates include a conservative
+64-byte allocator margin and runtime heap checks remain authoritative.
+
+HP is a separate opt-in pressure profile. It holds at most four test-owned
+sprites with sides 16/24/32/40 and depths 16/8/4/1 bpp. It checks the
+12,288-byte floor and largest contiguous block before each create, frees
+all owned sprites on every exit, then tries one safe 8×8 sprite and display
+draw as recovery evidence. A low starting heap is SKIP. A create failure
+or Q is incomplete even if recovery succeeds. Deliberate over-allocation
+is skipped because this profile does not assume the sprite API guarantees
+safe failure for an invalid request.
+
+The compile-only NodeMCU build at this checkpoint reports 363,731 text,
+1,552 data, and 28,144 bss bytes. The same build of published main at
+adb2175d reports 356,883 text, 1,552 data, and 27,880 bss bytes: added
+instrumentation is +6,848 text and +264 bss bytes. These are static ELF
+sections, not a runtime heap delta. Measure startup heap on approved
+hardware before interpreting physical pressure results; stack headroom
+remains unavailable. Existing size baseline approval is unchanged.
+
+FM, FM8H, and FM24H are separate opt-in 30-minute, 8-hour, and 24-hour
+mixed-soak profiles. Each repeats one FP3 scene and one HC allocation
+lifecycle step. The firmware samples frame duration in at most 128-entry
+batches, emits a MEM checkpoint each elapsed minute, and polls Q after
+every frame. END carries actual completed frame count and 64-bit elapsed
+microseconds. No profile starts or resumes automatically. The long profiles
+require separate physical authorization, a continuous raw capture sized for
+the expected data volume, and a manually checked stop path. An incomplete
+capture or interrupted run is not physical endurance evidence.
+
+LW is an opt-in Wi-Fi latency suite. It repeats the exact FP3 mixed-frame workload
+for 1,000 frames under the physical Wi-Fi state observed at boot and reported in
+RUN.wifi and the PERF profile ID (`lw_off`, `lw_sta`, `lw_on`, `lw_ap`). The test
+does not configure credentials or generate network traffic; comparison across
+Wi-Fi states (`off`, `on_idle`, `local_traffic`) requires operator-attested capture
+metadata and hardware witness. Q cancels cooperatively and stops the suite.
+
+The operator must complete hardware gates H1–H3 in the performance validation
+spec before any upload or real capture. One operator-owned process opens the
+chosen serial port and pipes its raw bytes to the passive capture command.
+This repository's offline commands do not open a port, reset a board, upload
+firmware, or change DTR/RTS. Record the approved firmware checksum, board,
+display, CPU/SPI clocks, Wi-Fi state, boot witness, source SHA, and operator
+authorization in a JSON metadata file. Use a new run directory each time.
+
+A synthetic replay that needs no hardware:
+
+~~~sh
+printf 'HWTEST,2\n' | python3 -m scripts.hw_perf_capture .build/hardware/perf/example/synthetic --max-bytes 100000 --max-seconds 10
+python3 -m scripts.hw_perf_analysis .build/hardware/perf/example/synthetic
+make test-hw-perf-offline
+~~~
+
+The capture keeps exact bytes in serial.raw; capture.json records its hash,
+size and truncation reason. The analysis writes parsed.json,
+measurements.csv, summary.json, and report.md without replacing prior
+artifacts. Missing operator attestation remains synthetic. A firmware PASS
+with a sequence gap remains incomplete transport evidence.
+
+## Laboratory characterization (Plan 13E)
+
+Optional external instruments (oscilloscope, optical sensor, current probe)
+can characterize SPI frequencies, optical display update/tearing, and power
+consumption without presenting firmware timers as external evidence.
+
+1. Each frequency/wiring variant must be an operator-prepared, separately
+   compiled build (`test-hw-preflight`). Never change production defaults or
+   clocks silently.
+2. The operator exports calibrated CSV readings with `timestamp_utc`,
+   `channel`, `value`, and `unit` alongside a `lab-manifest.json` containing
+   instrument ID, calibration factors, and approved capture interval.
+3. Validate offline:
+   ~~~sh
+   python3 -m unittest scripts.test_hw_perf_lab
+   ~~~
+   A capture without external traces reports `UNAVAILABLE`; missing calibration
+   or interval clipping reports `INCOMPARABLE`. Watts are calculated only from
+   calibrated, simultaneous voltage and current measurements.

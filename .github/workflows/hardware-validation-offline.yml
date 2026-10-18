@@ -16,6 +16,7 @@ jobs:
       - uses: jdx/mise-action@9149ea85001c7435d5a66bb127d6a1b6227cb0a5 # v5.0.0
       - run: uv sync --locked --python "$(mise which python)"
       - run: make test-python
+      - run: make test-hw-perf-offline
       - run: make test-native
       - run: make test-host
       - run: make test-compile

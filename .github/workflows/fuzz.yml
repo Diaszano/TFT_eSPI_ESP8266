@@ -22,6 +22,8 @@ jobs:
         run: uv run python3 tests/host/run.py --case scroll --fuzz --fuzz-time 60 --fuzz-timeout 5
       - name: Run bounded extreme-coordinate fuzzer campaign
         run: uv run python3 tests/host/run.py --case extreme-coordinates --fuzz --fuzz-time 60 --fuzz-timeout 2
+      - name: Run stateful graphics validation
+        run: uv run python3 tests/host/run.py --case stateful-graphics
       - name: Upload crash and corpus artifacts
         if: always()
         uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08 # v4.6.0

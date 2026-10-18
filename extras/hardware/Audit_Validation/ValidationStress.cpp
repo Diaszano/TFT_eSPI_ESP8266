@@ -1,7 +1,7 @@
 #include "ValidationStress.h"
 
 #include <Arduino.h>
-#include "ValidationCommand.h"
+#include "ValidationInput.h"
 #include "ValidationStressMath.h"
 #include "ValidationTelemetry.h"
 
@@ -43,15 +43,7 @@ void emit_end(Print& log, const char* id, uint32_t cycles, uint32_t elapsed, uin
 }
 
 bool quit_requested(Print& log) {
-  static validation::ValidationCommandReader reader;
-  while (Serial.available()) {
-    validation::ValidationCommand command;
-    if (reader.consume(static_cast<char>(Serial.read()), &command)) {
-      if (command.kind == validation::ValidationCommandKind::Quit) return true;
-      log.println("UNKNOWN; Q aborts endurance");
-    }
-  }
-  return false;
+  return validation_poll_control(log, false) == validation::ControlAction::Quit;
 }
 }  // namespace
 

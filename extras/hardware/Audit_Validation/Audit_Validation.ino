@@ -1,6 +1,12 @@
 #include <stdint.h>
+#include <stdio.h>
 #include <TFT_eSPI.h>
 #include "ValidationCommand.h"
+#include "ValidationInput.h"
+#include "ValidationPerfTelemetry.h"
+#include "ValidationFramePerf.h"
+#include "ValidationMemoryExtended.h"
+#include "ValidationSoak.h"
 #include "ValidationTelemetry.h"
 #include "ValidationVisual.h"
 #include "ValidationBench.h"
@@ -11,8 +17,6 @@ TFT_eSPI tft;
 TFT_eSprite sprite32(&tft);
 TFT_eSprite wideSprite(&tft);
 bool spritesReady = false;
-
-bool readValidationCommand(validation::ValidationCommand* command);
 
 void showMenu() {
   tft.fillScreen(TFT_BLACK);
@@ -25,14 +29,13 @@ void showMenu() {
   tft.drawString("E30: endurance   X: extremes", 4, 80);
   tft.drawString("R0-R3: display rotation", 4, 96);
   tft.drawString("Suites are manually selected", 4, 112);
-}
-
-bool readValidationCommand(validation::ValidationCommand* command) {
-  static validation::ValidationCommandReader reader;
-  while (Serial.available()) {
-    if (reader.consume(static_cast<char>(Serial.read()), command)) return true;
-  }
-  return false;
+  tft.drawString("TI: telemetry integrity", 4, 128);
+  tft.drawString("FP1: full frame", 4, 144);
+  tft.drawString("FP2: partial regions", 4, 160);
+  tft.drawString("FP3: mixed frame", 4, 176);
+  tft.drawString("HC: heap churn", 4, 192);
+  tft.drawString("HP: heap pressure", 4, 208);
+  tft.drawString("FM/LW: soak/wifi latency", 4, 224);
 }
 
 void skipSuite(const char* name) {
@@ -69,11 +72,51 @@ void validation_dispatch(validation::ValidationCommand command) {
       Serial.print("ROTATION,");
       Serial.println(command.rotation);
       break;
+    case ValidationCommandKind::TelemetryIntegrity: {
+      static uint16_t suite_counter = 0;
+      char run_id[17];
+      snprintf(run_id, sizeof(run_id), "T%08lx%04x",
+               static_cast<unsigned long>(ESP.getCycleCount()), suite_counter++);
+      ValidationPerfEmitter perf(Serial, run_id);
+      uint32_t values[16];
+      for (uint8_t i = 0; i < 16; ++i) values[i] = i + 1;
+      if (!perf.begin("TI", 0, 16, "sentinel") || !perf.samples("TI", 0, 0, values, 16) ||
+          !perf.end("TI", 16, 0, "PASS"))
+        Serial.println("TI,ERROR,EMISSION");
+      break;
+    }
+    case ValidationCommandKind::FrameFull:
+      validation::run_frame_perf(validation::FrameSuite::Full, tft, sprite32, Serial);
+      break;
+    case ValidationCommandKind::FramePartial:
+      validation::run_frame_perf(validation::FrameSuite::Partial, tft, sprite32, Serial);
+      break;
+    case ValidationCommandKind::FrameMixed:
+      validation::run_frame_perf(validation::FrameSuite::Mixed, tft, sprite32, Serial);
+      break;
+    case ValidationCommandKind::HeapChurn:
+      validation::run_heap_churn(tft, Serial);
+      break;
+    case ValidationCommandKind::HeapPressure:
+      validation::run_heap_pressure(tft, Serial);
+      break;
+    case ValidationCommandKind::FrameMixedLong30:
+      validation::run_mixed_soak(30, tft, Serial);
+      break;
+    case ValidationCommandKind::FrameMixedLong8H:
+      validation::run_mixed_soak(480, tft, Serial);
+      break;
+    case ValidationCommandKind::FrameMixedLong24H:
+      validation::run_mixed_soak(1440, tft, Serial);
+      break;
+    case ValidationCommandKind::LatencyWifi:
+      validation::run_wifi_latency(tft, Serial);
+      break;
     case ValidationCommandKind::Next:
     case ValidationCommandKind::Quit:
     case ValidationCommandKind::Unknown:
     default:
-      Serial.println("UNKNOWN; send ?, B, S, S1-S4, R0-R3, L, M, E30 or X");
+      Serial.println("UNKNOWN; send ?, B, S, S1-S4, R0-R3, L, M, E30, X or TI");
       break;
   }
 }
@@ -106,5 +149,5 @@ void setup() {
 
 void loop() {
   validation::ValidationCommand command;
-  if (readValidationCommand(&command)) validation_dispatch(command);
+  if (validation_poll_command(&command)) validation_dispatch(command);
 }

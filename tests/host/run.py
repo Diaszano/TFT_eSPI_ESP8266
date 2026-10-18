@@ -497,7 +497,10 @@ def run_validation_unit(root: pathlib.Path) -> None:
     if not compiler:
         raise RuntimeError("C++ compiler required for validation protocol tests")
     sources = ("test_validation_command.cpp", "test_validation_bench_math.cpp",
-               "test_validation_stress_math.cpp", "test_validation_oracle.cpp")
+               "test_validation_stress_math.cpp", "test_validation_oracle.cpp",
+               "test_validation_perf_protocol.cpp", "test_validation_input.cpp",
+               "test_validation_frame_math.cpp", "test_validation_frame_workloads.cpp",
+               "test_validation_heap_churn.cpp", "test_validation_soak.cpp")
     includes = (root / "extras/hardware/Audit_Validation", root / "tests/host")
     with tempfile.TemporaryDirectory(prefix="tft-validation-unit-") as temp:
         for name in sources:
@@ -506,16 +509,62 @@ def run_validation_unit(root: pathlib.Path) -> None:
             subprocess.run([compiler, "-std=c++11", "-Wall", "-Wextra", "-Werror",
                             "-fsanitize=address,undefined", "-fno-sanitize-recover=all",
                             *(arg for include in includes for arg in ("-I", str(include))),
-                            str(source), "-o", str(binary)], check=True)
+                            str(source),
+                            *([str(root / "extras/hardware/Audit_Validation/ValidationPerfTelemetry.cpp")]
+                              if name == "test_validation_perf_protocol.cpp" else []),
+                            *([str(root / "extras/hardware/Audit_Validation/ValidationInput.cpp")]
+                              if name in ("test_validation_input.cpp", "test_validation_frame_workloads.cpp") else []),
+                            *([str(root / "extras/hardware/Audit_Validation/ValidationPerfTelemetry.cpp"),
+                               str(root / "extras/hardware/Audit_Validation/ValidationFramePerf.cpp")]
+                              if name == "test_validation_frame_workloads.cpp" else []),
+                            *([str(root / "extras/hardware/Audit_Validation/ValidationInput.cpp"),
+                               str(root / "extras/hardware/Audit_Validation/ValidationPerfTelemetry.cpp"),
+                               str(root / "extras/hardware/Audit_Validation/ValidationMemoryExtended.cpp")]
+                              if name == "test_validation_heap_churn.cpp" else []),
+                            *([str(root / "extras/hardware/Audit_Validation/ValidationInput.cpp"),
+                               str(root / "extras/hardware/Audit_Validation/ValidationPerfTelemetry.cpp"),
+                               str(root / "extras/hardware/Audit_Validation/ValidationFramePerf.cpp"),
+                               str(root / "extras/hardware/Audit_Validation/ValidationMemoryExtended.cpp"),
+                               str(root / "extras/hardware/Audit_Validation/ValidationTelemetry.cpp"),
+                               str(root / "extras/hardware/Audit_Validation/ValidationSoak.cpp")]
+                              if name == "test_validation_soak.cpp" else []),
+                            "-o", str(binary)], check=True)
             subprocess.run([str(binary)], check=True)
             print("PASS validation-{}".format(source.stem.removeprefix("test_validation_")))
+
+
+def run_stateful_graphics(root: pathlib.Path) -> None:
+    fixture = (root / "tests/host/test_validation_stateful.cpp").read_text()
+    source = (root / "src/TFT_eSPI.cpp").read_text()
+    signatures = (
+        "void TFT_eSPI::setViewport(int32_t x, int32_t y, int32_t w, int32_t h, bool vpDatum) {",
+        "void TFT_eSPI::drawFastHLine(int32_t x, int32_t y, int32_t w, uint32_t color) {",
+        "void TFT_eSPI::fillRect(int32_t x, int32_t y, int32_t w, int32_t h, uint32_t color) {",
+        "void TFT_eSPI::setSwapBytes(bool swap) {",
+        "void TFT_eSPI::setTextFont(uint8_t f) {",
+    )
+    methods = []
+    for signature in signatures:
+        method, line = extract_method(source, signature)
+        methods.append(f'#line {line} "src/TFT_eSPI.cpp"\n{method}')
+    generated = fixture.replace("// FUNCTIONS UNDER TEST", "\n".join(methods))
+    with tempfile.TemporaryDirectory(prefix="tft-stateful-") as temp:
+        source_path = pathlib.Path(temp) / "stateful.cpp"
+        binary = pathlib.Path(temp) / "stateful"
+        source_path.write_text(generated)
+        subprocess.run(["c++", "-std=c++11", "-Wall", "-Wextra", "-Werror",
+                        "-fsanitize=address,undefined", "-fno-sanitize-recover=all",
+                        "-I", str(root / "tests/host"), str(source_path),
+                        "-o", str(binary)], check=True)
+        subprocess.run([str(binary)], check=True)
+    print("PASS stateful-graphics")
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--case",
-        choices=("scroll", "font-metrics", "allocations", "glyph-allocation", "font-files", "spi-pixels", "sprite-rotation", "sprite-clipping", "text-clipping", "gfx-initialization", "clipping", "image-clipping", "extreme-coordinates", "validation-unit", "all"),
+        choices=("scroll", "font-metrics", "allocations", "glyph-allocation", "font-files", "spi-pixels", "sprite-rotation", "sprite-clipping", "text-clipping", "gfx-initialization", "clipping", "image-clipping", "extreme-coordinates", "validation-unit", "stateful-graphics", "all"),
         default="all",
     )
     parser.add_argument(
@@ -568,6 +617,8 @@ def main() -> int:
         run_extreme_coordinates(root, args.case_id, args.fuzz, args.fuzz_time, args.fuzz_timeout)
     if args.case in ("validation-unit", "all"):
         run_validation_unit(root)
+    if args.case in ("stateful-graphics", "all"):
+        run_stateful_graphics(root)
     return 0
 
 
