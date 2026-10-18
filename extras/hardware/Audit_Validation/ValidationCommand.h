@@ -21,6 +21,7 @@ enum class ValidationCommandKind : uint8_t {
   FrameFull,
   FramePartial,
   FrameMixed,
+  HeapChurn,
   Unknown
 };
 
@@ -101,6 +102,8 @@ inline ValidationCommand parse_validation_command(const char* line) {
     command.kind = ValidationCommandKind::FramePartial;
   else if (strcmp(line, "FP3") == 0)
     command.kind = ValidationCommandKind::FrameMixed;
+  else if (strcmp(line, "HC") == 0)
+    command.kind = ValidationCommandKind::HeapChurn;
   return command;
 }
 

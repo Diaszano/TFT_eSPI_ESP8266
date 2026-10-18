@@ -517,6 +517,10 @@ def run_validation_unit(root: pathlib.Path) -> None:
                             *([str(root / "extras/hardware/Audit_Validation/ValidationPerfTelemetry.cpp"),
                                str(root / "extras/hardware/Audit_Validation/ValidationFramePerf.cpp")]
                               if name == "test_validation_frame_workloads.cpp" else []),
+                            *([str(root / "extras/hardware/Audit_Validation/ValidationInput.cpp"),
+                               str(root / "extras/hardware/Audit_Validation/ValidationPerfTelemetry.cpp"),
+                               str(root / "extras/hardware/Audit_Validation/ValidationMemoryExtended.cpp")]
+                              if name == "test_validation_heap_churn.cpp" else []),
                             "-o", str(binary)], check=True)
             subprocess.run([str(binary)], check=True)
             print("PASS validation-{}".format(source.stem.removeprefix("test_validation_")))

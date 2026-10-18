@@ -57,6 +57,28 @@ class TFT_eSprite {
   int32_t max_x = -1;
   std::vector<int32_t> positions;
   bool created() const { return available; }
+  void setColorDepth(uint8_t depth) {
+    last_depth = depth;
+    if (depth <= 16) seen_depth[depth] = true;
+  }
+  void* createSprite(int32_t, int32_t) {
+    ++create_calls;
+    if (create_calls == fail_at) return nullptr;
+    owned = true;
+    return this;
+  }
+  void deleteSprite() {
+    if (owned) {
+      ++delete_calls;
+      owned = false;
+    }
+  }
+  bool owned = false;
+  static int create_calls;
+  static int delete_calls;
+  static int fail_at;
+  static uint8_t last_depth;
+  static bool seen_depth[17];
   void fillSprite(uint16_t) {}
   void pushSprite(int32_t x, int32_t) {
     ++pushes;

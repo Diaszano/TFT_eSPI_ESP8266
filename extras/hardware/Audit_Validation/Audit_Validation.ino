@@ -5,6 +5,7 @@
 #include "ValidationInput.h"
 #include "ValidationPerfTelemetry.h"
 #include "ValidationFramePerf.h"
+#include "ValidationMemoryExtended.h"
 #include "ValidationTelemetry.h"
 #include "ValidationVisual.h"
 #include "ValidationBench.h"
@@ -31,6 +32,7 @@ void showMenu() {
   tft.drawString("FP1: full frame", 4, 144);
   tft.drawString("FP2: partial regions", 4, 160);
   tft.drawString("FP3: mixed frame", 4, 176);
+  tft.drawString("HC: heap churn", 4, 192);
 }
 
 void skipSuite(const char* name) {
@@ -89,6 +91,9 @@ void validation_dispatch(validation::ValidationCommand command) {
       break;
     case ValidationCommandKind::FrameMixed:
       validation::run_frame_perf(validation::FrameSuite::Mixed, tft, sprite32, Serial);
+      break;
+    case ValidationCommandKind::HeapChurn:
+      validation::run_heap_churn(tft, Serial);
       break;
     case ValidationCommandKind::Next:
     case ValidationCommandKind::Quit:

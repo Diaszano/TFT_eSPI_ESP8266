@@ -181,6 +181,15 @@ approval. Without that approval, results are informational and no regression
 verdict is issued; a configured budget can flag a regression candidate but
 does not by itself fail a release.
 
+HC requests 100,000 create/draw/delete cycles using a fixed seed, sprite
+sides 8/16/24/32 and depths 1/4/8/16 bpp. It checks the 12,288-byte free
+heap floor and largest block before each create. MEM checkpoints occur at
+start, every 1,024 completed cycles and after cleanup. Q is polled every
+128 cycles. The run reports actual completed cycles; an allocation failure,
+floor stop, or Q sends ABORT. The first 16 allocation latencies are samples,
+separate from drawing time. Sprite storage estimates include a conservative
+64-byte allocator margin and runtime heap checks remain authoritative.
+
 The operator must complete hardware gates H1–H3 in the performance validation
 spec before any upload or real capture. One operator-owned process opens the
 chosen serial port and pipes its raw bytes to the passive capture command.
