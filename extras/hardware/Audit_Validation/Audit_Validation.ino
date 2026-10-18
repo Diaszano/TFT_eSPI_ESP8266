@@ -4,6 +4,7 @@
 #include "ValidationCommand.h"
 #include "ValidationInput.h"
 #include "ValidationPerfTelemetry.h"
+#include "ValidationFramePerf.h"
 #include "ValidationTelemetry.h"
 #include "ValidationVisual.h"
 #include "ValidationBench.h"
@@ -27,6 +28,7 @@ void showMenu() {
   tft.drawString("R0-R3: display rotation", 4, 96);
   tft.drawString("Suites are manually selected", 4, 112);
   tft.drawString("TI: telemetry integrity", 4, 128);
+  tft.drawString("FP1: full frame", 4, 144);
 }
 
 void skipSuite(const char* name) {
@@ -77,6 +79,9 @@ void validation_dispatch(validation::ValidationCommand command) {
         Serial.println("TI,ERROR,EMISSION");
       break;
     }
+    case ValidationCommandKind::FrameFull:
+      validation::run_frame_perf(validation::FrameSuite::Full, tft, sprite32, Serial);
+      break;
     case ValidationCommandKind::Next:
     case ValidationCommandKind::Quit:
     case ValidationCommandKind::Unknown:

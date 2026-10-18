@@ -499,7 +499,7 @@ def run_validation_unit(root: pathlib.Path) -> None:
     sources = ("test_validation_command.cpp", "test_validation_bench_math.cpp",
                "test_validation_stress_math.cpp", "test_validation_oracle.cpp",
                "test_validation_perf_protocol.cpp", "test_validation_input.cpp",
-               "test_validation_frame_math.cpp")
+               "test_validation_frame_math.cpp", "test_validation_frame_workloads.cpp")
     includes = (root / "extras/hardware/Audit_Validation", root / "tests/host")
     with tempfile.TemporaryDirectory(prefix="tft-validation-unit-") as temp:
         for name in sources:
@@ -512,7 +512,10 @@ def run_validation_unit(root: pathlib.Path) -> None:
                             *([str(root / "extras/hardware/Audit_Validation/ValidationPerfTelemetry.cpp")]
                               if name == "test_validation_perf_protocol.cpp" else []),
                             *([str(root / "extras/hardware/Audit_Validation/ValidationInput.cpp")]
-                              if name == "test_validation_input.cpp" else []),
+                              if name in ("test_validation_input.cpp", "test_validation_frame_workloads.cpp") else []),
+                            *([str(root / "extras/hardware/Audit_Validation/ValidationPerfTelemetry.cpp"),
+                               str(root / "extras/hardware/Audit_Validation/ValidationFramePerf.cpp")]
+                              if name == "test_validation_frame_workloads.cpp" else []),
                             "-o", str(binary)], check=True)
             subprocess.run([str(binary)], check=True)
             print("PASS validation-{}".format(source.stem.removeprefix("test_validation_")))

@@ -18,6 +18,7 @@ enum class ValidationCommandKind : uint8_t {
   Next,
   Quit,
   TelemetryIntegrity,
+  FrameFull,
   Unknown
 };
 
@@ -92,6 +93,8 @@ inline ValidationCommand parse_validation_command(const char* line) {
     command.kind = ValidationCommandKind::Quit;
   else if (strcmp(line, "TI") == 0)
     command.kind = ValidationCommandKind::TelemetryIntegrity;
+  else if (strcmp(line, "FP1") == 0)
+    command.kind = ValidationCommandKind::FrameFull;
   return command;
 }
 

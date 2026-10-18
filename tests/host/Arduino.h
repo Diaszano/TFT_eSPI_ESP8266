@@ -9,4 +9,14 @@ class HostSerial : public Print {
   int read() { return static_cast<unsigned char>(input[position++]); }
 };
 extern HostSerial Serial;
+inline uint32_t micros() {
+  static uint32_t now = 0;
+  now += 100;
+  return now;
+}
+inline void yield() {}
+struct HostESP {
+  uint32_t getCycleCount() const { return 12345; }
+};
+extern HostESP ESP;
 #endif
