@@ -9,6 +9,13 @@ The hardening changes below were merged after the published v1.0.0 tag. They are
 
 * harden ESP8266 library and tooling ([#5](https://github.com/Diaszano/TFT_eSPI_ESP8266/issues/5)) ([e9e7f2d](https://github.com/Diaszano/TFT_eSPI_ESP8266/commit/e9e7f2d30378babd22427fd9606d7b99bf0d83d0))
 
+## [1.2.0](https://github.com/Diaszano/TFT_eSPI_ESP8266/compare/v1.1.1...v1.2.0) (2026-10-18)
+
+
+### Features
+
+* **validation:** add ST7789 simulator and hardware validation ([#23](https://github.com/Diaszano/TFT_eSPI_ESP8266/issues/23)) ([e7090fa](https://github.com/Diaszano/TFT_eSPI_ESP8266/commit/e7090fac262898969b4c895aa8e0f1bf30c652a2))
+
 ## [1.1.1](https://github.com/Diaszano/TFT_eSPI_ESP8266/compare/v1.1.0...v1.1.1) (2026-10-10)
 
 
