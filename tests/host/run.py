@@ -497,7 +497,8 @@ def run_validation_unit(root: pathlib.Path) -> None:
     if not compiler:
         raise RuntimeError("C++ compiler required for validation protocol tests")
     sources = ("test_validation_command.cpp", "test_validation_bench_math.cpp",
-               "test_validation_stress_math.cpp", "test_validation_oracle.cpp")
+               "test_validation_stress_math.cpp", "test_validation_oracle.cpp",
+               "test_validation_perf_protocol.cpp", "test_validation_input.cpp")
     includes = (root / "extras/hardware/Audit_Validation", root / "tests/host")
     with tempfile.TemporaryDirectory(prefix="tft-validation-unit-") as temp:
         for name in sources:
@@ -506,7 +507,12 @@ def run_validation_unit(root: pathlib.Path) -> None:
             subprocess.run([compiler, "-std=c++11", "-Wall", "-Wextra", "-Werror",
                             "-fsanitize=address,undefined", "-fno-sanitize-recover=all",
                             *(arg for include in includes for arg in ("-I", str(include))),
-                            str(source), "-o", str(binary)], check=True)
+                            str(source),
+                            *([str(root / "extras/hardware/Audit_Validation/ValidationPerfTelemetry.cpp")]
+                              if name == "test_validation_perf_protocol.cpp" else []),
+                            *([str(root / "extras/hardware/Audit_Validation/ValidationInput.cpp")]
+                              if name == "test_validation_input.cpp" else []),
+                            "-o", str(binary)], check=True)
             subprocess.run([str(binary)], check=True)
             print("PASS validation-{}".format(source.stem.removeprefix("test_validation_")))
 

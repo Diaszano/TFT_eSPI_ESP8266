@@ -150,3 +150,31 @@ python3 simulator/tools/generate_visual_guide.py --out .build/simulator/renders
 
 - **O que comprova:** documenta de forma determinística no host a aparência esperada das cenas `S1`–`S4` renderizadas pelo código de produção no simulador, facilitando a inspeção humana lado a lado com o ST7789 físico.
 - **O que NÃO comprova:** o vídeo é gerado pelo simulador (`Simulator-generated reference — not physical hardware footage`), **não** é filmagem do hardware físico, **não** substitui a inspeção visual humana no painel ST7789 (`Physical visual review is required`) e **não** valida fiação SPI, temporização do ESP8266, backlight, óptica do display nem consumo de heap. Além disso, por usar compressão H.264 (`yuv420p`) com perdas, o arquivo MP4 é apenas um artefato de apresentação e **nunca** deve ser usado como referência golden exata de pixels (para verificação exata de pixels, use `frame.rgb565` e `frame.png`).
+# PERF offline capture and analysis
+
+New suites are opt-in. Sending TI emits a 16-value protocol sentinel; it is
+never a hardware speed measurement. During a running suite, Q stops the suite
+at a cooperative checkpoint, N advances only visual review, and other
+complete commands receive BUSY.
+
+The operator must complete hardware gates H1–H3 in the performance validation
+spec before any upload or real capture. One operator-owned process opens the
+chosen serial port and pipes its raw bytes to the passive capture command.
+This repository's offline commands do not open a port, reset a board, upload
+firmware, or change DTR/RTS. Record the approved firmware checksum, board,
+display, CPU/SPI clocks, Wi-Fi state, boot witness, source SHA, and operator
+authorization in a JSON metadata file. Use a new run directory each time.
+
+A synthetic replay that needs no hardware:
+
+~~~sh
+printf 'HWTEST,2\n' | python3 -m scripts.hw_perf_capture .build/hardware/perf/example/synthetic --max-bytes 100000 --max-seconds 10
+python3 -m scripts.hw_perf_analysis .build/hardware/perf/example/synthetic
+make test-hw-perf-offline
+~~~
+
+The capture keeps exact bytes in serial.raw; capture.json records its hash,
+size and truncation reason. The analysis writes parsed.json,
+measurements.csv, summary.json, and report.md without replacing prior
+artifacts. Missing operator attestation remains synthetic. A firmware PASS
+with a sequence gap remains incomplete transport evidence.

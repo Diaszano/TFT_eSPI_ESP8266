@@ -17,14 +17,23 @@ enum class ValidationCommandKind : uint8_t {
   Rotation,
   Next,
   Quit,
+  TelemetryIntegrity,
   Unknown
 };
+
+enum class ControlAction : uint8_t { None, Next, Quit, Busy };
 
 struct ValidationCommand {
   ValidationCommandKind kind;
   uint8_t visual_case;
   uint8_t rotation;
 };
+
+inline ControlAction control_action(ValidationCommand command, bool allow_next) {
+  if (command.kind == ValidationCommandKind::Quit) return ControlAction::Quit;
+  if (allow_next && command.kind == ValidationCommandKind::Next) return ControlAction::Next;
+  return ControlAction::Busy;
+}
 
 inline ValidationCommand parse_validation_command(const char* line);
 
@@ -81,6 +90,8 @@ inline ValidationCommand parse_validation_command(const char* line) {
     command.kind = ValidationCommandKind::Next;
   else if (strcmp(line, "Q") == 0)
     command.kind = ValidationCommandKind::Quit;
+  else if (strcmp(line, "TI") == 0)
+    command.kind = ValidationCommandKind::TelemetryIntegrity;
   return command;
 }
 

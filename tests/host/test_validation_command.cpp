@@ -22,6 +22,7 @@ int main() {
   assert(validation::parse_validation_command("R10").kind == ValidationCommandKind::Unknown);
   assert(validation::parse_validation_command("N").kind == ValidationCommandKind::Next);
   assert(validation::parse_validation_command("Q").kind == ValidationCommandKind::Quit);
+  assert(validation::parse_validation_command("TI").kind == ValidationCommandKind::TelemetryIntegrity);
   assert(validation::parse_validation_command("S5").kind == ValidationCommandKind::Unknown);
   assert(validation::parse_validation_command("b").kind == ValidationCommandKind::Unknown);
   assert(validation::parse_validation_command("Bextra").kind == ValidationCommandKind::Unknown);
@@ -50,4 +51,8 @@ int main() {
   reader.consume(embeddedNul[1], &command);
   assert(reader.consume(embeddedNul[2], &command));
   assert(command.kind == ValidationCommandKind::Unknown);
+  assert(validation::control_action({ValidationCommandKind::Next, 0, 0}, true) == validation::ControlAction::Next);
+  assert(validation::control_action({ValidationCommandKind::Next, 0, 0}, false) == validation::ControlAction::Busy);
+  assert(validation::control_action({ValidationCommandKind::Quit, 0, 0}, false) == validation::ControlAction::Quit);
+  assert(validation::control_action({ValidationCommandKind::Bench, 0, 0}, true) == validation::ControlAction::Busy);
 }

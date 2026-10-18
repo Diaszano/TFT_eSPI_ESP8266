@@ -59,6 +59,10 @@ test-compile: .build/pio-library/.stamp
 test-hw-build: test-compile
 	python3 scripts/hw_validation_build.py --build-only
 
+.PHONY: test-hw-perf-offline
+test-hw-perf-offline:
+	python3 -m unittest scripts.test_hw_perf_protocol scripts.test_hw_perf_capture scripts.test_hw_perf_analysis
+
 test-hw-preflight: test-hw-build
 	python3 scripts/hw_validation_preflight.py
 
