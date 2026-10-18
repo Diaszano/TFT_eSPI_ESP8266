@@ -173,6 +173,14 @@ The sprite and image buffer are prepared before timing. A missing sprite
 produces SKIP; it is not a successful frame run. The sketch restores Font 1
 and the default non-swapped pixel order after the mixed scene.
 
+Physical comparisons use at least five distinct, operator-attested boots per
+revision with 1,000 intact warm frames per scene. The board, supply, display,
+rotation, CPU/SPI clocks, Wi-Fi condition, scene, and seed must match across
+revisions. Store the baseline content SHA-256 with its operator and UTC
+approval. Without that approval, results are informational and no regression
+verdict is issued; a configured budget can flag a regression candidate but
+does not by itself fail a release.
+
 The operator must complete hardware gates H1–H3 in the performance validation
 spec before any upload or real capture. One operator-owned process opens the
 chosen serial port and pipes its raw bytes to the passive capture command.

@@ -5,6 +5,7 @@ import hashlib
 import json
 import math
 import os
+import statistics
 from pathlib import Path
 
 from scripts.hw_perf_protocol import parse_perf
@@ -36,12 +37,96 @@ def summarize_samples(samples: list[int], elapsed_us: int) -> dict:
             "status": "COMPLETE" if count >= 1000 else "INCOMPLETE"}
 
 
+def summarize_frame_run(run: dict) -> dict:
+    summary = summarize_samples(run["samples"], run["elapsed_us"])
+    pixels = run.get("pixels_per_frame")
+    if not isinstance(pixels, int) or pixels <= 0:
+        raise ValueError("positive pixels_per_frame required")
+    cold = run.get("cold_us")
+    if cold is not None and not 0 < cold <= 0xffffffff:
+        raise ValueError("invalid cold frame")
+    summary.update({"cold_us": cold,
+                    "pixel_throughput": pixels * len(run["samples"]) * 1_000_000
+                    / run["elapsed_us"],
+                    "p95_minus_p50_us": summary["p95_us"] - summary["p50_us"],
+                    "max_minus_p50_us": summary["max_us"] - summary["p50_us"],
+                    "timer_overhead_us": run.get("timer_overhead_us"),
+                    "source_type": run.get("source_type", "synthetic")})
+    return summary
+
+
+def baseline_content_hash(runs: list[dict]) -> str:
+    canonical = json.dumps(sorted(runs, key=lambda run: run.get("boot_id", "")),
+                           sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+
+def compare_frame_profiles(baseline_runs: list[dict], candidate_runs: list[dict],
+                           approval: dict) -> dict:
+    required_profile = {"board", "display", "rotation", "cpu_hz", "spi_hz",
+                        "wifi", "scene", "seed", "supply"}
+    for runs in (baseline_runs, candidate_runs):
+        boots = [run.get("boot_id") for run in runs]
+        if (len(runs) < 5 or len(set(boots)) != len(runs) or None in boots
+                or len({run.get("firmware_sha") for run in runs}) != 1
+                or any(not run.get("firmware_sha") or not run.get("boot_witness")
+                       or run.get("source_type") != "physical"
+                       or run.get("transport_integrity") != "COMPLETE"
+                       or run.get("profile_compatibility") != "COMPATIBLE"
+                       or run.get("physical_review") != "APPROVED_BY_OPERATOR"
+                       or not required_profile <= set(run.get("profile") or {})
+                       for run in runs)):
+            return {"status": "INCOMPARABLE", "reason": "insufficient independent physical boots"}
+    profiles = [run["profile"] for run in baseline_runs + candidate_runs]
+    if any(profile != profiles[0] for profile in profiles[1:]):
+        return {"status": "INCOMPARABLE", "reason": "physical profiles differ"}
+    try:
+        base = [summarize_samples(run["samples"], run["elapsed_us"])
+                for run in baseline_runs]
+        cand = [summarize_samples(run["samples"], run["elapsed_us"])
+                for run in candidate_runs]
+    except (KeyError, ValueError):
+        return {"status": "INCOMPARABLE", "reason": "invalid frame samples"}
+    if any(summary["status"] != "COMPLETE" for summary in base + cand):
+        return {"status": "INCOMPARABLE", "reason": "fewer than 1000 valid frames"}
+    if (not approval.get("operator") or not approval.get("approved_utc")
+            or approval.get("baseline_sha256") != baseline_content_hash(baseline_runs)):
+        return {"status": "NO_BASELINE", "reason": "baseline lacks matching approval"}
+    base_p99 = statistics.median(summary["p99_us"] for summary in base)
+    cand_p99 = statistics.median(summary["p99_us"] for summary in cand)
+    effect = 100 * (cand_p99 / base_p99 - 1)
+    budget = approval.get("budget_percent")
+    status = ("REGRESSION_CANDIDATE" if isinstance(budget, (int, float))
+              and effect > budget else "INFORMATIONAL")
+    return {"status": status, "baseline_boots": len(base),
+            "candidate_boots": len(cand), "baseline_boot_p99_median_us": base_p99,
+            "candidate_boot_p99_median_us": cand_p99, "p99_effect_percent": effect,
+            "profile": profiles[0]}
+
+
 def analyze_run(raw: bytes, capture: dict) -> dict:
     parsed = parse_perf(raw)
+    run_summaries = []
+    for run in parsed["runs"]:
+        measurement = None
+        integrity = run["transport_integrity"]
+        if run["suite"] not in {"TI", "HC", "HP"} and run["samples"] and run["elapsed_us"]:
+            try:
+                measurement = summarize_samples(run["samples"], run["elapsed_us"])
+            except ValueError:
+                integrity = "CORRUPT"
+        run_summaries.append({"run": run, "measurements": measurement,
+                              "firmware_result": run["firmware_result"],
+                              "transport_integrity": integrity})
     run = parsed["runs"][0] if parsed["runs"] else None
     source_type = capture.get("source_type", "synthetic")
-    firmware_result = run["firmware_result"] if run else "NOT_EXECUTED"
-    integrity = run["transport_integrity"] if run else "NOT_CAPTURED"
+    results = [item["firmware_result"] for item in run_summaries]
+    firmware_result = (next((status for status in ("FAIL", "INCONCLUSIVE", "SKIP")
+                             if status in results), "PASS") if results else "NOT_EXECUTED")
+    integrities = [item["transport_integrity"] for item in run_summaries]
+    integrity = ("CORRUPT" if "CORRUPT" in integrities else
+                 "INCOMPLETE" if "INCOMPLETE" in integrities else
+                 "COMPLETE" if integrities else "NOT_CAPTURED")
     if (capture.get("truncation_reason")
             or capture.get("byte_count", len(raw)) != len(raw)):
         integrity = "INCOMPLETE"
@@ -62,9 +147,11 @@ def analyze_run(raw: bytes, capture: dict) -> dict:
     baseline = capture.get("baseline_status", "NO_BASELINE")
     if baseline not in {"APPROVED", "NO_BASELINE", "INCOMPARABLE"}:
         baseline = "INCOMPARABLE"
-    measurements = None
-    if run and run["suite"] not in {"TI", "HC", "HP"} and run["samples"] and run["elapsed_us"]:
-        measurements = summarize_samples(run["samples"], run["elapsed_us"])
+    warm = next((item for item in run_summaries
+                 if item["measurements"] and not
+                 str(item["run"].get("profile_id") or "").endswith("_cold")),
+                None)
+    measurements = warm["measurements"] if warm else None
     statuses = {"firmware_result": firmware_result,
                 "transport_integrity": integrity,
                 "profile_compatibility": compatibility,
@@ -73,9 +160,13 @@ def analyze_run(raw: bytes, capture: dict) -> dict:
     complete = (firmware_result == "PASS" and integrity == "COMPLETE"
                 and compatibility == "COMPATIBLE" and baseline == "APPROVED"
                 and physical_review == "APPROVED_BY_OPERATOR"
-                and (measurements is None or measurements["status"] == "COMPLETE"))
+                and all(item["measurements"] is None
+                        or str(item["run"].get("profile_id") or "").endswith("_cold")
+                        or item["measurements"]["status"] == "COMPLETE"
+                        for item in run_summaries))
     return {**statuses, "overall_status": "PASS" if complete else "INCONCLUSIVE",
-            "source_type": source_type, "run": run, "measurements": measurements,
+            "source_type": source_type, "run": run, "runs": run_summaries,
+            "measurements": measurements,
             "parser_errors": parsed["errors"], "raw_sha256": hashlib.sha256(raw).hexdigest()}
 
 
