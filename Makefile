@@ -55,6 +55,7 @@ test-compile: .build/pio-library/.stamp
 	@cd /tmp && pio ci --lib=$(CURDIR)/.build/pio-library --board=nodemcuv2 -O "platform=espressif8266@4.2.1" --build-dir=$(CURDIR)/.build/compile/sprite_ownership --keep-build-dir $(CURDIR)/tests/compile/sprite_ownership
 	@cd /tmp && pio ci --lib=$(CURDIR)/.build/pio-library --board=nodemcuv2 -O "platform=espressif8266@4.2.1" -O "build_flags=-DUSER_SETUP_LOADED -DST7789_DRIVER -DTFT_WIDTH=240 -DTFT_HEIGHT=240 -DTFT_MOSI=13 -DTFT_SCLK=14 -DTFT_DC=0 -DTFT_RST=2 -DSPI_FREQUENCY=40000000 -DLOAD_GLCD" --build-dir=$(CURDIR)/.build/compile/minimal_setup --keep-build-dir $(CURDIR)/tests/compile/minimal_setup
 	@cd /tmp && pio ci --lib=$(CURDIR)/.build/pio-library --board=nodemcuv2 -O "platform=espressif8266@4.2.1" --build-dir=$(CURDIR)/.build/compile/firmware_memory --keep-build-dir $(CURDIR)/tests/compile/firmware_memory
+	@cd /tmp && pio ci --lib=$(CURDIR)/.build/pio-library --board=nodemcuv2 -O "platform=espressif8266@4.2.1" --build-dir=$(CURDIR)/.build/compile/render_probe --keep-build-dir $(CURDIR)/tests/compile/render_probe
 
 test-hw-build: test-compile
 	python3 scripts/hw_validation_build.py --build-only

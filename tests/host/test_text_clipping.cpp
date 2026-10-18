@@ -1,6 +1,16 @@
+#include "internal/clip.h"
 #include <cassert>
 #include <cstdint>
 #include <vector>
+
+using namespace tft_espi_internal;
+
+class FifoPixels {
+ public:
+  void push(uint16_t) {}
+  void run(uint16_t, uint32_t) {}
+  void end() {}
+};
 
 #define LOAD_FONT2
 #define LOAD_GLCD

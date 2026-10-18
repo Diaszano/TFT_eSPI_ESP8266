@@ -187,6 +187,9 @@
 #define SPI1W13 simulator::host_spi().reg(simulator::SpiRegister::Id::W13)
 #define SPI1W14 simulator::host_spi().reg(simulator::SpiRegister::Id::W14)
 #define SPI1W15 simulator::host_spi().reg(simulator::SpiRegister::Id::W15)
+#define SPI1W(i)                                                     \
+  simulator::host_spi().reg(static_cast<simulator::SpiRegister::Id>( \
+      static_cast<int>(simulator::SpiRegister::Id::W0) + ((i) & 0xF)))
 #undef DC_C
 #undef DC_D
 #undef CS_L

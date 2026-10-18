@@ -1,8 +1,11 @@
 #include "validation_oracle.h"
+#include "internal/clip.h"
 #include <cassert>
 #include <cstdint>
 #include <climits>
 #include <vector>
+
+using namespace tft_espi_internal;
 
 class TFT_eSPI {
  public:

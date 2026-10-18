@@ -13,8 +13,11 @@
  ****************************************************/
 
 #include "TFT_eSPI.h"
+#include "internal/clip.h"
 #include "internal/color_conversion.h"
 #include "internal/sprite_layout.h"
+
+using namespace tft_espi_internal;
 
 // ESP8266 SPI layer
 // Select the SPI port to use
@@ -126,15 +129,15 @@ void TFT_eSPI::pushPixels(const void* data_in, uint32_t len) {
 
   uint16_t* data = (uint16_t*)data_in;
 
-  uint32_t color[8];
+  uint32_t color[16];
 
-  SPI1U1 = (255 << SPILMOSI) | (255 << SPILMISO);
+  SPI1U1 = (511 << SPILMOSI) | (511 << SPILMISO);
 
-  while (len > 15) {
-    memcpy(color, data, 32);
-    data += 16;
+  while (len > 31) {
+    memcpy(color, data, 64);
+    data += 32;
 
-    len -= 16;
+    len -= 32;
 
     // ESP8266 wait time here at 40MHz SPI is ~5.45us
     while (SPI1CMD & SPIBUSY) {
@@ -147,6 +150,14 @@ void TFT_eSPI::pushPixels(const void* data_in, uint32_t len) {
     SPI1W5 = color[5];
     SPI1W6 = color[6];
     SPI1W7 = color[7];
+    SPI1W8 = color[8];
+    SPI1W9 = color[9];
+    SPI1W10 = color[10];
+    SPI1W11 = color[11];
+    SPI1W12 = color[12];
+    SPI1W13 = color[13];
+    SPI1W14 = color[14];
+    SPI1W15 = color[15];
     SPI1CMD |= SPIBUSY;
   }
 
@@ -166,6 +177,14 @@ void TFT_eSPI::pushPixels(const void* data_in, uint32_t len) {
     SPI1W5 = color[5];
     SPI1W6 = color[6];
     SPI1W7 = color[7];
+    SPI1W8 = color[8];
+    SPI1W9 = color[9];
+    SPI1W10 = color[10];
+    SPI1W11 = color[11];
+    SPI1W12 = color[12];
+    SPI1W13 = color[13];
+    SPI1W14 = color[14];
+    SPI1W15 = color[15];
     SPI1CMD |= SPIBUSY;
   }
 
@@ -271,6 +290,70 @@ void TFT_eSPI::pushSwapBytePixels(const void* data_in, uint32_t len) {
   if ((y + dh) > _vpH) dh = _vpH - y;     \
                                           \
   if (dw < 1 || dh < 1) return;
+
+// Stages pixels for pushPixels() in a fixed 32-byte buffer so image paths keep a static stack
+// frame. One flush is one 16-pixel SPI FIFO transfer, as with a full line buffer.
+struct PixelChunk {
+  TFT_eSPI& tft;
+  uint16_t buf[16];
+  uint32_t n;
+
+  explicit PixelChunk(TFT_eSPI& t) : tft(t), n(0) {}
+  void push(uint16_t pixel) {
+    buf[n++] = pixel;
+    if (n == 16) flush();
+  }
+  void flush() {
+    if (n) tft.pushPixels(buf, n);
+    n = 0;
+  }
+};
+
+// Packs single pixels straight into the 64-byte SPI FIFO: one transfer per 32 pixels instead of
+// one per pixel, with no RAM buffer. The caller owns the write transaction and window and must call
+// end() before any other bus access.
+class FifoPixels {
+ public:
+  __attribute__((always_inline)) void push(uint16_t color) {
+    if (n == 0) {
+      while (SPI1CMD & SPIBUSY) {  // FIFO words may only change while the bus is idle
+      }
+    }
+    uint32_t c = (color >> 8 | (color & 0xFF) << 8);  // RGB565 is sent high byte first
+    if (n & 1)
+      SPI1W(n >> 1) = half | c << 16;
+    else
+      half = c;
+    if (++n == 32) flush();
+  }
+  __attribute__((always_inline)) void run(uint16_t color, uint32_t len) {
+    while (len--) push(color);
+  }
+  __attribute__((always_inline)) void end() {
+    flush();
+    while (SPI1CMD & SPIBUSY) {
+    }
+  }
+
+ private:
+  // Starts the transfer; the next push() waits for it, so glyph decoding overlaps the SPI clock.
+  __attribute__((always_inline)) void flush() {
+    if (n == 0) return;
+    if (n & 1) SPI1W(n >> 1) = half;
+    uint32_t bits = n * 16 - 1;
+    SPI1U1 = (bits << SPILMOSI) | (bits << SPILMISO);
+    SPI1CMD |= SPIBUSY;
+    n = 0;
+  }
+  uint32_t n = 0, half = 0;
+};
+
+// Push n PROGMEM pixels; the flash cache only allows aligned 32-bit loads, so read word-wise.
+static void pushFlashPixels(TFT_eSPI& tft, const uint16_t* data, int32_t n) {
+  PixelChunk chunk(tft);
+  while (n--) chunk.push(pgm_read_word(data++));
+  chunk.flush();
+}
 
 /***************************************************************************************
 ** Function name:           Legacy - deprecated
@@ -1282,8 +1365,6 @@ void TFT_eSPI::pushImage(int32_t x, int32_t y, int32_t w, int32_t h, uint16_t* d
 
   data += dx + dy * w;
 
-  uint16_t lineBuf[dw];  // Use buffer to minimise setWindow call count
-
   // The little endian transp color must be byte swapped if the image is big
   // endian
   if (!_swapBytes) transp = transp >> 8 | transp << 8;
@@ -1291,6 +1372,7 @@ void TFT_eSPI::pushImage(int32_t x, int32_t y, int32_t w, int32_t h, uint16_t* d
   while (dh--) {
     int32_t len = dw;
     uint16_t* ptr = data;
+    uint16_t* run = data;  // Opaque runs are contiguous in the source, so push them in place
     int32_t px = x, sx = x;
     bool move = true;
     uint16_t np = 0;
@@ -1300,14 +1382,14 @@ void TFT_eSPI::pushImage(int32_t x, int32_t y, int32_t w, int32_t h, uint16_t* d
         if (move) {
           move = false;
           sx = px;
+          run = ptr;
         }
-        lineBuf[np] = *ptr;
         np++;
       } else {
         move = true;
         if (np) {
           setWindow(sx, y, sx + np - 1, y);
-          pushPixels((uint16_t*)lineBuf, np);
+          pushPixels(run, np);
           np = 0;
         }
       }
@@ -1316,7 +1398,7 @@ void TFT_eSPI::pushImage(int32_t x, int32_t y, int32_t w, int32_t h, uint16_t* d
     }
     if (np) {
       setWindow(sx, y, sx + np - 1, y);
-      pushPixels((uint16_t*)lineBuf, np);
+      pushPixels(run, np);
     }
 
     y++;
@@ -1340,17 +1422,14 @@ void TFT_eSPI::pushImage(int32_t x, int32_t y, int32_t w, int32_t h, const uint1
 
   data += dx + dy * w;
 
-  uint16_t buffer[dw];
-
   setWindow(x, y, x + dw - 1, y + dh - 1);
 
-  // Fill and send line buffers to TFT
+  // One window covers every row, so the pixel stream continues across row ends
+  PixelChunk chunk(*this);
   for (int32_t i = 0; i < dh; i++) {
-    for (int32_t j = 0; j < dw; j++) {
-      buffer[j] = pgm_read_word(&data[i * w + j]);
-    }
-    pushPixels(buffer, dw);
+    for (int32_t j = 0; j < dw; j++) chunk.push(pgm_read_word(&data[i * w + j]));
   }
+  chunk.flush();
 
   inTransaction = lockTransaction;
   end_tft_write();
@@ -1370,43 +1449,22 @@ void TFT_eSPI::pushImage(int32_t x, int32_t y, int32_t w, int32_t h, const uint1
 
   data += dx + dy * w;
 
-  uint16_t lineBuf[dw];
-
   // The little endian transp color must be byte swapped if the image is big
   // endian
   if (!_swapBytes) transp = transp >> 8 | transp << 8;
 
   while (dh--) {
-    int32_t len = dw;
-    uint16_t* ptr = (uint16_t*)data;
-    int32_t px = x, sx = x;
-    bool move = true;
-
-    uint16_t np = 0;
-
-    while (len--) {
-      uint16_t color = pgm_read_word(ptr);
-      if (transp != color) {
-        if (move) {
-          move = false;
-          sx = px;
-        }
-        lineBuf[np] = color;
-        np++;
-      } else {
-        move = true;
-        if (np) {
-          setWindow(sx, y, sx + np - 1, y);
-          pushPixels(lineBuf, np);
-          np = 0;
-        }
+    // Scan ahead to the end of each opaque run so one window covers it
+    for (int32_t i = 0; i < dw;) {
+      if (pgm_read_word(&data[i]) == transp) {
+        i++;
+        continue;
       }
-      px++;
-      ptr++;
-    }
-    if (np) {
-      setWindow(sx, y, sx + np - 1, y);
-      pushPixels(lineBuf, np);
+      int32_t end = i + 1;
+      while (end < dw && pgm_read_word(&data[end]) != transp) end++;
+      setWindow(x + i, y, x + end - 1, y);
+      pushFlashPixels(*this, &data[i], end - i);
+      i = end;
     }
 
     y++;
@@ -1432,8 +1490,7 @@ void TFT_eSPI::pushImage(int32_t x, int32_t y, int32_t w, int32_t h, const uint8
 
   setWindow(x, y, x + dw - 1, y + dh - 1);  // Sets CS low and sent RAMWR
 
-  // Line buffer makes plotting faster
-  uint16_t lineBuf[dw];
+  PixelChunk chunk(*this);  // Bounded staging; the window spans all rows
 
   if (bpp8) {
     _swapBytes = false;
@@ -1450,7 +1507,6 @@ void TFT_eSPI::pushImage(int32_t x, int32_t y, int32_t w, int32_t h, const uint8
     while (dh--) {
       uint32_t len = dw;
       uint8_t* ptr = (uint8_t*)data;
-      uint8_t* linePtr = (uint8_t*)lineBuf;
 
       while (len--) {
         uint32_t color = pgm_read_byte(ptr++);
@@ -1464,14 +1520,12 @@ void TFT_eSPI::pushImage(int32_t x, int32_t y, int32_t w, int32_t h, const uint8
           _lastColor = color;
         }
 
-        *linePtr++ = msbColor;
-        *linePtr++ = lsbColor;
+        chunk.push(lsbColor << 8 | msbColor);  // bytes msb, lsb in memory
       }
-
-      pushPixels(lineBuf, dw);
 
       data += w;
     }
+    chunk.flush();
     _swapBytes = swap;         // Restore old value
   } else if (cmap != nullptr)  // Must be 4bpp
   {
@@ -1491,14 +1545,13 @@ void TFT_eSPI::pushImage(int32_t x, int32_t y, int32_t w, int32_t h, const uint8
     while (dh--) {
       uint32_t len = dw;
       uint8_t* ptr = (uint8_t*)data;
-      uint16_t* linePtr = lineBuf;
       uint8_t colors;  // two colors in one byte
       uint16_t index;
 
       if (splitFirst) {
         colors = pgm_read_byte(ptr);
         index = (colors & 0x0F);
-        *linePtr++ = cmap[index];
+        chunk.push(cmap[index]);
         len--;
         ptr++;
       }
@@ -1506,11 +1559,11 @@ void TFT_eSPI::pushImage(int32_t x, int32_t y, int32_t w, int32_t h, const uint8
       while (len--) {
         colors = pgm_read_byte(ptr);
         index = ((colors & 0xF0) >> 4) & 0x0F;
-        *linePtr++ = cmap[index];
+        chunk.push(cmap[index]);
 
         if (len--) {
           index = colors & 0x0F;
-          *linePtr++ = cmap[index];
+          chunk.push(cmap[index]);
         } else {
           break;  // nothing to do here
         }
@@ -1518,32 +1571,29 @@ void TFT_eSPI::pushImage(int32_t x, int32_t y, int32_t w, int32_t h, const uint8
         ptr++;
       }
 
-      pushPixels(lineBuf, dw);
       data += (w >> 1);
     }
+    chunk.flush();
     _swapBytes = swap;  // Restore old value
   } else                // Must be 1bpp
   {
     _swapBytes = false;
-    uint8_t* ptr = (uint8_t*)data;
-    uint32_t ww = (w + 7) >> 3;  // Width of source image line in bytes
+    uint32_t ww = (w + 7) >> 3;               // Width of source image line in bytes
+    uint8_t* ptr = (uint8_t*)data + dy * ww;  // Skip rows clipped off the top
     for (int32_t yp = dy; yp < dy + dh; yp++) {
-      uint8_t* linePtr = (uint8_t*)lineBuf;
       for (int32_t xp = dx; xp < dx + dw; xp++) {
         uint16_t col = (pgm_read_byte(ptr + (xp >> 3)) & (0x80 >> (xp & 0x7)));
         if (col) {
-          *linePtr++ = bitmap_fg >> 8;
-          *linePtr++ = (uint8_t)bitmap_fg;
+          chunk.push(bitmap_fg << 8 | bitmap_fg >> 8);
         } else {
-          *linePtr++ = bitmap_bg >> 8;
-          *linePtr++ = (uint8_t)bitmap_bg;
+          chunk.push(bitmap_bg << 8 | bitmap_bg >> 8);
         }
       }
       ptr += ww;
-      pushPixels(lineBuf, dw);
     }
   }
 
+  chunk.flush();
   _swapBytes = swap;  // Restore old value
   inTransaction = lockTransaction;
   end_tft_write();
@@ -1564,8 +1614,7 @@ void TFT_eSPI::pushImage(int32_t x, int32_t y, int32_t w, int32_t h, uint8_t* da
 
   setWindow(x, y, x + dw - 1, y + dh - 1);  // Sets CS low and sent RAMWR
 
-  // Line buffer makes plotting faster
-  uint16_t lineBuf[dw];
+  PixelChunk chunk(*this);  // Bounded staging; the window spans all rows
 
   if (bpp8) {
     _swapBytes = false;
@@ -1582,7 +1631,6 @@ void TFT_eSPI::pushImage(int32_t x, int32_t y, int32_t w, int32_t h, uint8_t* da
     while (dh--) {
       uint32_t len = dw;
       uint8_t* ptr = data;
-      uint8_t* linePtr = (uint8_t*)lineBuf;
 
       while (len--) {
         uint32_t color = *ptr++;
@@ -1596,14 +1644,12 @@ void TFT_eSPI::pushImage(int32_t x, int32_t y, int32_t w, int32_t h, uint8_t* da
           _lastColor = color;
         }
 
-        *linePtr++ = msbColor;
-        *linePtr++ = lsbColor;
+        chunk.push(lsbColor << 8 | msbColor);  // bytes msb, lsb in memory
       }
-
-      pushPixels(lineBuf, dw);
 
       data += w;
     }
+    chunk.flush();
     _swapBytes = swap;         // Restore old value
   } else if (cmap != nullptr)  // Must be 4bpp
   {
@@ -1623,14 +1669,13 @@ void TFT_eSPI::pushImage(int32_t x, int32_t y, int32_t w, int32_t h, uint8_t* da
     while (dh--) {
       uint32_t len = dw;
       uint8_t* ptr = data;
-      uint16_t* linePtr = lineBuf;
       uint8_t colors;  // two colors in one byte
       uint16_t index;
 
       if (splitFirst) {
         colors = *ptr;
         index = (colors & 0x0F);
-        *linePtr++ = cmap[index];
+        chunk.push(cmap[index]);
         len--;
         ptr++;
       }
@@ -1638,11 +1683,11 @@ void TFT_eSPI::pushImage(int32_t x, int32_t y, int32_t w, int32_t h, uint8_t* da
       while (len--) {
         colors = *ptr;
         index = ((colors & 0xF0) >> 4) & 0x0F;
-        *linePtr++ = cmap[index];
+        chunk.push(cmap[index]);
 
         if (len--) {
           index = colors & 0x0F;
-          *linePtr++ = cmap[index];
+          chunk.push(cmap[index]);
         } else {
           break;  // nothing to do here
         }
@@ -1650,32 +1695,30 @@ void TFT_eSPI::pushImage(int32_t x, int32_t y, int32_t w, int32_t h, uint8_t* da
         ptr++;
       }
 
-      pushPixels(lineBuf, dw);
       data += (w >> 1);
     }
+    chunk.flush();
     _swapBytes = swap;  // Restore old value
   } else                // Must be 1bpp
   {
     _swapBytes = false;
 
     uint32_t ww = (w + 7) >> 3;  // Width of source image line in bytes
+    data += dy * ww;             // Skip rows clipped off the top
     for (int32_t yp = dy; yp < dy + dh; yp++) {
-      uint8_t* linePtr = (uint8_t*)lineBuf;
       for (int32_t xp = dx; xp < dx + dw; xp++) {
         uint16_t col = (data[(xp >> 3)] & (0x80 >> (xp & 0x7)));
         if (col) {
-          *linePtr++ = bitmap_fg >> 8;
-          *linePtr++ = (uint8_t)bitmap_fg;
+          chunk.push(bitmap_fg << 8 | bitmap_fg >> 8);
         } else {
-          *linePtr++ = bitmap_bg >> 8;
-          *linePtr++ = (uint8_t)bitmap_bg;
+          chunk.push(bitmap_bg << 8 | bitmap_bg >> 8);
         }
       }
       data += ww;
-      pushPixels(lineBuf, dw);
     }
   }
 
+  chunk.flush();
   _swapBytes = swap;  // Restore old value
   inTransaction = lockTransaction;
   end_tft_write();
@@ -1694,9 +1737,6 @@ void TFT_eSPI::pushImage(int32_t x, int32_t y, int32_t w, int32_t h, uint8_t* da
   inTransaction = true;
   bool swap = _swapBytes;
 
-  // Line buffer makes plotting faster
-  uint16_t lineBuf[dw];
-
   if (bpp8) {  // 8 bits per pixel
     _swapBytes = false;
 
@@ -1711,21 +1751,18 @@ void TFT_eSPI::pushImage(int32_t x, int32_t y, int32_t w, int32_t h, uint8_t* da
     uint8_t lsbColor = 0;
 
     while (dh--) {
-      int32_t len = dw;
-      uint8_t* ptr = data;
-      uint8_t* linePtr = (uint8_t*)lineBuf;
-
-      int32_t px = x, sx = x;
-      bool move = true;
-      uint16_t np = 0;
-
-      while (len--) {
-        if (transp != *ptr) {
-          if (move) {
-            move = false;
-            sx = px;
-          }
-          uint8_t color = *ptr;
+      // Scan ahead to the end of each opaque run so one window covers it
+      for (int32_t i = 0; i < dw;) {
+        if (data[i] == transp) {
+          i++;
+          continue;
+        }
+        int32_t end = i + 1;
+        while (end < dw && data[end] != transp) end++;
+        setWindow(x + i, y, x + end - 1, y);
+        PixelChunk chunk(*this);
+        for (; i < end; i++) {
+          uint8_t color = data[i];
 
           // Shifts are slow so check if colour has changed first
           if (color != _lastColor) {
@@ -1735,25 +1772,9 @@ void TFT_eSPI::pushImage(int32_t x, int32_t y, int32_t w, int32_t h, uint8_t* da
             lsbColor = (color & 0x1C) << 3 | blue[color & 0x03];
             _lastColor = color;
           }
-          *linePtr++ = msbColor;
-          *linePtr++ = lsbColor;
-          np++;
-        } else {
-          move = true;
-          if (np) {
-            setWindow(sx, y, sx + np - 1, y);
-            pushPixels(lineBuf, np);
-            linePtr = (uint8_t*)lineBuf;
-            np = 0;
-          }
+          chunk.push(lsbColor << 8 | msbColor);  // bytes msb, lsb in memory
         }
-        px++;
-        ptr++;
-      }
-
-      if (np) {
-        setWindow(sx, y, sx + np - 1, y);
-        pushPixels(lineBuf, np);
+        chunk.flush();
       }
       y++;
       data += w;
@@ -1763,89 +1784,28 @@ void TFT_eSPI::pushImage(int32_t x, int32_t y, int32_t w, int32_t h, uint8_t* da
     _swapBytes = true;
 
     w = (w + 1) & 0xFFFE;  // here we try to recreate iwidth from dwidth.
-    bool splitFirst = ((dx & 0x01) != 0);
-    if (splitFirst) {
-      data += ((dx - 1 + dy * w) >> 1);
-    } else {
-      data += ((dx + dy * w) >> 1);
-    }
+    // Nibble index of the first visible pixel; even nibbles are the high half of a byte
+    uint32_t row = dx + dy * w;
 
     while (dh--) {
-      uint32_t len = dw;
-      uint8_t* ptr = data;
-
-      int32_t px = x, sx = x;
-      bool move = true;
-      uint16_t np = 0;
-
-      uint8_t index;  // index into cmap.
-
-      if (splitFirst) {
-        index = (*ptr & 0x0F);  // odd = bits 3 .. 0
-        if (index != transp) {
-          move = false;
-          sx = px;
-          lineBuf[np] = cmap[index];
-          np++;
+      auto index = [&](int32_t i) {
+        uint32_t n = row + i;
+        return (n & 1) ? data[n >> 1] & 0x0F : data[n >> 1] >> 4;
+      };
+      // Scan ahead to the end of each opaque run so one window covers it
+      for (int32_t i = 0; i < dw;) {
+        if (index(i) == transp) {
+          i++;
+          continue;
         }
-        px++;
-        ptr++;
-        len--;
+        int32_t end = i + 1;
+        while (end < dw && index(end) != transp) end++;
+        setWindow(x + i, y, x + end - 1, y);
+        PixelChunk chunk(*this);
+        for (; i < end; i++) chunk.push(cmap[index(i)]);
+        chunk.flush();
       }
-
-      while (len--) {
-        uint8_t color = *ptr;
-
-        // find the actual color you care about.  There will be two pixels here!
-        // but we may only want one at the end of the row
-        uint16_t index = ((color & 0xF0) >> 4) & 0x0F;  // high bits are the even numbers
-        if (index != transp) {
-          if (move) {
-            move = false;
-            sx = px;
-          }
-          lineBuf[np] = cmap[index];
-          np++;  // added a pixel
-        } else {
-          move = true;
-          if (np) {
-            setWindow(sx, y, sx + np - 1, y);
-            pushPixels(lineBuf, np);
-            np = 0;
-          }
-        }
-        px++;
-
-        if (len--) {
-          index = color & 0x0F;  // the odd number is 3 .. 0
-          if (index != transp) {
-            if (move) {
-              move = false;
-              sx = px;
-            }
-            lineBuf[np] = cmap[index];
-            np++;
-          } else {
-            move = true;
-            if (np) {
-              setWindow(sx, y, sx + np - 1, y);
-              pushPixels(lineBuf, np);
-              np = 0;
-            }
-          }
-          px++;
-        } else {
-          break;  // we are done with this row.
-        }
-        ptr++;  // we only increment ptr once in the loop (deliberate)
-      }
-
-      if (np) {
-        setWindow(sx, y, sx + np - 1, y);
-        pushPixels(lineBuf, np);
-        np = 0;
-      }
-      data += (w >> 1);
+      row += w;
       y++;
     }
   } else {  // 1 bit per pixel
@@ -1853,6 +1813,7 @@ void TFT_eSPI::pushImage(int32_t x, int32_t y, int32_t w, int32_t h, uint8_t* da
 
     uint32_t ww = (w + 7) >> 3;  // Width of source image line in bytes
     uint16_t np = 0;
+    data += dy * ww;  // Skip rows clipped off the top
 
     for (int32_t yp = dy; yp < dy + dh; yp++) {
       int32_t px = x, sx = x;
@@ -2775,17 +2736,11 @@ int16_t TFT_eSPI::height(void) {
 * font
 ***************************************************************************************/
 int16_t TFT_eSPI::textWidth(const String& string) {
-  int16_t len = string.length() + 2;
-  char buffer[len];
-  string.toCharArray(buffer, len);
-  return textWidth(buffer, textfont);
+  return textWidth(string.c_str(), textfont);
 }
 
 int16_t TFT_eSPI::textWidth(const String& string, uint8_t font) {
-  int16_t len = string.length() + 2;
-  char buffer[len];
-  string.toCharArray(buffer, len);
-  return textWidth(buffer, font);
+  return textWidth(string.c_str(), font);
 }
 
 int16_t TFT_eSPI::textWidth(const char* string) {
@@ -2940,17 +2895,13 @@ void TFT_eSPI::drawChar(int32_t x, int32_t y, uint16_t c, uint32_t color, uint32
       for (int8_t i = 0; i < 5; i++) column[i] = pgm_read_byte(&font[0] + (c * 5) + i);
       column[5] = 0;
 
+      FifoPixels fifo;
       for (int8_t j = 0; j < 8; j++) {
-        for (int8_t k = 0; k < 5; k++) {
-          if (column[k] & mask) {
-            tft_Write_16(color);
-          } else {
-            tft_Write_16(bg);
-          }
-        }
+        for (int8_t k = 0; k < 5; k++) fifo.push(column[k] & mask ? color : bg);
         mask <<= 1;
-        tft_Write_16(bg);
+        fifo.push(bg);
       }
+      fifo.end();
 
       end_tft_write();
     } else {
@@ -4012,22 +3963,9 @@ inline float TFT_eSPI::wedgeLineDistance(float xpax, float ypay, float bax, floa
 ** Description:             draw a vertical line
 ***************************************************************************************/
 void TFT_eSPI::drawFastVLine(int32_t x, int32_t y, int32_t h, uint32_t color) {
-  if (_vpOoB) return;
-
-  x += _xDatum;
-  y += _yDatum;
-
-  // Clipping
-  if ((x < _vpX) || (x >= _vpW) || (y >= _vpH)) return;
-
-  if (y < _vpY) {
-    h += y - _vpY;
-    y = _vpY;
-  }
-
-  if ((y + h) > _vpH) h = _vpH - y;
-
-  if (h < 1) return;
+  int32_t w = 1;
+  if (_vpOoB || !clipSpan(x, w, _xDatum, _vpX, _vpW) || !clipSpan(y, h, _yDatum, _vpY, _vpH))
+    return;
 
   begin_tft_write();
 
@@ -4043,22 +3981,9 @@ void TFT_eSPI::drawFastVLine(int32_t x, int32_t y, int32_t h, uint32_t color) {
 ** Description:             draw a horizontal line
 ***************************************************************************************/
 void TFT_eSPI::drawFastHLine(int32_t x, int32_t y, int32_t w, uint32_t color) {
-  if (_vpOoB) return;
-
-  x += _xDatum;
-  y += _yDatum;
-
-  // Clipping
-  if ((y < _vpY) || (x >= _vpW) || (y >= _vpH)) return;
-
-  if (x < _vpX) {
-    w += x - _vpX;
-    x = _vpX;
-  }
-
-  if ((x + w) > _vpW) w = _vpW - x;
-
-  if (w < 1) return;
+  int32_t h = 1;
+  if (_vpOoB || !clipSpan(x, w, _xDatum, _vpX, _vpW) || !clipSpan(y, h, _yDatum, _vpY, _vpH))
+    return;
 
   begin_tft_write();
 
@@ -4074,40 +3999,8 @@ void TFT_eSPI::drawFastHLine(int32_t x, int32_t y, int32_t w, uint32_t color) {
 ** Description:             draw a filled rectangle
 ***************************************************************************************/
 void TFT_eSPI::fillRect(int32_t x, int32_t y, int32_t w, int32_t h, uint32_t color) {
-  if (_vpOoB) return;
-
-  x += _xDatum;
-  y += _yDatum;
-
-  // Clipping
-  if ((x >= _vpW) || (y >= _vpH)) return;
-
-  if (x < _vpX) {
-    w += x - _vpX;
-    x = _vpX;
-  }
-  if (y < _vpY) {
-    h += y - _vpY;
-    y = _vpY;
-  }
-
-  if ((x + w) > _vpW) w = _vpW - x;
-  if ((y + h) > _vpH) h = _vpH - y;
-
-  if ((w < 1) || (h < 1)) return;
-
-  // Serial.print(" _xDatum=");Serial.print( _xDatum);Serial.print(",
-  // _yDatum=");Serial.print( _yDatum); Serial.print(",
-  // _xWidth=");Serial.print(_xWidth);Serial.print(",
-  // _yHeight=");Serial.println(_yHeight);
-
-  // Serial.print(" _vpX=");Serial.print( _vpX);Serial.print(",
-  // _vpY=");Serial.print( _vpY); Serial.print(",
-  // _vpW=");Serial.print(_vpW);Serial.print(", _vpH=");Serial.println(_vpH);
-
-  // Serial.print(" x=");Serial.print( y);Serial.print(", y=");Serial.print( y);
-  // Serial.print(", w=");Serial.print(w);Serial.print(",
-  // h=");Serial.println(h);
+  if (_vpOoB || !clipSpan(x, w, _xDatum, _vpX, _vpW) || !clipSpan(y, h, _yDatum, _vpY, _vpH))
+    return;
 
   begin_tft_write();
 
@@ -4716,25 +4609,23 @@ int16_t TFT_eSPI::drawChar(uint16_t uniCode, int32_t x, int32_t y, uint8_t font)
       setWindow(xd, yd, xd + width - 1, yd + height - 1);
 
       uint8_t mask;
+      FifoPixels fifo;
       for (int32_t i = 0; i < height; i++) {
         pX = width;
         for (int32_t k = 0; k < w; k++) {
           line = pgm_read_byte((uint8_t*)(flash_address + w * i + k));
           mask = 0x80;
           while (mask && pX) {
-            if (line & mask) {
-              tft_Write_16(textcolor);
-            } else {
-              tft_Write_16(textbgcolor);
-            }
+            fifo.push(line & mask ? textcolor : textbgcolor);
             pX--;
             mask = mask >> 1;
           }
         }
         if (pX) {
-          tft_Write_16(textbgcolor);
+          fifo.push(textbgcolor);
         }
       }
+      fifo.end();
 
       end_tft_write();
     }
@@ -4752,48 +4643,25 @@ int16_t TFT_eSPI::drawChar(uint16_t uniCode, int32_t x, int32_t y, uint8_t font)
 
     w *= height;  // Now w is total number of pixels in the character
     if (textcolor == textbgcolor && !clip) {
-      int32_t px = 0, py = pY;           // To hold character block start and end column
-                                         // and row values
-      int32_t pc = 0;                    // Pixel count
-      uint8_t np = textsize * textsize;  // Number of pixels in a drawn pixel
-
-      uint8_t tnp = 0;            // Temporary copy of np for while loop
-      uint8_t ts = textsize - 1;  // Temporary copy of textsize
-      // 16-bit pixel count so maximum font size is equivalent to 180x180 pixels
-      // in area w is total number of pixels to plot to fill character block
+      int32_t pc = 0;                     // Pixel count
+      uint32_t np = textsize * textsize;  // Pixels in a drawn glyph pixel
+      // Transparent glyphs are sparse, so one setWindow + pushBlock per horizontal run of
+      // foreground pixels replaces the per-pixel setWindow used before.
       while (pc < w) {
         line = pgm_read_byte((uint8_t*)flash_address);
         flash_address++;
         if (line & 0x80) {
           line &= 0x7F;
           line++;
-          if (ts) {
-            px = xd + textsize * (pc % width);  // Keep these px and py calculations
-                                                // outside the loop as they are slow
-            py = yd + textsize * (pc / width);
-          } else {
-            px = xd + pc % width;  // Keep these px and py calculations outside
-                                   // the loop as they are slow
-            py = yd + pc / width;
-          }
-          while (line--) {  // In this case the while(line--) is faster
-            pc++;           // This is faster than putting pc+=line before while()?
-            setWindow(px, py, px + ts, py + ts);
-
-            if (ts) {
-              tnp = np;
-              while (tnp--) {
-                tft_Write_16(textcolor);
-              }
-            } else {
-              tft_Write_16(textcolor);
-            }
-            px += textsize;
-
-            if (px >= (xd + width * textsize)) {
-              px = xd;
-              py += textsize;
-            }
+          while (line) {
+            int32_t px = xd + textsize * (pc % width);
+            int32_t py = yd + textsize * (pc / width);
+            int32_t seg = width - pc % width;  // foreground pixels left on this row
+            if (seg > line) seg = line;
+            setWindow(px, py, px + seg * textsize - 1, py + textsize - 1);
+            pushBlock(textcolor, seg * np);
+            pc += seg;
+            line -= seg;
           }
         } else {
           line++;
@@ -4808,6 +4676,7 @@ int16_t TFT_eSPI::drawChar(uint16_t uniCode, int32_t x, int32_t y, uint8_t font)
         setWindow(xd, yd, xd + width - 1, yd + height - 1);
 
         // Maximum font size is equivalent to 180x180 pixels in area
+        FifoPixels fifo;
         while (w > 0) {
           line =
               pgm_read_byte((uint8_t*)flash_address++);  // 8 bytes smaller when incrementing here
@@ -4815,13 +4684,14 @@ int16_t TFT_eSPI::drawChar(uint16_t uniCode, int32_t x, int32_t y, uint8_t font)
             line &= 0x7F;
             line++;
             w -= line;
-            pushBlock(textcolor, line);
+            fifo.run(textcolor, line);
           } else {
             line++;
             w -= line;
-            pushBlock(textbgcolor, line);
+            fifo.run(textbgcolor, line);
           }
         }
+        fifo.end();
       } else {
         int32_t px = 0, py = 0;  // To hold character pixel coords
         int32_t tx = 0, ty = 0;  // To hold character TFT pixel coords
@@ -4888,17 +4758,11 @@ int16_t TFT_eSPI::drawChar(uint16_t uniCode, int32_t x, int32_t y, uint8_t font)
 ***************************************************************************************/
 // Without font number, uses font set by setTextFont()
 int16_t TFT_eSPI::drawString(const String& string, int32_t poX, int32_t poY) {
-  int16_t len = string.length() + 2;
-  char buffer[len];
-  string.toCharArray(buffer, len);
-  return drawString(buffer, poX, poY, textfont);
+  return drawString(string.c_str(), poX, poY, textfont);
 }
 // With font number
 int16_t TFT_eSPI::drawString(const String& string, int32_t poX, int32_t poY, uint8_t font) {
-  int16_t len = string.length() + 2;
-  char buffer[len];
-  string.toCharArray(buffer, len);
-  return drawString(buffer, poX, poY, font);
+  return drawString(string.c_str(), poX, poY, font);
 }
 
 // Without font number, uses font set by setTextFont()
@@ -5139,10 +5003,7 @@ int16_t TFT_eSPI::drawString(const char* string, int32_t poX, int32_t poY, uint8
 ** Descriptions:            draw string centred on dX
 ***************************************************************************************/
 int16_t TFT_eSPI::drawCentreString(const String& string, int32_t dX, int32_t poY, uint8_t font) {
-  int16_t len = string.length() + 2;
-  char buffer[len];
-  string.toCharArray(buffer, len);
-  return drawCentreString(buffer, dX, poY, font);
+  return drawCentreString(string.c_str(), dX, poY, font);
 }
 
 int16_t TFT_eSPI::drawCentreString(const char* string, int32_t dX, int32_t poY, uint8_t font) {
@@ -5159,10 +5020,7 @@ int16_t TFT_eSPI::drawCentreString(const char* string, int32_t dX, int32_t poY, 
 ** Descriptions:            draw string right justified to dX
 ***************************************************************************************/
 int16_t TFT_eSPI::drawRightString(const String& string, int32_t dX, int32_t poY, uint8_t font) {
-  int16_t len = string.length() + 2;
-  char buffer[len];
-  string.toCharArray(buffer, len);
-  return drawRightString(buffer, dX, poY, font);
+  return drawRightString(string.c_str(), dX, poY, font);
 }
 
 int16_t TFT_eSPI::drawRightString(const char* string, int32_t dX, int32_t poY, uint8_t font) {
