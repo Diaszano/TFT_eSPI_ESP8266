@@ -499,7 +499,8 @@ def run_validation_unit(root: pathlib.Path) -> None:
     sources = ("test_validation_command.cpp", "test_validation_bench_math.cpp",
                "test_validation_stress_math.cpp", "test_validation_oracle.cpp",
                "test_validation_perf_protocol.cpp", "test_validation_input.cpp",
-               "test_validation_frame_math.cpp", "test_validation_frame_workloads.cpp")
+               "test_validation_frame_math.cpp", "test_validation_frame_workloads.cpp",
+               "test_validation_heap_churn.cpp")
     includes = (root / "extras/hardware/Audit_Validation", root / "tests/host")
     with tempfile.TemporaryDirectory(prefix="tft-validation-unit-") as temp:
         for name in sources:
