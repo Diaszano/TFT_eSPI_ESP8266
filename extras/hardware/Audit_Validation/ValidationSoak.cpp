@@ -8,15 +8,17 @@
 #include "ValidationMemoryExtended.h"
 #include "ValidationMemoryMath.h"
 #include "ValidationPerfTelemetry.h"
+#include "ValidationTelemetry.h"
 
 namespace {
 uint16_t run_counter = 0;
 
-bool flush(ValidationPerfEmitter& perf, validation::FrameBatch& batch, uint32_t* batch_id) {
+bool flush(ValidationPerfEmitter& perf, const char* suite, validation::FrameBatch& batch,
+           uint32_t* batch_id) {
   if (!batch.count) return true;
   for (uint8_t chunk = 0; chunk < (batch.count + 15) / 16; ++chunk) {
     const uint8_t left = batch.count - chunk * 16;
-    if (!perf.samples("FM", *batch_id, chunk, batch.durations_us + chunk * 16,
+    if (!perf.samples(suite, *batch_id, chunk, batch.durations_us + chunk * 16,
                       left < 16 ? left : 16)) return false;
   }
   ++*batch_id;
@@ -65,7 +67,7 @@ void run_mixed_soak(uint32_t requested_minutes, TFT_eSPI& tft, Print& log) {
   const uint32_t requested_ms = requested_minutes * 60000UL;
   while (static_cast<uint32_t>(millis() - started) < requested_ms) {
     if (!may_allocate(ESP.getFreeHeap(), ESP.getMaxFreeBlockSize(), estimated_sprite)) {
-      flush(perf, batch, &batch_id);
+      flush(perf, "FM", batch, &batch_id);
       sprite.deleteSprite();
       perf.abort("FM", observed, "HEAP_FLOOR");
       return;
@@ -81,13 +83,13 @@ void run_mixed_soak(uint32_t requested_minutes, TFT_eSPI& tft, Print& log) {
     }
     uint32_t allocation_us, operation_us;
     if (!heap_lifecycle_step(observed, tft, &allocation_us, &operation_us)) {
-      flush(perf, batch, &batch_id);
+      flush(perf, "FM", batch, &batch_id);
       sprite.deleteSprite();
       perf.abort("FM", observed + 1, "ALLOC_FAIL");
       return;
     }
     ++observed;
-    if (batch.count == 128 && !flush(perf, batch, &batch_id)) {
+    if (batch.count == 128 && !flush(perf, "FM", batch, &batch_id)) {
       sprite.deleteSprite();
       return;
     }
@@ -103,13 +105,13 @@ void run_mixed_soak(uint32_t requested_minutes, TFT_eSPI& tft, Print& log) {
       }
     }
     if (validation_poll_control(log, false) == ControlAction::Quit) {
-      flush(perf, batch, &batch_id);
+      flush(perf, "FM", batch, &batch_id);
       sprite.deleteSprite();
       perf.abort("FM", observed, "Q");
       return;
     }
   }
-  if (!flush(perf, batch, &batch_id)) {
+  if (!flush(perf, "FM", batch, &batch_id)) {
     sprite.deleteSprite();
     return;
   }
@@ -117,5 +119,65 @@ void run_mixed_soak(uint32_t requested_minutes, TFT_eSPI& tft, Print& log) {
   tft.setTextFont(1);
   tft.setSwapBytes(false);
   perf.end("FM", observed, static_cast<uint64_t>(millis() - started) * 1000ULL, "PASS");
+}
+
+void run_wifi_latency(TFT_eSPI& tft, Print& log) {
+  char id[17];
+  snprintf(id, sizeof(id), "W%08lx%04x",
+           static_cast<unsigned long>(ESP.getCycleCount()), run_counter++);
+  ValidationPerfEmitter perf(log, id);
+  const char* mode = validation_wifi_mode();
+  char profile[32];
+  snprintf(profile, sizeof(profile), "lw_%s", mode);
+  if (!perf.begin("LW", 0x13579bdfUL, 1000, profile)) return;
+  uint32_t estimated_sprite;
+  if (!estimate_sprite_bytes(32, 32, 16, &estimated_sprite) ||
+      !may_allocate(ESP.getFreeHeap(), ESP.getMaxFreeBlockSize(), estimated_sprite)) {
+    perf.end("LW", 0, 0, "SKIP");
+    return;
+  }
+  TFT_eSprite sprite(&tft);
+  sprite.setColorDepth(16);
+  if (!sprite.createSprite(32, 32)) {
+    perf.abort("LW", 0, "ALLOC_FAIL");
+    return;
+  }
+  prepare_mixed_image();
+  FrameBatch batch;
+  uint32_t batch_id = 0;
+  uint32_t observed = 0;
+  uint64_t elapsed_us = 0;
+  while (observed < 1000) {
+    const uint32_t before = micros();
+    draw_mixed_frame(observed, tft, sprite);
+    const uint32_t after = micros();
+    uint32_t duration;
+    if (!validation_frame_sample(before, after, &duration) || !batch.append(duration)) {
+      sprite.deleteSprite();
+      perf.abort("LW", observed, "INVALID_SAMPLE");
+      return;
+    }
+    elapsed_us += duration;
+    ++observed;
+    if (batch.count == 128 && !flush(perf, "LW", batch, &batch_id)) {
+      sprite.deleteSprite();
+      return;
+    }
+    yield();
+    if (validation_poll_control(log, false) == ControlAction::Quit) {
+      flush(perf, "LW", batch, &batch_id);
+      sprite.deleteSprite();
+      perf.abort("LW", observed, "Q");
+      return;
+    }
+  }
+  if (!flush(perf, "LW", batch, &batch_id)) {
+    sprite.deleteSprite();
+    return;
+  }
+  sprite.deleteSprite();
+  tft.setTextFont(1);
+  tft.setSwapBytes(false);
+  perf.end("LW", observed, elapsed_us, "PASS");
 }
 }

@@ -26,6 +26,7 @@ enum class ValidationCommandKind : uint8_t {
   FrameMixedLong30,
   FrameMixedLong8H,
   FrameMixedLong24H,
+  LatencyWifi,
   Unknown
 };
 
@@ -116,6 +117,8 @@ inline ValidationCommand parse_validation_command(const char* line) {
     command.kind = ValidationCommandKind::FrameMixedLong8H;
   else if (strcmp(line, "FM24H") == 0)
     command.kind = ValidationCommandKind::FrameMixedLong24H;
+  else if (strcmp(line, "LW") == 0)
+    command.kind = ValidationCommandKind::LatencyWifi;
   return command;
 }
 

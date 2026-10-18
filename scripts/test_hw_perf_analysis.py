@@ -5,8 +5,8 @@ import zlib
 
 from scripts.hw_perf_analysis import (
     analyze_run, summarize_samples, elapsed_u32, summarize_frame_run,
-    compare_frame_profiles, baseline_content_hash)
-from scripts.hw_perf_analysis import summarize_heap
+    compare_frame_profiles, baseline_content_hash, summarize_heap,
+    summarize_soak, compare_wifi_conditions)
 
 
 def line(sequence, kind, *fields, run_id="run42"):
@@ -121,6 +121,75 @@ class AnalysisTest(unittest.TestCase):
         run["memory"][0]["free_heap"] = 0
         with self.assertRaises(ValueError):
             summarize_heap(run)
+
+    def test_summarize_soak_progress_and_floor(self):
+        memory = [
+            {"checkpoint": 0, "free_heap": 20000, "largest_block": 15000, "min_heap": 20000, "failures": 0},
+            {"checkpoint": 1, "free_heap": 19500, "largest_block": 14500, "min_heap": 19000, "failures": 0},
+            {"checkpoint": 2, "free_heap": 19000, "largest_block": 14000, "min_heap": 18500, "failures": 0},
+        ]
+        run = {"samples": [1000] * 1000, "elapsed_us": 2_000_000, "memory": memory,
+               "transport_integrity": "COMPLETE", "firmware_result": "PASS"}
+        soak = summarize_soak(run)
+        self.assertEqual(soak["status"], "COMPLETE")
+        self.assertEqual(soak["checkpoint_count"], 3)
+        self.assertEqual(soak["warnings"], [])
+
+        # Checkpoint gap (e.g. missing minute 1)
+        gap_run = {"samples": [1000] * 1000, "elapsed_us": 2_000_000,
+                   "memory": [memory[0], memory[2]], "transport_integrity": "COMPLETE", "firmware_result": "PASS"}
+        gap_soak = summarize_soak(gap_run)
+        self.assertEqual(gap_soak["status"], "INCOMPLETE")
+        self.assertIn("CHECKPOINT_PROGRESSION_ERROR", gap_soak["warnings"])
+
+        # Heap floor breach
+        low_memory = [
+            {"checkpoint": 0, "free_heap": 12000, "largest_block": 10000, "min_heap": 11000, "failures": 0}
+        ]
+        low_run = {"samples": [1000], "elapsed_us": 2000, "memory": low_memory,
+                   "transport_integrity": "COMPLETE", "firmware_result": "PASS"}
+        low_soak = summarize_soak(low_run)
+        self.assertEqual(low_soak["status"], "INCOMPLETE")
+        self.assertIn("HEAP_FLOOR_BREACH", low_soak["warnings"])
+
+    def test_compare_wifi_conditions(self):
+        base_profile = {
+            "board": "nodemcuv2", "display": "st7789", "rotation": 0,
+            "cpu_hz": 80_000_000, "spi_hz": 40_000_000, "scene": "fp3_mixed", "seed": 0x13579bdf
+        }
+        run_off = {
+            "source_type": "physical", "transport_integrity": "COMPLETE", "firmware_result": "PASS",
+            "profile": {**base_profile, "wifi": "off"}, "wifi_condition": "off",
+            "samples": [1000] * 1000, "elapsed_us": 1_000_000
+        }
+        run_idle = {
+            "source_type": "physical", "transport_integrity": "COMPLETE", "firmware_result": "PASS",
+            "profile": {**base_profile, "wifi": "on_idle"}, "wifi_condition": "on_idle",
+            "samples": [1050] * 1000, "elapsed_us": 1_050_000
+        }
+        run_traffic = {
+            "source_type": "physical", "transport_integrity": "COMPLETE", "firmware_result": "PASS",
+            "profile": {**base_profile, "wifi": "local_traffic"}, "wifi_condition": "local_traffic",
+            "traffic_witness": "iperf_100kbps_local",
+            "samples": [1200] * 1000, "elapsed_us": 1_200_000
+        }
+        comparison = compare_wifi_conditions([run_off, run_idle, run_traffic])
+        self.assertEqual(comparison["status"], "INFORMATIONAL")
+        self.assertIn("on_idle", comparison["effects_percent"])
+        self.assertIn("local_traffic", comparison["effects_percent"])
+
+        # Missing traffic witness for local_traffic
+        no_witness_run = dict(run_traffic)
+        del no_witness_run["traffic_witness"]
+        self.assertEqual(compare_wifi_conditions([run_off, no_witness_run])["status"], "INCOMPARABLE")
+
+        # Non-physical run
+        synthetic_run = {**run_off, "source_type": "synthetic"}
+        self.assertEqual(compare_wifi_conditions([synthetic_run, run_idle])["status"], "INCOMPARABLE")
+
+        # Mismatched hardware profile
+        mismatched_run = {**run_idle, "profile": {**base_profile, "cpu_hz": 160_000_000, "wifi": "on_idle"}}
+        self.assertEqual(compare_wifi_conditions([run_off, mismatched_run])["status"], "INCOMPARABLE")
 
 
 if __name__ == "__main__":

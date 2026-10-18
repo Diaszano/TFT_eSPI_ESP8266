@@ -8,5 +8,6 @@ void validation_emit_run(Print& out);
 void validation_emit_case_start(Print& out, const char* id, uint32_t seed);
 void validation_emit_case_return(Print& out, const char* id, uint32_t duration_us,
                                  const char* status);
+const char* validation_wifi_mode();
 
 #endif

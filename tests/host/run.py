@@ -525,6 +525,7 @@ def run_validation_unit(root: pathlib.Path) -> None:
                                str(root / "extras/hardware/Audit_Validation/ValidationPerfTelemetry.cpp"),
                                str(root / "extras/hardware/Audit_Validation/ValidationFramePerf.cpp"),
                                str(root / "extras/hardware/Audit_Validation/ValidationMemoryExtended.cpp"),
+                               str(root / "extras/hardware/Audit_Validation/ValidationTelemetry.cpp"),
                                str(root / "extras/hardware/Audit_Validation/ValidationSoak.cpp")]
                               if name == "test_validation_soak.cpp" else []),
                             "-o", str(binary)], check=True)

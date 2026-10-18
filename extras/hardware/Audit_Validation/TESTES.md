@@ -217,6 +217,13 @@ require separate physical authorization, a continuous raw capture sized for
 the expected data volume, and a manually checked stop path. An incomplete
 capture or interrupted run is not physical endurance evidence.
 
+LW is an opt-in Wi-Fi latency suite. It repeats the exact FP3 mixed-frame workload
+for 1,000 frames under the physical Wi-Fi state observed at boot and reported in
+RUN.wifi and the PERF profile ID (`lw_off`, `lw_sta`, `lw_on`, `lw_ap`). The test
+does not configure credentials or generate network traffic; comparison across
+Wi-Fi states (`off`, `on_idle`, `local_traffic`) requires operator-attested capture
+metadata and hardware witness. Q cancels cooperatively and stops the suite.
+
 The operator must complete hardware gates H1–H3 in the performance validation
 spec before any upload or real capture. One operator-owned process opens the
 chosen serial port and pipes its raw bytes to the passive capture command.

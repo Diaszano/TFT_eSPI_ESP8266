@@ -47,4 +47,26 @@ int main() {
   assert(late_cancelled.bytes.find("ABORT,FM,128,Q,") != std::string::npos);
   Serial.suppress_until = 0;
   host_yield_step_value() = 60000;
+
+  Print wifi_off_output;
+  host_wifi_mode_value() = "off";
+  validation::run_wifi_latency(display, wifi_off_output);
+  assert(wifi_off_output.bytes.find("BEGIN,LW,324508639,1000,lw_off,") != std::string::npos);
+  assert(wifi_off_output.bytes.find("END,LW,1000,") != std::string::npos);
+  assert(wifi_off_output.bytes.find(",PASS,") != std::string::npos);
+  assert(TFT_eSprite::create_calls == TFT_eSprite::delete_calls);
+
+  Print wifi_sta_output;
+  host_wifi_mode_value() = "sta";
+  validation::run_wifi_latency(display, wifi_sta_output);
+  assert(wifi_sta_output.bytes.find("BEGIN,LW,324508639,1000,lw_sta,") != std::string::npos);
+  assert(wifi_sta_output.bytes.find("END,LW,1000,") != std::string::npos);
+
+  Serial.input = "Q\n";
+  Serial.position = 0;
+  Serial.available_calls = 0;
+  Print wifi_cancelled;
+  validation::run_wifi_latency(display, wifi_cancelled);
+  assert(wifi_cancelled.bytes.find("ABORT,LW,1,Q,") != std::string::npos);
+  assert(TFT_eSprite::create_calls == TFT_eSprite::delete_calls);
 }

@@ -106,6 +106,89 @@ def summarize_heap(run: dict) -> dict:
             "stack_headroom": "UNAVAILABLE"}
 
 
+def summarize_soak(run: dict) -> dict:
+    checkpoints = run.get("memory") or []
+    elapsed_us = run.get("elapsed_us") or 0
+    samples = run.get("samples") or []
+    if elapsed_us <= 0:
+        raise ValueError("positive elapsed_us required for soak run")
+    warnings = []
+    expected_checkpoint = 0
+    for point in checkpoints:
+        cp = point.get("checkpoint")
+        if cp != expected_checkpoint:
+            warnings.append("CHECKPOINT_PROGRESSION_ERROR")
+            break
+        expected_checkpoint += 1
+    lowest_heap = min((point.get("min_heap", point.get("free_heap", 0))
+                       for point in checkpoints), default=None)
+    if lowest_heap is not None and lowest_heap < 12288:
+        warnings.append("HEAP_FLOOR_BREACH")
+    frame_summary = None
+    if samples:
+        frame_summary = summarize_samples(samples, elapsed_us)
+    integrity = run.get("transport_integrity", "COMPLETE")
+    if "CHECKPOINT_PROGRESSION_ERROR" in warnings:
+        integrity = "INCOMPLETE"
+    return {
+        "status": "COMPLETE" if integrity == "COMPLETE" and not warnings else "INCOMPLETE",
+        "sample_count": len(samples),
+        "duration_us": elapsed_us,
+        "checkpoint_count": len(checkpoints),
+        "lowest_free_heap": lowest_heap,
+        "frame_summary": frame_summary,
+        "warnings": warnings,
+        "transport_integrity": integrity,
+        "firmware_result": run.get("firmware_result", "UNKNOWN")
+    }
+
+
+def compare_wifi_conditions(runs: list[dict]) -> dict:
+    if not runs:
+        return {"status": "INCOMPARABLE", "reason": "no runs provided"}
+    required_profile = {"board", "display", "rotation", "cpu_hz", "spi_hz", "scene", "seed"}
+    for run in runs:
+        if run.get("source_type") != "physical":
+            return {"status": "INCOMPARABLE", "reason": "non-physical run"}
+        if run.get("transport_integrity") != "COMPLETE" or run.get("firmware_result") != "PASS":
+            return {"status": "INCOMPARABLE", "reason": "incomplete or failed run"}
+        prof = set(run.get("profile") or {})
+        if not required_profile <= prof:
+            return {"status": "INCOMPARABLE", "reason": "incomplete profile metadata"}
+    base_prof = runs[0]["profile"]
+    for run in runs[1:]:
+        p = run["profile"]
+        if any(base_prof.get(k) != p.get(k) for k in required_profile):
+            return {"status": "INCOMPARABLE", "reason": "mismatched hardware profile or seed"}
+    conditions = {}
+    for run in runs:
+        cond = run.get("wifi_condition") or run.get("profile", {}).get("wifi")
+        if not cond:
+            return {"status": "INCOMPARABLE", "reason": "missing wifi condition"}
+        if cond == "local_traffic" and not run.get("traffic_witness"):
+            return {"status": "INCOMPARABLE", "reason": "missing traffic witness for local_traffic"}
+        conditions.setdefault(cond, []).append(run)
+    summaries = {}
+    for cond, group in conditions.items():
+        all_samples = [s for r in group for s in r.get("samples", [])]
+        total_elapsed = sum(r.get("elapsed_us", 0) for r in group)
+        if not all_samples or total_elapsed <= 0:
+            return {"status": "INCOMPARABLE", "reason": f"no samples for condition {cond}"}
+        summaries[cond] = summarize_samples(all_samples, total_elapsed)
+    effects = {}
+    if "off" in summaries:
+        base_p99 = summaries["off"]["p99_us"]
+        for cond, summary in summaries.items():
+            if cond != "off":
+                effects[cond] = 100 * (summary["p99_us"] / base_p99 - 1)
+    return {
+        "status": "INFORMATIONAL",
+        "conditions": summaries,
+        "effects_percent": effects,
+        "profile": {k: base_prof[k] for k in required_profile}
+    }
+
+
 def baseline_content_hash(runs: list[dict]) -> str:
     canonical = json.dumps(sorted(runs, key=lambda run: run.get("boot_id", "")),
                            sort_keys=True, separators=(",", ":"))
@@ -167,13 +250,21 @@ def analyze_run(raw: bytes, capture: dict) -> dict:
                 measurement = summarize_samples(run["samples"], run["elapsed_us"])
             except ValueError:
                 integrity = "CORRUPT"
+        soak = None
         if run["suite"] in {"HC", "HP"} and len(run["memory"]) >= 2:
             try:
                 heap = summarize_heap(run)
             except ValueError:
                 integrity = "CORRUPT"
+        if run["suite"] in {"FM", "FM8H", "FM24H"} and run["memory"]:
+            try:
+                soak = summarize_soak(run)
+                if soak["transport_integrity"] != "COMPLETE":
+                    integrity = soak["transport_integrity"]
+            except ValueError:
+                integrity = "CORRUPT"
         run_summaries.append({"run": run, "measurements": measurement,
-                              "heap": heap,
+                              "heap": heap, "soak": soak,
                               "firmware_result": run["firmware_result"],
                               "transport_integrity": integrity})
     run = parsed["runs"][0] if parsed["runs"] else None

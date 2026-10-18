@@ -31,6 +31,7 @@ int main() {
   assert(validation::parse_validation_command("FM").kind == ValidationCommandKind::FrameMixedLong30);
   assert(validation::parse_validation_command("FM8H").kind == ValidationCommandKind::FrameMixedLong8H);
   assert(validation::parse_validation_command("FM24H").kind == ValidationCommandKind::FrameMixedLong24H);
+  assert(validation::parse_validation_command("LW").kind == ValidationCommandKind::LatencyWifi);
   assert(validation::parse_validation_command("S5").kind == ValidationCommandKind::Unknown);
   assert(validation::parse_validation_command("b").kind == ValidationCommandKind::Unknown);
   assert(validation::parse_validation_command("Bextra").kind == ValidationCommandKind::Unknown);

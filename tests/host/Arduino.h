@@ -35,6 +35,12 @@ struct HostESP {
   uint32_t largest_block = 40000;
   uint32_t getFreeHeap() const { return free_heap; }
   uint32_t getMaxFreeBlockSize() const { return largest_block; }
+  uint32_t getCpuFreqMHz() const { return 80; }
+  const char* getResetReason() const { return "Power on"; }
 };
 extern HostESP ESP;
+inline const char*& host_wifi_mode_value() {
+  static const char* value = "off";
+  return value;
+}
 #endif
