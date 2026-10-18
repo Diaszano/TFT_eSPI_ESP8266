@@ -24,7 +24,7 @@ def library_files(root: pathlib.Path) -> list[str]:
         folder = source_root / name
         if folder.is_dir():
             files.extend(path for path in folder.rglob("*") if path.is_file())
-    for name in ("Makefile", "library.json", "library.properties", "keywords.txt", "license.txt", "scripts/requirements-dev.in", "scripts/requirements-dev.txt"):
+    for name in ("Makefile", "library.json", "library.properties", "keywords.txt", "license.txt", "mise.toml", "pyproject.toml", "uv.lock"):
         path = root / name
         if path.is_file():
             files.append(path)

@@ -166,6 +166,41 @@
 #define T_CS_H  // No macro allocated so it generates no code
 /// @endcond
 
+#ifdef TFT_ESPI_SIMULATOR
+#include <SimulatorTransport.h>
+#define SPI1U   simulator::host_spi().reg(simulator::SpiRegister::Id::U)
+#define SPI1U1  simulator::host_spi().reg(simulator::SpiRegister::Id::U1)
+#define SPI1CMD simulator::host_spi().reg(simulator::SpiRegister::Id::Cmd)
+#define SPI1W0  simulator::host_spi().reg(simulator::SpiRegister::Id::W0)
+#define SPI1W1  simulator::host_spi().reg(simulator::SpiRegister::Id::W1)
+#define SPI1W2  simulator::host_spi().reg(simulator::SpiRegister::Id::W2)
+#define SPI1W3  simulator::host_spi().reg(simulator::SpiRegister::Id::W3)
+#define SPI1W4  simulator::host_spi().reg(simulator::SpiRegister::Id::W4)
+#define SPI1W5  simulator::host_spi().reg(simulator::SpiRegister::Id::W5)
+#define SPI1W6  simulator::host_spi().reg(simulator::SpiRegister::Id::W6)
+#define SPI1W7  simulator::host_spi().reg(simulator::SpiRegister::Id::W7)
+#define SPI1W8  simulator::host_spi().reg(simulator::SpiRegister::Id::W8)
+#define SPI1W9  simulator::host_spi().reg(simulator::SpiRegister::Id::W9)
+#define SPI1W10 simulator::host_spi().reg(simulator::SpiRegister::Id::W10)
+#define SPI1W11 simulator::host_spi().reg(simulator::SpiRegister::Id::W11)
+#define SPI1W12 simulator::host_spi().reg(simulator::SpiRegister::Id::W12)
+#define SPI1W13 simulator::host_spi().reg(simulator::SpiRegister::Id::W13)
+#define SPI1W14 simulator::host_spi().reg(simulator::SpiRegister::Id::W14)
+#define SPI1W15 simulator::host_spi().reg(simulator::SpiRegister::Id::W15)
+#undef DC_C
+#undef DC_D
+#undef CS_L
+#undef CS_H
+#undef T_CS_L
+#undef T_CS_H
+#define DC_C   simulator::host_spi().set_dc(false)
+#define DC_D   simulator::host_spi().set_dc(true)
+#define CS_L   simulator::host_spi().select(true)
+#define CS_H   simulator::host_spi().select(false)
+#define T_CS_L simulator::host_spi().unsupported_touch()
+#define T_CS_H simulator::host_spi().unsupported_touch()
+#endif
+
 ////////////////////////////////////////////////////////////////////////////////////////
 // Make sure TFT_MISO is defined if not used to avoid an error message
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -239,21 +274,23 @@
   }
 
 /// @brief tft Write 32C configuration constant.
-#define tft_Write_32C(C, D)                                     \
-  SPI1U1 = (31 << SPILMOSI) | (31 << SPILMISO);                 \
-  SPI1W0 = ((D) >> 8 | (D) << 8) << 16 | ((C) >> 8 | (C) << 8); \
-  SPI1CMD |= SPIBUSY;                                           \
-  while (SPI1CMD & SPIBUSY) {                                   \
-    ;                                                           \
+#define tft_Write_32C(C, D)                                                    \
+  SPI1U1 = (31 << SPILMOSI) | (31 << SPILMISO);                                \
+  SPI1W0 = (((((uint32_t)(D) >> 8) | ((uint32_t)(D) << 8)) & 0xFFFFu) << 16) | \
+           ((((uint32_t)(C) >> 8) | ((uint32_t)(C) << 8)) & 0xFFFFu);          \
+  SPI1CMD |= SPIBUSY;                                                          \
+  while (SPI1CMD & SPIBUSY) {                                                  \
+    ;                                                                          \
   }
 
 /// @brief tft Write 32D configuration constant.
-#define tft_Write_32D(C)                                        \
-  SPI1U1 = (31 << SPILMOSI) | (31 << SPILMISO);                 \
-  SPI1W0 = ((C) >> 8 | (C) << 8) << 16 | ((C) >> 8 | (C) << 8); \
-  SPI1CMD |= SPIBUSY;                                           \
-  while (SPI1CMD & SPIBUSY) {                                   \
-    ;                                                           \
+#define tft_Write_32D(C)                                                   \
+  SPI1U1 = (31 << SPILMOSI) | (31 << SPILMISO);                            \
+  SPI1W0 = ((((uint32_t)(C) >> 8 | (uint32_t)(C) << 8) & 0xFFFFU) << 16) | \
+           (((uint32_t)(C) >> 8 | (uint32_t)(C) << 8) & 0xFFFFU);          \
+  SPI1CMD |= SPIBUSY;                                                      \
+  while (SPI1CMD & SPIBUSY) {                                              \
+    ;                                                                      \
   }
 
 #ifndef tft_Write_16N

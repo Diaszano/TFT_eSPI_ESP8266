@@ -1,0 +1,17 @@
+[project]
+name = "tft-espi-esp8266-dev"
+version = "0.0.0"
+requires-python = ">=3.14.7,<3.15"
+dependencies = []
+
+[dependency-groups]
+dev = [
+    "platformio==6.2.0",
+    "starlette>=1.3.1,<2",
+    "pre-commit==4.6.2",
+    "clang-format==23.1.2",
+    "clang-tidy==22.1.8",
+]
+
+[tool.uv]
+package = false

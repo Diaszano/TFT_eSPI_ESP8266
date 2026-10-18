@@ -4,7 +4,7 @@ English | [Português (Brasil)](https://github.com/Diaszano/TFT_eSPI_ESP8266/blo
 
 ## Make targets
 
-Use Python 3.14.7 for the development toolchain. Install the pinned and hash-locked tools with `python -m pip install --require-hashes -r scripts/requirements-dev.txt`; the build uses ESP8266 platform 4.2.1 and tracks nested library and example inputs so additions, edits, and deletions invalidate cached builds.
+Use `mise trust && mise install` to install the pinned Python 3.14.7 and uv toolchain, then run `make setup` to sync the hash-locked development dependencies from `uv.lock`. The Makefile uses that environment for its commands. The build uses ESP8266 platform 4.2.1 and tracks nested library and example inputs so additions, edits, and deletions invalidate cached builds.
 
 The build and CodeQL workflows compile `Colour_Test` once before their parallel build. This serial first build initializes the shared PlatformIO packages before other examples use them concurrently; the locked PlatformIO core and target versions are part of the checked build profile.
 
@@ -72,3 +72,7 @@ CI also runs `make test-native` for pure color conversions and `make test-compil
 Write the English file in `docs/en/` first, add its same-named pt-BR translation in `docs/pt-BR/`, and update the matching README if needed. Run `make docs` to check links and language pairs and generate Doxygen HTML.
 
 The Pages workflow uses Doxygen 1.18.0. Install the same version locally so generated warnings match CI; the workflow downloads the official Linux binary for the pinned `DOXYGEN_VERSION`.
+
+## ST7789 graphics simulator
+
+The native simulator runs the library's production drawing paths with a host SPI seam. It is a functional graphics simulator, not an ESP8266 CPU emulator. Use `make sim-build`, `make sim-test`, and `make sim-render SCENE=edge_rect OUT=.build/simulator/runs/edge_rect`; start the read-only local viewer explicitly with `make sim-preview RUN=...`. Full coverage, comparison statuses, golden approval policy, and physical test limitations are documented in [the simulator guide](../../simulator/README.md). No host result verifies panel colors, SPI timing, electrical behavior, or ESP8266 runtime memory.

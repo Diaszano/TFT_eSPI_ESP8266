@@ -2044,7 +2044,11 @@ int16_t TFT_eSprite::drawChar(uint16_t uniCode, int32_t x, int32_t y, uint8_t fo
 
   int32_t width = 0;
   int32_t height = 0;
+#ifdef TFT_ESPI_SIMULATOR
+  uintptr_t flash_address = 0;
+#else
   uint32_t flash_address = 0;
+#endif
   uniCode -= 32;
 
 #ifdef LOAD_FONT2

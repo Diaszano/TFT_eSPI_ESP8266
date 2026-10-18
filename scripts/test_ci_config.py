@@ -14,7 +14,16 @@ class CIConfigTests(unittest.TestCase):
     def test_lint_workflow_uses_valid_python_module_commands(self):
         workflow = (ROOT / ".github/workflows/lint.yml").read_text()
         self.assertNotIn("python -m python -m", workflow)
-        self.assertIn("python -m pip install --require-hashes", workflow)
+        self.assertNotIn("python -m pip install", workflow)
+        self.assertIn("uv sync --locked", workflow)
+
+    def test_python_workflows_use_mise_and_uv_lock(self):
+        for name in ("build", "codeql", "docs", "fuzz", "hardware-validation-offline", "lint", "simulator"):
+            workflow = (ROOT / f".github/workflows/{name}.yml").read_text()
+            self.assertIn("jdx/mise-action@9149ea85001c7435d5a66bb127d6a1b6227cb0a5", workflow, name)
+            self.assertIn("uv sync --locked", workflow, name)
+            self.assertNotIn("actions/setup-python", workflow, name)
+            self.assertNotIn("requirements-dev.txt", workflow, name)
 
     def test_lint_checks_downloaded_gitleaks_and_working_tree(self):
         workflow = (ROOT / ".github/workflows/lint.yml").read_text()
@@ -47,6 +56,7 @@ class CIConfigTests(unittest.TestCase):
 
         self.assertEqual(ruleset["conditions"]["ref_name"]["include"], ["~ALL"])
         for branch in ("feat/add-display", "fix/st7789-init", "main", "codex/execute-all-plans",
+                       "codex/physical-hardware-validation",
                        "dependabot/github_actions/actions-08422bfd53", "release-please--branches--main"):
             self.assertRegex(branch, branch_pattern)
         for branch in ("feature/add-display", "Feat/add-display", "feat/Add-Display"):
@@ -59,6 +69,7 @@ class CIConfigTests(unittest.TestCase):
 
     def test_conventional_branch_and_commit_formats(self):
         for branch in ("feat/add-display", "fix/st7789-init", "main", "codex/execute-all-plans",
+                       "codex/physical-hardware-validation",
                        "dependabot/github_actions/actions-08422bfd53", "release-please--branches--main"):
             self.assertTrue(is_conventional_branch(branch), branch)
         for branch in ("feature/add-display", "Feat/add-display", "feat/Add-Display"):
@@ -113,6 +124,11 @@ class CIConfigTests(unittest.TestCase):
                 self.assertFalse(job.get("continue-on-error", False))
                 for step in job["steps"]:
                     self.assertFalse(step.get("continue-on-error", False))
+
+    def test_simulator_workflow_installs_ffmpeg_for_video_tests(self):
+        workflow = yaml.safe_load((ROOT / ".github/workflows/simulator.yml").read_text())
+        runs = [step["run"] for step in workflow["jobs"]["headless"]["steps"] if "run" in step]
+        self.assertTrue(any("apt-get install" in run and "ffmpeg" in run for run in runs))
 
     def test_arduino_download_checks_exact_version_digest_and_core(self):
         workflow = yaml.safe_load((ROOT / ".github/workflows/build.yml").read_text())

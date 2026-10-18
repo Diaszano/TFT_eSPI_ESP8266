@@ -1,0 +1,2 @@
+HWTEST,2
+RUN,run1,abc123,nodemcuv2

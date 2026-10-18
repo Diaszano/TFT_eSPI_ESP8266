@@ -4,7 +4,7 @@
 
 ## Alvos do Make
 
-Use Python 3.14.7 para as ferramentas de desenvolvimento. Instale as ferramentas com versões e hashes fixados usando `python -m pip install --require-hashes -r scripts/requirements-dev.txt`; o build usa a plataforma ESP8266 4.2.1 e acompanha entradas aninhadas da biblioteca e dos exemplos para que inclusões, alterações e remoções invalidem builds em cache.
+Use `mise trust && mise install` para instalar o Python 3.14.7 e o uv fixados; depois execute `make setup` para sincronizar as dependências de desenvolvimento com hashes de `uv.lock`. O Makefile usa esse ambiente nos comandos. O build usa a plataforma ESP8266 4.2.1 e acompanha entradas aninhadas da biblioteca e dos exemplos para que inclusões, alterações e remoções invalidem builds em cache.
 
 Os workflows de build e CodeQL compilam `Colour_Test` serialmente antes do build paralelo. Essa primeira compilação inicializa os pacotes compartilhados do PlatformIO antes que os outros exemplos os usem ao mesmo tempo; as versões fixadas do core PlatformIO e do alvo fazem parte do perfil de build verificado.
 
@@ -74,3 +74,7 @@ A CI também executa `make test-native` para conversões puras de cor e `make te
 Escreva primeiro o arquivo em inglês em `docs/en/`, adicione a tradução pt-BR com o mesmo nome em `docs/pt-BR/` e atualize o README correspondente se necessário. Execute `make docs` para verificar links e pares de idioma e gerar o HTML do Doxygen.
 
 O workflow do Pages usa Doxygen 1.18.0. Instale a mesma versão localmente para que os avisos gerados coincidam com a CI; o workflow baixa o binário oficial para Linux da versão fixada em `DOXYGEN_VERSION`.
+
+## Simulador gráfico ST7789
+
+O simulador nativo executa os caminhos de desenho de produção da biblioteca com uma camada SPI para host. É um simulador gráfico funcional, não um emulador de CPU ESP8266. Use `make sim-build`, `make sim-test` e `make sim-render SCENE=edge_rect OUT=.build/simulator/runs/edge_rect`; inicie o viewer local read-only explicitamente com `make sim-preview RUN=...`. A cobertura, os status de comparação, a política de aprovação de golden e os limites dos testes físicos estão no [guia do simulador](../../simulator/README.md). Nenhum resultado no host verifica cores do painel, temporização SPI, sinais elétricos ou memória de runtime do ESP8266.
