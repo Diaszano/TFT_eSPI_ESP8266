@@ -157,6 +157,16 @@ never a hardware speed measurement. During a running suite, Q stops the suite
 at a cooperative checkpoint, N advances only visual review, and other
 complete commands receive BUSY.
 
+FP1 records separate scanline RGB565 transfers (57,600 pixels and 115,200
+payload bytes per warm frame) and the optimized fillScreen path. FP2 records
+8, 32, 64, and 120 square-pixel regions at center and bottom-right edge,
+plus explicitly clipped half-width/half-height cases. Each scene has a
+separate cold frame and 1,000 warm frames. Preparation of scanline pixels
+is outside the timed interval; address-window setup and all display writes
+are inside it. The reported elapsed window sums measured frame intervals,
+excluding serial output and cooperative control checks. Q is checked after
+each batch of at most 128 frames.
+
 The operator must complete hardware gates H1–H3 in the performance validation
 spec before any upload or real capture. One operator-owned process opens the
 chosen serial port and pipes its raw bytes to the passive capture command.

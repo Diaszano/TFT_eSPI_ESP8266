@@ -29,6 +29,7 @@ void showMenu() {
   tft.drawString("Suites are manually selected", 4, 112);
   tft.drawString("TI: telemetry integrity", 4, 128);
   tft.drawString("FP1: full frame", 4, 144);
+  tft.drawString("FP2: partial regions", 4, 160);
 }
 
 void skipSuite(const char* name) {
@@ -81,6 +82,9 @@ void validation_dispatch(validation::ValidationCommand command) {
     }
     case ValidationCommandKind::FrameFull:
       validation::run_frame_perf(validation::FrameSuite::Full, tft, sprite32, Serial);
+      break;
+    case ValidationCommandKind::FramePartial:
+      validation::run_frame_perf(validation::FrameSuite::Partial, tft, sprite32, Serial);
       break;
     case ValidationCommandKind::Next:
     case ValidationCommandKind::Quit:

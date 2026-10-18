@@ -18,9 +18,12 @@ class TFT_eSPI {
   uint16_t last_pixel = 0;
   void startWrite() {}
   void endWrite() {}
-  void setAddrWindow(int32_t, int32_t, int32_t width, int32_t height) {
+  void setAddrWindow(int32_t x, int32_t y, int32_t width, int32_t height) {
+    if (x < 0 || y < 0 || width < 0 || height < 0 ||
+        x + width > 240 || y + height > 240) ++bad_windows;
     if (width && height) ++windows;
   }
+  unsigned bad_windows = 0;
   void pushPixels(uint16_t* pixels, uint32_t count) {
     if (!rows) first_pixel = pixels[0];
     last_pixel = pixels[count - 1];
