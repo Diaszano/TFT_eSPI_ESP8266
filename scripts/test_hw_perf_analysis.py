@@ -6,6 +6,7 @@ import zlib
 from scripts.hw_perf_analysis import (
     analyze_run, summarize_samples, elapsed_u32, summarize_frame_run,
     compare_frame_profiles, baseline_content_hash)
+from scripts.hw_perf_analysis import summarize_heap
 
 
 def line(sequence, kind, *fields, run_id="run42"):
@@ -94,6 +95,32 @@ class AnalysisTest(unittest.TestCase):
         result = analyze_run(raw, {"source_type": "synthetic"})
         self.assertEqual(len(result["runs"]), 2)
         self.assertEqual(result["runs"][1]["run"]["profile_id"], "fp1_warm")
+
+    def test_heap_warning_is_not_leak_verdict(self):
+        run = {"memory": [
+            {"checkpoint": 0, "free_heap": 20000, "largest_block": 15000,
+             "min_heap": 20000, "failures": 0},
+            {"checkpoint": 1, "free_heap": 18976, "largest_block": 14000,
+             "min_heap": 18000, "failures": 0}],
+            "samples": [1, 2], "elapsed_us": 100,
+            "transport_integrity": "COMPLETE"}
+        summary = summarize_heap(run)
+        self.assertNotIn("WARNING_HEAP_DROP", summary["warnings"])
+        run["memory"][-1]["free_heap"] = 18975
+        summary = summarize_heap(run)
+        self.assertIn("WARNING_HEAP_DROP", summary["warnings"])
+        self.assertNotEqual(summary["leak_status"], "PROVEN")
+        run["memory"][-1]["free_heap"] = 20000
+        summary = summarize_heap(run)
+        self.assertEqual(summary["post_minus_pre_bytes"], 0)
+        self.assertEqual(summary["recovered_bytes"], 2000)
+        self.assertLess(summary["largest_block_delta"], 0)
+        run["memory"][0]["largest_block"] = 20001
+        with self.assertRaises(ValueError):
+            summarize_heap(run)
+        run["memory"][0]["free_heap"] = 0
+        with self.assertRaises(ValueError):
+            summarize_heap(run)
 
 
 if __name__ == "__main__":

@@ -199,6 +199,14 @@ or Q is incomplete even if recovery succeeds. Deliberate over-allocation
 is skipped because this profile does not assume the sprite API guarantees
 safe failure for an invalid request.
 
+The compile-only NodeMCU build at this checkpoint reports 363,731 text,
+1,552 data, and 28,144 bss bytes. The same build of published main at
+adb2175d reports 356,883 text, 1,552 data, and 27,880 bss bytes: added
+instrumentation is +6,848 text and +264 bss bytes. These are static ELF
+sections, not a runtime heap delta. Measure startup heap on approved
+hardware before interpreting physical pressure results; stack headroom
+remains unavailable. Existing size baseline approval is unchanged.
+
 The operator must complete hardware gates H1–H3 in the performance validation
 spec before any upload or real capture. One operator-owned process opens the
 chosen serial port and pipes its raw bytes to the passive capture command.

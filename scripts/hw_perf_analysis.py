@@ -55,6 +55,57 @@ def summarize_frame_run(run: dict) -> dict:
     return summary
 
 
+def summarize_heap(run: dict) -> dict:
+    checkpoints = run.get("memory") or []
+    if len(checkpoints) < 2:
+        raise ValueError("pre and post cleanup checkpoints required")
+    for point in checkpoints:
+        free = point["free_heap"]
+        largest = point["largest_block"]
+        if not isinstance(free, int) or free <= 0 or not 0 <= largest <= free:
+            raise ValueError("invalid heap checkpoint")
+    pre, post = checkpoints[0], checkpoints[-1]
+    lowest = min(point["min_heap"] for point in checkpoints)
+    fragmentations = [1000 * (point["free_heap"] - point["largest_block"])
+                      / point["free_heap"] for point in checkpoints]
+    x = [point["checkpoint"] for point in checkpoints]
+    y = [point["free_heap"] for point in checkpoints]
+    mean_x, mean_y = statistics.mean(x), statistics.mean(y)
+    denominator = sum((value - mean_x) ** 2 for value in x)
+    slope = (sum((a - mean_x) * (b - mean_y) for a, b in zip(x, y))
+             / denominator if denominator else 0.0)
+    warnings = []
+    if pre["free_heap"] - post["free_heap"] > 1024:
+        warnings.append("WARNING_HEAP_DROP")
+    if post["largest_block"] < pre["largest_block"]:
+        warnings.append("WARNING_LARGEST_BLOCK_REGRESSION")
+    latencies = run.get("samples") or []
+    latency = None
+    if latencies and run.get("elapsed_us"):
+        latency = summarize_samples(latencies, run["elapsed_us"])
+    return {"status": "COMPLETE" if run.get("transport_integrity") == "COMPLETE"
+            else "INCOMPLETE",
+            "pre_free_heap": pre["free_heap"], "post_free_heap": post["free_heap"],
+            "lowest_free_heap": lowest, "pre_largest_block": pre["largest_block"],
+            "post_largest_block": post["largest_block"],
+            "minimum_largest_block": min(point["largest_block"] for point in checkpoints),
+            "pre_fragmentation_permille": fragmentations[0],
+            "post_fragmentation_permille": fragmentations[-1],
+            "recovered_bytes": post["free_heap"] - lowest,
+            "post_minus_pre_bytes": post["free_heap"] - pre["free_heap"],
+            "largest_block_delta": post["largest_block"] - pre["largest_block"],
+            "failure_count": post["failures"], "allocation_latency": latency,
+            "cleanup_slope_bytes_per_checkpoint": slope,
+            "cleanup_variability_bytes": statistics.pstdev(y),
+            "warnings": warnings,
+            "leak_status": "INVESTIGATE" if warnings else "NO_EVIDENCE",
+            "recovery_status": run.get("recovery_status", "UNAVAILABLE"),
+            "firmware_size": run.get("firmware_size", "UNAVAILABLE"),
+            "startup_heap_delta": run.get("startup_heap_delta",
+                                           "PENDING_REAL_HARDWARE"),
+            "stack_headroom": "UNAVAILABLE"}
+
+
 def baseline_content_hash(runs: list[dict]) -> str:
     canonical = json.dumps(sorted(runs, key=lambda run: run.get("boot_id", "")),
                            sort_keys=True, separators=(",", ":"))
@@ -109,13 +160,20 @@ def analyze_run(raw: bytes, capture: dict) -> dict:
     run_summaries = []
     for run in parsed["runs"]:
         measurement = None
+        heap = None
         integrity = run["transport_integrity"]
         if run["suite"] not in {"TI", "HC", "HP"} and run["samples"] and run["elapsed_us"]:
             try:
                 measurement = summarize_samples(run["samples"], run["elapsed_us"])
             except ValueError:
                 integrity = "CORRUPT"
+        if run["suite"] in {"HC", "HP"} and len(run["memory"]) >= 2:
+            try:
+                heap = summarize_heap(run)
+            except ValueError:
+                integrity = "CORRUPT"
         run_summaries.append({"run": run, "measurements": measurement,
+                              "heap": heap,
                               "firmware_result": run["firmware_result"],
                               "transport_integrity": integrity})
     run = parsed["runs"][0] if parsed["runs"] else None
