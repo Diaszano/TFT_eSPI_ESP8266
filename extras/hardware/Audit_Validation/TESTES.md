@@ -167,6 +167,12 @@ are inside it. The reported elapsed window sums measured frame intervals,
 excluding serial output and cooperative control checks. Q is checked after
 each batch of at most 128 frames.
 
+FP3 draws two text regions, three primitives, a fixed 12×12 cropped RGB565
+image, background repair, and a moving 32×32 sprite with seed 324508639.
+The sprite and image buffer are prepared before timing. A missing sprite
+produces SKIP; it is not a successful frame run. The sketch restores Font 1
+and the default non-swapped pixel order after the mixed scene.
+
 The operator must complete hardware gates H1–H3 in the performance validation
 spec before any upload or real capture. One operator-owned process opens the
 chosen serial port and pipes its raw bytes to the passive capture command.

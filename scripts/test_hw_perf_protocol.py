@@ -73,6 +73,13 @@ class PerfProtocolTest(unittest.TestCase):
         self.assertEqual([run["transport_integrity"] for run in parsed["runs"]],
                          ["COMPLETE", "COMPLETE"])
 
+    def test_skip_has_complete_transport_without_samples(self):
+        raw = (line("run42", 0, "BEGIN", "FP3", 0, 1000, "fp3_mixed")
+               + line("run42", 1, "END", "FP3", 0, 0, "SKIP"))
+        run = parse_perf(raw)["runs"][0]
+        self.assertEqual(run["firmware_result"], "SKIP")
+        self.assertEqual(run["transport_integrity"], "COMPLETE")
+
 
 if __name__ == "__main__":
     unittest.main()

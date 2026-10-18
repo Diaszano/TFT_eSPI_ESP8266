@@ -166,16 +166,18 @@ def parse_perf(raw: bytes) -> dict:
 
     for run in runs:
         frame = run["suite"] not in {"HC", "HP"}
-        if (run["terminal"] == "END" and frame
+        skipped = run["firmware_result"] == "SKIP" and run["observed_count"] == 0
+        if (run["terminal"] == "END" and frame and not skipped
                 and "sequence discontinuity" not in run["errors"] and (
                 run["observed_count"] != len(run["samples"])
                 or (run["expected_count"] and run["expected_count"] != len(run["samples"])))):
             run["_corrupt"] = True
             run["errors"].append("terminal sample count mismatch")
         complete = (run["terminal"] == "END" and not run["errors"]
-                    and (not frame or run["observed_count"] == len(run["samples"]))
-                    and (not frame or run["expected_count"] == 0
-                         or run["expected_count"] == len(run["samples"])))
+                    and (skipped or (
+                        (not frame or run["observed_count"] == len(run["samples"]))
+                        and (not frame or run["expected_count"] == 0
+                             or run["expected_count"] == len(run["samples"])))))
         if run["_corrupt"]:
             run["transport_integrity"] = "CORRUPT"
         elif complete:

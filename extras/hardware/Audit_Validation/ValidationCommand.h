@@ -20,6 +20,7 @@ enum class ValidationCommandKind : uint8_t {
   TelemetryIntegrity,
   FrameFull,
   FramePartial,
+  FrameMixed,
   Unknown
 };
 
@@ -98,6 +99,8 @@ inline ValidationCommand parse_validation_command(const char* line) {
     command.kind = ValidationCommandKind::FrameFull;
   else if (strcmp(line, "FP2") == 0)
     command.kind = ValidationCommandKind::FramePartial;
+  else if (strcmp(line, "FP3") == 0)
+    command.kind = ValidationCommandKind::FrameMixed;
   return command;
 }
 

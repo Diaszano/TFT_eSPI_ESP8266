@@ -30,6 +30,7 @@ void showMenu() {
   tft.drawString("TI: telemetry integrity", 4, 128);
   tft.drawString("FP1: full frame", 4, 144);
   tft.drawString("FP2: partial regions", 4, 160);
+  tft.drawString("FP3: mixed frame", 4, 176);
 }
 
 void skipSuite(const char* name) {
@@ -85,6 +86,9 @@ void validation_dispatch(validation::ValidationCommand command) {
       break;
     case ValidationCommandKind::FramePartial:
       validation::run_frame_perf(validation::FrameSuite::Partial, tft, sprite32, Serial);
+      break;
+    case ValidationCommandKind::FrameMixed:
+      validation::run_frame_perf(validation::FrameSuite::Mixed, tft, sprite32, Serial);
       break;
     case ValidationCommandKind::Next:
     case ValidationCommandKind::Quit:

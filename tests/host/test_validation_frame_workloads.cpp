@@ -37,4 +37,26 @@ int main() {
   assert(partial.payload_pixels == 44064 * 1001);
   assert(partial.bad_windows == 0);
   assert(partial_output.bytes.find("fp2_120_clip") != std::string::npos);
+  TFT_eSPI mixed;
+  Print mixed_output;
+  validation::run_frame_perf(validation::FrameSuite::Mixed, mixed, sprite,
+                             mixed_output);
+  assert(mixed.strings == 2 * 1001);
+  assert(mixed.images == 1001);
+  assert(sprite.pushes == 1001);
+  assert(sprite.min_x >= 40 && sprite.max_x <= 199);
+  assert(sprite.min_x != sprite.max_x);
+  TFT_eSPI replay_display;
+  TFT_eSprite replay_sprite(&replay_display);
+  Print replay_output;
+  validation::run_frame_perf(validation::FrameSuite::Mixed, replay_display,
+                             replay_sprite, replay_output);
+  assert(replay_sprite.positions == sprite.positions);
+  assert(mixed_output.bytes.find("END,FP3,1000,") != std::string::npos);
+  assert(mixed.font == 1 && !mixed.swap_bytes);
+  sprite.available = false;
+  Print skipped;
+  validation::run_frame_perf(validation::FrameSuite::Mixed, mixed, sprite, skipped);
+  assert(skipped.bytes.find("END,FP3,0,0,SKIP,") != std::string::npos);
+  assert(skipped.bytes.find("PASS") == std::string::npos);
 }

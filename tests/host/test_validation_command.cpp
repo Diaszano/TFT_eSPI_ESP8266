@@ -25,6 +25,7 @@ int main() {
   assert(validation::parse_validation_command("TI").kind == ValidationCommandKind::TelemetryIntegrity);
   assert(validation::parse_validation_command("FP1").kind == ValidationCommandKind::FrameFull);
   assert(validation::parse_validation_command("FP2").kind == ValidationCommandKind::FramePartial);
+  assert(validation::parse_validation_command("FP3").kind == ValidationCommandKind::FrameMixed);
   assert(validation::parse_validation_command("S5").kind == ValidationCommandKind::Unknown);
   assert(validation::parse_validation_command("b").kind == ValidationCommandKind::Unknown);
   assert(validation::parse_validation_command("Bextra").kind == ValidationCommandKind::Unknown);
