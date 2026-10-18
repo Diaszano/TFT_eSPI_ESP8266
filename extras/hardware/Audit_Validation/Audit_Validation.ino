@@ -6,6 +6,7 @@
 #include "ValidationPerfTelemetry.h"
 #include "ValidationFramePerf.h"
 #include "ValidationMemoryExtended.h"
+#include "ValidationSoak.h"
 #include "ValidationTelemetry.h"
 #include "ValidationVisual.h"
 #include "ValidationBench.h"
@@ -34,6 +35,7 @@ void showMenu() {
   tft.drawString("FP3: mixed frame", 4, 176);
   tft.drawString("HC: heap churn", 4, 192);
   tft.drawString("HP: heap pressure", 4, 208);
+  tft.drawString("FM/FM8H/FM24H: mixed soak", 4, 224);
 }
 
 void skipSuite(const char* name) {
@@ -98,6 +100,15 @@ void validation_dispatch(validation::ValidationCommand command) {
       break;
     case ValidationCommandKind::HeapPressure:
       validation::run_heap_pressure(tft, Serial);
+      break;
+    case ValidationCommandKind::FrameMixedLong30:
+      validation::run_mixed_soak(30, tft, Serial);
+      break;
+    case ValidationCommandKind::FrameMixedLong8H:
+      validation::run_mixed_soak(480, tft, Serial);
+      break;
+    case ValidationCommandKind::FrameMixedLong24H:
+      validation::run_mixed_soak(1440, tft, Serial);
       break;
     case ValidationCommandKind::Next:
     case ValidationCommandKind::Quit:

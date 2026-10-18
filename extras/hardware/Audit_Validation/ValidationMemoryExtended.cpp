@@ -43,6 +43,22 @@ bool recover(TFT_eSPI& tft) {
 }
 
 namespace validation {
+bool heap_lifecycle_step(uint32_t index, TFT_eSPI& tft, uint32_t* allocation_us,
+                         uint32_t* total_us) {
+  const uint8_t sizes[] = {8, 16, 24, 32};
+  const uint8_t depths[] = {1, 4, 8, 16};
+  const uint8_t choice = static_cast<uint8_t>((index + 0x13579bdfUL) & 15);
+  TFT_eSprite sprite(&tft);
+  sprite.setColorDepth(depths[choice >> 2]);
+  const uint32_t before = micros();
+  if (!sprite.createSprite(sizes[choice & 3], sizes[choice & 3])) return false;
+  *allocation_us = micros() - before;
+  sprite.fillSprite((index & 1) ? TFT_RED : TFT_BLUE);
+  sprite.deleteSprite();
+  *total_us = micros() - before;
+  return true;
+}
+
 void run_heap_churn(TFT_eSPI& tft, Print& log) {
   char id[17];
   run_id(id, sizeof(id));
@@ -68,20 +84,15 @@ void run_heap_churn(TFT_eSPI& tft, Print& log) {
       perf.abort("HC", i, "HEAP_FLOOR");
       return;
     }
-    TFT_eSprite sprite(&tft);
-    sprite.setColorDepth(depth);
-    const uint32_t before = micros();
-    if (!sprite.createSprite(side, side)) {
+    uint32_t allocation_us, operation_us;
+    if (!heap_lifecycle_step(i, tft, &allocation_us, &operation_us)) {
       ++failures;
       checkpoint(perf, "HC", i / 1024 + 1, minimum, failures);
       perf.abort("HC", i, "ALLOC_FAIL");
       return;
     }
-    const uint32_t allocation_us = micros() - before;
     if (i < 16) samples[i] = allocation_us;
-    sprite.fillSprite((i & 1) ? TFT_RED : TFT_BLUE);
-    sprite.deleteSprite();
-    elapsed += micros() - before;
+    elapsed += operation_us;
     const uint32_t free = ESP.getFreeHeap();
     if (free < minimum) minimum = free;
     if ((i + 1) % 1024 == 0) {

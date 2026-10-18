@@ -33,18 +33,7 @@ void draw(Scene scene, uint32_t frame, TFT_eSPI& tft, uint16_t* line,
     return;
   }
   if (scene == Scene::Mixed) {
-    tft.setTextFont(1);
-    tft.setTextColor(TFT_WHITE, TFT_BLACK);
-    tft.drawString("Frame", 4, 4);
-    tft.setTextFont(2);
-    tft.drawString("Mixed", 4, 24);
-    tft.drawRect(4, 54, 20, 20, TFT_RED);
-    tft.drawFastHLine(40, 64, 90, TFT_GREEN);
-    tft.fillRect(144, 54, 12, 12, TFT_BLUE);
-    tft.pushImage(12, 96, 12, 12, mixed_image);
-    tft.fillRect(0, 180, 240, 32, TFT_BLACK);
-    sprite->fillSprite((frame & 1) ? TFT_RED : TFT_BLUE);
-    sprite->pushSprite(40 + (frame * 3 + 0x13579bdfUL) % 160, 180);
+    validation::draw_mixed_frame(frame, tft, *sprite);
     return;
   }
   tft.startWrite();
@@ -104,6 +93,26 @@ bool run_profile(Scene scene, const char* profile, bool cold, TFT_eSPI& tft, Pri
 }  // namespace
 
 namespace validation {
+void prepare_mixed_image() {
+  for (uint16_t i = 0; i < 12 * 12; ++i)
+    mixed_image[i] = (i & 1) ? TFT_GREEN : TFT_BLUE;
+}
+
+void draw_mixed_frame(uint32_t frame, TFT_eSPI& tft, TFT_eSprite& sprite) {
+  tft.setTextFont(1);
+  tft.setTextColor(TFT_WHITE, TFT_BLACK);
+  tft.drawString("Frame", 4, 4);
+  tft.setTextFont(2);
+  tft.drawString("Mixed", 4, 24);
+  tft.drawRect(4, 54, 20, 20, TFT_RED);
+  tft.drawFastHLine(40, 64, 90, TFT_GREEN);
+  tft.fillRect(144, 54, 12, 12, TFT_BLUE);
+  tft.pushImage(12, 96, 12, 12, mixed_image);
+  tft.fillRect(0, 180, 240, 32, TFT_BLACK);
+  sprite.fillSprite((frame & 1) ? TFT_RED : TFT_BLUE);
+  sprite.pushSprite(40 + (frame * 3 + 0x13579bdfUL) % 160, 180);
+}
+
 void run_frame_perf(FrameSuite suite, TFT_eSPI& tft, TFT_eSprite& sprite, Print& log) {
   if (suite == FrameSuite::Full) {
     if (!run_profile(Scene::Scanline, "fp1_scanline_cold", true, tft, log)) return;
@@ -132,8 +141,7 @@ void run_frame_perf(FrameSuite suite, TFT_eSPI& tft, TFT_eSprite& sprite, Print&
         perf.end("FP3", 0, 0, "SKIP");
       return;
     }
-    for (uint16_t i = 0; i < 12 * 12; ++i)
-      mixed_image[i] = (i & 1) ? TFT_GREEN : TFT_BLUE;
+    prepare_mixed_image();
     if (run_profile(Scene::Mixed, "fp3_mixed_cold", true, tft, log,
                     0, 0, &sprite))
       run_profile(Scene::Mixed, "fp3_mixed", false, tft, log, 0, 0, &sprite);

@@ -207,6 +207,16 @@ sections, not a runtime heap delta. Measure startup heap on approved
 hardware before interpreting physical pressure results; stack headroom
 remains unavailable. Existing size baseline approval is unchanged.
 
+FM, FM8H, and FM24H are separate opt-in 30-minute, 8-hour, and 24-hour
+mixed-soak profiles. Each repeats one FP3 scene and one HC allocation
+lifecycle step. The firmware samples frame duration in at most 128-entry
+batches, emits a MEM checkpoint each elapsed minute, and polls Q after
+every frame. END carries actual completed frame count and 64-bit elapsed
+microseconds. No profile starts or resumes automatically. The long profiles
+require separate physical authorization, a continuous raw capture sized for
+the expected data volume, and a manually checked stop path. An incomplete
+capture or interrupted run is not physical endurance evidence.
+
 The operator must complete hardware gates H1–H3 in the performance validation
 spec before any upload or real capture. One operator-owned process opens the
 chosen serial port and pipes its raw bytes to the passive capture command.

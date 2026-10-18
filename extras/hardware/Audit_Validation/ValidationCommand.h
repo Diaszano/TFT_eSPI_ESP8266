@@ -23,6 +23,9 @@ enum class ValidationCommandKind : uint8_t {
   FrameMixed,
   HeapChurn,
   HeapPressure,
+  FrameMixedLong30,
+  FrameMixedLong8H,
+  FrameMixedLong24H,
   Unknown
 };
 
@@ -107,6 +110,12 @@ inline ValidationCommand parse_validation_command(const char* line) {
     command.kind = ValidationCommandKind::HeapChurn;
   else if (strcmp(line, "HP") == 0)
     command.kind = ValidationCommandKind::HeapPressure;
+  else if (strcmp(line, "FM") == 0)
+    command.kind = ValidationCommandKind::FrameMixedLong30;
+  else if (strcmp(line, "FM8H") == 0)
+    command.kind = ValidationCommandKind::FrameMixedLong8H;
+  else if (strcmp(line, "FM24H") == 0)
+    command.kind = ValidationCommandKind::FrameMixedLong24H;
   return command;
 }
 

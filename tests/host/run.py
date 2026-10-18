@@ -500,7 +500,7 @@ def run_validation_unit(root: pathlib.Path) -> None:
                "test_validation_stress_math.cpp", "test_validation_oracle.cpp",
                "test_validation_perf_protocol.cpp", "test_validation_input.cpp",
                "test_validation_frame_math.cpp", "test_validation_frame_workloads.cpp",
-               "test_validation_heap_churn.cpp")
+               "test_validation_heap_churn.cpp", "test_validation_soak.cpp")
     includes = (root / "extras/hardware/Audit_Validation", root / "tests/host")
     with tempfile.TemporaryDirectory(prefix="tft-validation-unit-") as temp:
         for name in sources:
@@ -521,6 +521,12 @@ def run_validation_unit(root: pathlib.Path) -> None:
                                str(root / "extras/hardware/Audit_Validation/ValidationPerfTelemetry.cpp"),
                                str(root / "extras/hardware/Audit_Validation/ValidationMemoryExtended.cpp")]
                               if name == "test_validation_heap_churn.cpp" else []),
+                            *([str(root / "extras/hardware/Audit_Validation/ValidationInput.cpp"),
+                               str(root / "extras/hardware/Audit_Validation/ValidationPerfTelemetry.cpp"),
+                               str(root / "extras/hardware/Audit_Validation/ValidationFramePerf.cpp"),
+                               str(root / "extras/hardware/Audit_Validation/ValidationMemoryExtended.cpp"),
+                               str(root / "extras/hardware/Audit_Validation/ValidationSoak.cpp")]
+                              if name == "test_validation_soak.cpp" else []),
                             "-o", str(binary)], check=True)
             subprocess.run([str(binary)], check=True)
             print("PASS validation-{}".format(source.stem.removeprefix("test_validation_")))
