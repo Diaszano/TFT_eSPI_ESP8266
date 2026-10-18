@@ -413,21 +413,18 @@ void TFT_eSPI::setViewport(int32_t x, int32_t y, int32_t w, int32_t h, bool vpDa
   _vpH = height();   // Equivalent of TFT height (Nb: viewport bottom edge coord
                      // + 1)
 
-  // Clip viewport to screen area
-  if (x < 0) {
-    w += x;
-    x = 0;
-  }
-  if (y < 0) {
-    h += y;
-    y = 0;
-  }
-  if ((x + w) > width()) {
-    w = width() - x;
-  }
-  if ((y + h) > height()) {
-    h = height() - y;
-  }
+  // Clip in a wider type so extreme origins and dimensions cannot overflow.
+  int64_t left = x, top = y;
+  int64_t right = static_cast<int64_t>(x) + w;
+  int64_t bottom = static_cast<int64_t>(y) + h;
+  if (left < 0) left = 0;
+  if (top < 0) top = 0;
+  if (right > width()) right = width();
+  if (bottom > height()) bottom = height();
+  w = right > left ? static_cast<int32_t>(right - left) : 0;
+  h = bottom > top ? static_cast<int32_t>(bottom - top) : 0;
+  x = static_cast<int32_t>(left);
+  y = static_cast<int32_t>(top);
 
   // Serial.print(" x=");Serial.print( x);Serial.print(", y=");Serial.print( y);
   // Serial.print(", w=");Serial.print(w);Serial.print(",
@@ -4626,7 +4623,11 @@ int16_t TFT_eSPI::drawChar(uint16_t uniCode, int32_t x, int32_t y, uint8_t font)
 
   int32_t width = 0;
   int32_t height = 0;
+#ifdef TFT_ESPI_SIMULATOR
+  uintptr_t flash_address = 0;
+#else
   uint32_t flash_address = 0;
+#endif
   uniCode -= 32;
 
 #ifdef LOAD_FONT2

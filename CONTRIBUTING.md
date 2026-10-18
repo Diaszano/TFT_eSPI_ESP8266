@@ -4,7 +4,7 @@ English | [Português (Brasil)](CONTRIBUTING.pt-BR.md)
 
 ## Setup and checks
 
-Use Python 3.14.7 and install the hash-locked tools with `python -m pip install --require-hashes -r scripts/requirements-dev.txt`. Run `make setup` once, then run `make build lint docs` before opening a pull request.
+Install the pinned tools with `mise trust && mise install`, then run `make setup` once to sync the hash-locked Python dependencies from `uv.lock`. Run `make build lint docs` before opening a pull request.
 
 ## Branches and commits
 

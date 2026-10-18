@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>ST7789 Simulator Viewer</title>
+  <link rel="stylesheet" href="style.css">
+  <script defer src="viewer.js"></script>
+</head>
+<body>
+  <header>
+    <strong class="warning">SIMULATED — NOT PHYSICAL DISPLAY</strong>
+    <p>Functional graphics simulation; it does not verify ESP8266 timing, memory, electrical behavior, or physical colors.</p>
+    <div id="identity"></div>
+  </header>
+  <main>
+    <aside>
+      <label>Scene / run <select id="scene-list"></select></label>
+      <nav><button id="prev-frame" type="button">Previous</button><span id="frame-index">0 / 0</span><button id="next-frame" type="button">Next</button></nav>
+      <label>Zoom <select id="zoom"><option>1x</option><option>2x</option><option>4x</option><option>8x</option></select></label>
+      <label>View <select id="view"><option value="candidate">Candidate</option><option value="expected">Expected</option><option value="diff">Difference overlay</option></select></label>
+      <p>Comparison: <strong id="status">INCONCLUSIVE</strong></p>
+      <section id="comparison"></section>
+      <pre id="metadata"></pre>
+      <section id="pixel-info" aria-live="polite">Hover over a pixel to inspect it.</section>
+      <section id="error" role="alert"></section>
+    </aside>
+    <section class="display"><img id="frame" alt="Simulated ST7789 frame" width="240" height="240"><img id="diff-overlay" alt="Pixel differences" width="240" height="240" hidden></section>
+  </main>
+</body>
+</html>

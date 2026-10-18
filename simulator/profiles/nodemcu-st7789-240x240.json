@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "name": "nodemcu-st7789-240x240",
+  "board": "nodemcuv2",
+  "controller": "ST7789",
+  "visible": {"width": 240, "height": 240, "offset_x": 0, "offset_y": 0},
+  "gram": {"width": 240, "height": 320},
+  "pixel_format": "RGB565",
+  "colmod": "0x55",
+  "default_madctl": "0x00",
+  "supported_rotations": [0, 1, 2, 3],
+  "inversion_changes_raw_gram": false
+}
