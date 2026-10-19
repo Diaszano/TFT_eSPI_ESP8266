@@ -9,6 +9,18 @@ The hardening changes below were merged after the published v1.0.0 tag. They are
 
 * harden ESP8266 library and tooling ([#5](https://github.com/Diaszano/TFT_eSPI_ESP8266/issues/5)) ([e9e7f2d](https://github.com/Diaszano/TFT_eSPI_ESP8266/commit/e9e7f2d30378babd22427fd9606d7b99bf0d83d0))
 
+## [1.3.1](https://github.com/Diaszano/TFT_eSPI_ESP8266/compare/v1.3.0...v1.3.1) (2026-10-19)
+
+
+### Bug Fixes
+
+* **sprite:** clip sprite operations, lines, and text without signed overflow ([#20](https://github.com/Diaszano/TFT_eSPI_ESP8266/issues/20)) ([efbfe23](https://github.com/Diaszano/TFT_eSPI_ESP8266/commit/efbfe23523ff22eda32fada12c9ef40a2384970f))
+
+
+### Performance Improvements
+
+* **esp8266:** optimize ST7789 rendering and SPI stream primitives ([#21](https://github.com/Diaszano/TFT_eSPI_ESP8266/issues/21)) ([d53af2e](https://github.com/Diaszano/TFT_eSPI_ESP8266/commit/d53af2e408d41cfeeb158d0b96db6d47d308a846))
+
 ## [1.3.0](https://github.com/Diaszano/TFT_eSPI_ESP8266/compare/v1.2.0...v1.3.0) (2026-10-18)
 
 
