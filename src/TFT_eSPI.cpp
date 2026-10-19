@@ -17,8 +17,6 @@
 #include "internal/color_conversion.h"
 #include "internal/sprite_layout.h"
 
-using namespace tft_espi_internal;
-
 // ESP8266 SPI layer
 // Select the SPI port to use
 // ESP8266 default (FLASH port also available via overlap mode)
@@ -263,34 +261,21 @@ void TFT_eSPI::pushSwapBytePixels(const void* data_in, uint32_t len) {
 #endif
 
 // Clipping macro for pushImage
-#define PI_CLIP                           \
-  if (_vpOoB) return;                     \
-  x += _xDatum;                           \
-  y += _yDatum;                           \
-                                          \
-  if ((x >= _vpW) || (y >= _vpH)) return; \
-                                          \
-  int32_t dx = 0;                         \
-  int32_t dy = 0;                         \
-  int32_t dw = w;                         \
-  int32_t dh = h;                         \
-                                          \
-  if (x < _vpX) {                         \
-    dx = _vpX - x;                        \
-    dw -= dx;                             \
-    x = _vpX;                             \
-  }                                       \
-  if (y < _vpY) {                         \
-    dy = _vpY - y;                        \
-    dh -= dy;                             \
-    y = _vpY;                             \
-  }                                       \
-                                          \
-  if ((x + dw) > _vpW) dw = _vpW - x;     \
-  if ((y + dh) > _vpH) dh = _vpH - y;     \
-                                          \
-  if (dw < 1 || dh < 1) return;
+#define PI_CLIP                                                                                 \
+  int32_t dx = x, dy = y, dw = w, dh = h;                                                       \
+  if (_vpOoB || !clipSpan(x, dw, _xDatum, _vpX, _vpW) || !clipSpan(y, dh, _yDatum, _vpY, _vpH)) \
+    return;                                                                                     \
+  /* source offset of the first visible pixel; clipping only ever trims the start \
+   * of the span, so this is >= 0 and < w (or h) */             \
+  dx = (int32_t)((int64_t)x - dx - _xDatum);                                                    \
+  dy = (int32_t)((int64_t)y - dy - _yDatum);
 
+using tft_espi_internal::clipSpan;
+using tft_espi_internal::glyphInRange;
+using tft_espi_internal::offsetCoord;
+
+// Internal linkage, so a sketch type with the same name cannot be merged with these at link time.
+namespace {
 // Stages pixels for pushPixels() in a fixed 32-byte buffer so image paths keep a static stack
 // frame. One flush is one 16-pixel SPI FIFO transfer, as with a full line buffer.
 struct PixelChunk {
@@ -347,6 +332,8 @@ class FifoPixels {
   }
   uint32_t n = 0, half = 0;
 };
+
+}  // namespace
 
 // Push n PROGMEM pixels; the flash cache only allows aligned 32-bit loads, so read word-wise.
 static void pushFlashPixels(TFT_eSPI& tft, const uint16_t* data, int32_t n) {
@@ -1192,10 +1179,10 @@ uint32_t TFT_eSPI::readcommand32(uint8_t cmd_function, uint8_t index) {
 uint16_t TFT_eSPI::readPixel(int32_t x0, int32_t y0) {
   if (TFT_MISO < 0) return 0;  // No MISO wired: display is write-only, assume black
 
-  if (_vpOoB) return 0;
-
-  x0 += _xDatum;
-  y0 += _yDatum;
+  // A position whose sum with the origin overflows lies outside every viewport
+  if (_vpOoB || __builtin_add_overflow(x0, _xDatum, &x0) ||
+      __builtin_add_overflow(y0, _yDatum, &y0))
+    return 0;
 
   // Range checking
   if ((x0 < _vpX) || (y0 < _vpY) || (x0 >= _vpW) || (y0 >= _vpH)) return 0;
@@ -2302,11 +2289,14 @@ void TFT_eSPI::drawRect(int32_t x, int32_t y, int32_t w, int32_t h, uint32_t col
   // begin_tft_write()
   inTransaction = true;
 
+  int32_t bottom, top, side, right;
   drawFastHLine(x, y, w, color);
-  drawFastHLine(x, y + h - 1, w, color);
+  if (offsetCoord(y, (int64_t)h - 1, bottom)) drawFastHLine(x, bottom, w, color);
   // Avoid drawing corner pixels twice
-  drawFastVLine(x, y + 1, h - 2, color);
-  drawFastVLine(x + w - 1, y + 1, h - 2, color);
+  if (offsetCoord(y, 1, top) && offsetCoord(h, -2, side)) {
+    drawFastVLine(x, top, side, color);
+    if (offsetCoord(x, (int64_t)w - 1, right)) drawFastVLine(right, top, side, color);
+  }
 
   inTransaction = lockTransaction;
   end_tft_write();  // Does nothing if Sprite class uses this function
@@ -2870,6 +2860,7 @@ void TFT_eSPI::drawChar(int32_t x, int32_t y, uint16_t c, uint32_t color, uint32
 #endif
     //>>>>>>>>>>>>>>>>>>
 
+    if (!glyphInRange(x, y, _xDatum, _yDatum)) return;
     int32_t xd = x + _xDatum;
     int32_t yd = y + _yDatum;
 
@@ -2943,8 +2934,9 @@ void TFT_eSPI::drawChar(int32_t x, int32_t y, uint16_t c, uint32_t color, uint32
 #endif  // LOAD_GLCD
 
 #ifdef LOAD_GFXFF
-    // Filter out bad characters not present in font
-    if ((c >= pgm_read_word(&gfxFont->first)) && (c <= pgm_read_word(&gfxFont->last))) {
+    // Filter out bad characters not present in font, and glyphs too far out to be visible
+    if (glyphInRange(x, y, _xDatum, _yDatum) && (c >= pgm_read_word(&gfxFont->first)) &&
+        (c <= pgm_read_word(&gfxFont->last))) {
       // begin_tft_write();          // Sprite class can use this function,
       // avoiding begin_tft_write()
       inTransaction = true;
@@ -3111,10 +3103,9 @@ void TFT_eSPI::readAddrWindow(int32_t xs, int32_t ys, int32_t w, int32_t h) {
 ** Description:             push a single pixel at an arbitrary position
 ***************************************************************************************/
 void TFT_eSPI::drawPixel(int32_t x, int32_t y, uint32_t color) {
-  if (_vpOoB) return;
-
-  x += _xDatum;
-  y += _yDatum;
+  // A position whose sum with the origin overflows lies outside every viewport
+  if (_vpOoB || __builtin_add_overflow(x, _xDatum, &x) || __builtin_add_overflow(y, _yDatum, &y))
+    return;
 
   // Range checking
   if ((x < _vpX) || (y < _vpY) || (x >= _vpW) || (y >= _vpH)) return;
@@ -3246,6 +3237,30 @@ void TFT_eSPI::pushColors(uint16_t* data, uint32_t len, bool swap) {
   end_tft_write();
 }
 
+// drawLine helper: clip the major axis of a line with endpoints a <= b to the viewport span
+// [lo - datum, hi - datum) and advance the Bresenham error term err and minor coordinate y to the
+// first visible step. Out of line so its 64-bit arithmetic stays out of the drawing loop's frame.
+static __attribute__((noinline)) bool clipLineMajor(int32_t a, int32_t b, int32_t lo, int32_t hi,
+                                                    int32_t datum, uint32_t dx, uint32_t dy,
+                                                    uint32_t ystep, uint32_t& err, uint32_t& y,
+                                                    int32_t& first, int32_t& last) {
+  int64_t start = (int64_t)lo - datum, end = (int64_t)hi - datum - 1;
+  if (end > b) end = b;
+  if (start < a) start = a;
+  if (start > end) return false;
+  if (start > a) {
+    // After k steps y has moved m = ceil((k * dy - err) / dx) times (dy <= dx keeps err in
+    // [0, dx)). k, dy < 2^32, so k * dy fits uint64_t; the 64-bit divide is in the ESP8266 ROM.
+    uint64_t k = (uint64_t)(start - a), kdy = k * dy, m = 0;
+    if (kdy > err) m = (kdy - err + dx - 1) / dx;
+    err = (uint32_t)(err + m * dx - kdy);
+    y += ystep * (uint32_t)m;
+  }
+  first = (int32_t)start;
+  last = (int32_t)end;
+  return true;
+}
+
 /***************************************************************************************
 ** Function name:           drawLine
 ** Description:             draw a line between 2 arbitrary points
@@ -3262,7 +3277,9 @@ void TFT_eSPI::drawLine(int32_t x0, int32_t y0, int32_t x1, int32_t y1, uint32_t
   // x+= _xDatum;             // Not added here, added by drawPixel &
   // drawFastXLine y+= _yDatum;
 
-  bool steep = abs(y1 - y0) > abs(x1 - x0);
+  // Deltas are formed in 64-bit: endpoints may be anywhere in int32_t
+  int64_t adx = (int64_t)x1 - x0, ady = (int64_t)y1 - y0;
+  bool steep = (ady < 0 ? -ady : ady) > (adx < 0 ? -adx : adx);
   if (steep) {
     transpose(x0, y0);
     transpose(x1, y1);
@@ -3273,46 +3290,56 @@ void TFT_eSPI::drawLine(int32_t x0, int32_t y0, int32_t x1, int32_t y1, uint32_t
     transpose(y0, y1);
   }
 
-  int32_t dx = x1 - x0, dy = abs(y1 - y0);
-  ;
+  // 0 <= dy <= dx < 2^32 and the error term stays in [0, dx), so all fit uint32_t
+  uint32_t dx = (uint32_t)x1 - (uint32_t)x0;
+  uint32_t dy = y0 < y1 ? (uint32_t)y1 - (uint32_t)y0 : (uint32_t)y0 - (uint32_t)y1;
+  uint32_t err = dx >> 1;
+  uint32_t y = (uint32_t)y0;  // minor coordinate; may wrap one step past y1, never drawn then
+  uint32_t ystep = (y0 < y1) ? 1 : (uint32_t)-1;
 
-  int32_t err = dx >> 1, ystep = -1, xs = x0, dlen = 0;
+  // Only steps whose major coordinate is inside the viewport can draw: skip to the first one with
+  // the error term Bresenham would have reached and stop after the last, so a line from far
+  // off-screen costs time proportional to the viewport, not to its length.
+  int32_t lo = steep ? _vpY : _vpX, hi = steep ? _vpH : _vpW;
+  int32_t datum = steep ? _yDatum : _xDatum;
+  int32_t x, xe;
+  if (!clipLineMajor(x0, x1, lo, hi, datum, dx, dy, ystep, err, y, x, xe)) {
+    inTransaction = lockTransaction;
+    end_tft_write();
+    return;
+  }
 
-  if (y0 < y1) ystep = 1;
+  // x..xe lies inside the viewport and inside x0..x1. A run of dlen pixels ending at x starts at
+  // x - dlen + 1.
+  int32_t dlen = 0;
 
   // Split into steep and not steep for FastH/V separation
-  if (steep) {
-    for (; x0 <= x1; x0++) {
-      dlen++;
-      err -= dy;
-      if (err < 0) {
-        if (dlen == 1)
-          drawPixel(y0, xs, color);
+  for (;; x++) {
+    dlen++;
+    if (err < dy) {
+      if (dlen == 1) {
+        if (steep)
+          drawPixel((int32_t)y, x, color);
         else
-          drawFastVLine(y0, xs, dlen, color);
-        dlen = 0;
-        y0 += ystep;
-        xs = x0 + 1;
-        err += dx;
+          drawPixel(x, (int32_t)y, color);
+      } else if (steep) {
+        drawFastVLine((int32_t)y, x - dlen + 1, dlen, color);
+      } else {
+        drawFastHLine(x - dlen + 1, (int32_t)y, dlen, color);
       }
-    }
-    if (dlen) drawFastVLine(y0, xs, dlen, color);
-  } else {
-    for (; x0 <= x1; x0++) {
-      dlen++;
+      dlen = 0;
+      y += ystep;
+      err += dx - dy;
+    } else {
       err -= dy;
-      if (err < 0) {
-        if (dlen == 1)
-          drawPixel(xs, y0, color);
-        else
-          drawFastHLine(xs, y0, dlen, color);
-        dlen = 0;
-        y0 += ystep;
-        xs = x0 + 1;
-        err += dx;
-      }
     }
-    if (dlen) drawFastHLine(xs, y0, dlen, color);
+    if (x == xe) break;  // xe may be INT32_MAX, so test before incrementing
+  }
+  if (dlen > 0) {
+    if (steep)
+      drawFastVLine((int32_t)y, xe - dlen + 1, dlen, color);
+    else
+      drawFastHLine(xe - dlen + 1, (int32_t)y, dlen, color);
   }
 
   inTransaction = lockTransaction;
@@ -4544,6 +4571,8 @@ int16_t TFT_eSPI::drawChar(uint16_t uniCode, int32_t x, int32_t y, uint8_t font)
     }
   }
 #endif
+
+  if (!glyphInRange(x, y, _xDatum, _yDatum)) return width * textsize;
 
   int32_t xd = x + _xDatum;
   int32_t yd = y + _yDatum;
