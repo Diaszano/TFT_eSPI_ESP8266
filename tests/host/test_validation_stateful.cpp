@@ -1,10 +1,13 @@
 #include "stateful_cases.h"
+#include "internal/clip.h"
 #include <algorithm>
 #include <cassert>
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
 #include <vector>
+
+using tft_espi_internal::clipSpan;
 
 class TFT_eSPI {
  public:

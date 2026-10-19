@@ -1,9 +1,12 @@
 #include "extreme_cases.h"
 #include "validation_oracle.h"
+#include "internal/clip.h"
 #include <cassert>
 #include <climits>
 #include <cstring>
 #include <vector>
+
+using tft_espi_internal::clipSpan;
 
 class TFT_eSPI {
  public:

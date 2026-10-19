@@ -383,7 +383,7 @@ def run_clipping_case(root: pathlib.Path) -> None:
         binary = pathlib.Path(temp) / "clipping"
         cpp.write_text(generated)
         subprocess.run([compiler, "-std=c++11", "-Wall", "-Wextra", "-fsanitize=address,undefined",
-                        "-fno-sanitize-recover=all", "-I", str(root / "tests/host"), str(cpp), "-o", str(binary)], check=True)
+                        "-fno-sanitize-recover=all", "-I", str(root / "tests/host"), "-I", str(root / "src"), str(cpp), "-o", str(binary)], check=True)
         subprocess.run([str(binary)], check=True)
     print("PASS clipping")
 
@@ -436,7 +436,7 @@ def run_text_clipping(root: pathlib.Path) -> None:
         binary = pathlib.Path(temp) / "case"
         cpp.write_text(generated)
         subprocess.run([compiler, "-std=c++11", "-Wall", "-Wextra", "-Wno-int-to-pointer-cast", "-fsanitize=address,undefined",
-                        "-fno-sanitize-recover=all", str(cpp), "-o", str(binary)], check=True)
+                        "-fno-sanitize-recover=all", "-I", str(root / "src"), str(cpp), "-o", str(binary)], check=True)
         subprocess.run([str(binary)], check=True)
     print("PASS text-clipping fonts 1 and 2")
     print("SKIP text-font-4: no independent host RLE glyph fixture")
@@ -471,7 +471,7 @@ def run_extreme_coordinates(root: pathlib.Path, case_id: str = None, fuzz: bool 
         cpp.write_text(generated)
         command = [compiler, "-std=c++11", "-Wall", "-Wextra",
                    "-fsanitize=fuzzer,address,undefined" if fuzz else "-fsanitize=address,undefined",
-                   "-fno-sanitize-recover=all", "-I", str(root / "tests/host"), str(cpp), "-o", str(binary)]
+                   "-fno-sanitize-recover=all", "-I", str(root / "src"), "-I", str(root / "tests/host"), str(cpp), "-o", str(binary)]
         subprocess.run(command, check=True)
         if fuzz:
             corpus = root / "tests/host/corpus/extremes"
@@ -554,17 +554,76 @@ def run_stateful_graphics(root: pathlib.Path) -> None:
         source_path.write_text(generated)
         subprocess.run(["c++", "-std=c++11", "-Wall", "-Wextra", "-Werror",
                         "-fsanitize=address,undefined", "-fno-sanitize-recover=all",
-                        "-I", str(root / "tests/host"), str(source_path),
+                        "-I", str(root / "src"), "-I", str(root / "tests/host"), str(source_path),
                         "-o", str(binary)], check=True)
         subprocess.run([str(binary)], check=True)
     print("PASS stateful-graphics")
+
+
+RENDER_SIGNATURES = (
+    "inline void TFT_eSPI::begin_tft_write(void) {",
+    "inline void TFT_eSPI::end_tft_write(void) {",
+    "void TFT_eSPI::pushBlock(uint16_t color, uint32_t len) {",
+    "void TFT_eSPI::pushPixels(const void* data_in, uint32_t len) {",
+    "void TFT_eSPI::pushSwapBytePixels(const void* data_in, uint32_t len) {",
+    "void TFT_eSPI::setWindow(int32_t x0, int32_t y0, int32_t x1, int32_t y1) {",
+    "void TFT_eSPI::drawPixel(int32_t x, int32_t y, uint32_t color) {",
+    "void TFT_eSPI::fillRect(int32_t x, int32_t y, int32_t w, int32_t h, uint32_t color) {",
+    "void TFT_eSPI::drawFastVLine(int32_t x, int32_t y, int32_t h, uint32_t color) {",
+    "void TFT_eSPI::drawFastHLine(int32_t x, int32_t y, int32_t w, uint32_t color) {",
+    "void TFT_eSPI::drawRect(int32_t x, int32_t y, int32_t w, int32_t h, uint32_t color) {",
+    "void TFT_eSPI::pushImage(int32_t x, int32_t y, int32_t w, int32_t h, uint16_t* data) {",
+    "void TFT_eSPI::pushImage(int32_t x, int32_t y, int32_t w, int32_t h, uint16_t* data,\n",
+    "void TFT_eSPI::pushImage(int32_t x, int32_t y, int32_t w, int32_t h, const uint16_t* data) {",
+    "void TFT_eSPI::pushImage(int32_t x, int32_t y, int32_t w, int32_t h, const uint16_t* data,\n",
+    "void TFT_eSPI::pushImage(int32_t x, int32_t y, int32_t w, int32_t h, const uint8_t* data, bool bpp8,",
+    "void TFT_eSPI::pushImage(int32_t x, int32_t y, int32_t w, int32_t h, uint8_t* data, bool bpp8,",
+    "void TFT_eSPI::pushImage(int32_t x, int32_t y, int32_t w, int32_t h, uint8_t* data, uint8_t transp,",
+    "void TFT_eSPI::drawChar(int32_t x, int32_t y, uint16_t c, uint32_t color, uint32_t bg,",
+    "int16_t TFT_eSPI::drawChar(uint16_t uniCode, int32_t x, int32_t y, uint8_t font) {",
+)
+
+
+def run_render_stream(root: pathlib.Path, table: bool = False) -> None:
+    """Replay render primitives through a simulated ESP8266 SPI bus and ST7789 controller."""
+    compiler = shutil.which("c++")
+    if not compiler:
+        raise RuntimeError("C++ compiler required for host tests")
+    source = (root / "src/TFT_eSPI.cpp").read_text()
+    header = (root / "src/TFT_eSPI.h").read_text()
+    macros = header[header.index("#define CMD_BITS 8") : header.index("#ifndef tft_Write_16N")]
+    macros += re.search(r"^#define DAT8TO32\(P\).*$", header, re.MULTILINE).group(0) + "\n"
+    clip = source[source.index("#ifndef SPI_BUSY_CHECK") : source.index("/****", source.index("#define PI_CLIP"))]
+    methods = []
+    for signature in RENDER_SIGNATURES:
+        method, line = extract_method(source, signature)
+        method = method.replace("inline void", "void", 1).replace("uint32_t flash_address", "uintptr_t flash_address")
+        methods.append(f'#line {line} "src/TFT_eSPI.cpp"\n{method}')
+    fixture = (root / "tests/host/test_render_stream.cpp").read_text()
+    for marker in ("// HEADER MACROS UNDER TEST", "// FUNCTIONS UNDER TEST"):
+        if fixture.count(marker) != 1:
+            raise ValueError("expected exactly one unique insertion marker: " + marker)
+    generated = fixture.replace("// HEADER MACROS UNDER TEST", macros).replace(
+        "// FUNCTIONS UNDER TEST", clip + "\n" + "\n".join(methods)
+    )
+    with tempfile.TemporaryDirectory(prefix="tft-render-stream-") as temp:
+        source_path = pathlib.Path(temp) / "render_stream.cpp"
+        binary = pathlib.Path(temp) / "render_stream"
+        source_path.write_text(generated)
+        subprocess.run(
+            [compiler, "-std=c++17", "-Wall", "-Wextra",
+             "-fsanitize=address" if table else "-fsanitize=address,undefined",
+             "-fno-sanitize-recover=all", "-I", str(root / "src"), str(source_path), "-o", str(binary)],
+            check=True,
+        )
+        subprocess.run([str(binary)] + (["--table"] if table else []), check=True)
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--case",
-        choices=("scroll", "font-metrics", "allocations", "glyph-allocation", "font-files", "spi-pixels", "sprite-rotation", "sprite-clipping", "text-clipping", "gfx-initialization", "clipping", "image-clipping", "extreme-coordinates", "validation-unit", "stateful-graphics", "all"),
+        choices=("scroll", "font-metrics", "allocations", "glyph-allocation", "font-files", "spi-pixels", "sprite-rotation", "sprite-clipping", "text-clipping", "gfx-initialization", "clipping", "image-clipping", "extreme-coordinates", "validation-unit", "stateful-graphics", "render-stream", "all"),
         default="all",
     )
     parser.add_argument(
@@ -585,6 +644,11 @@ def main() -> int:
         help="Timeout per input in seconds (default: 5)",
     )
     parser.add_argument("--case-id", help="Run one extreme-coordinate case ID")
+    parser.add_argument(
+        "--table",
+        action="store_true",
+        help="Print the render-stream table instead of checking",
+    )
     args = parser.parse_args()
     root = pathlib.Path(__file__).resolve().parents[2]
     if args.fuzz and args.case not in ("scroll", "extreme-coordinates"):
@@ -619,6 +683,8 @@ def main() -> int:
         run_validation_unit(root)
     if args.case in ("stateful-graphics", "all"):
         run_stateful_graphics(root)
+    if args.case in ("render-stream", "all"):
+        run_render_stream(root, table=args.table)
     return 0
 
 
