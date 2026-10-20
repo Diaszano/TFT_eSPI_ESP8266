@@ -13,10 +13,10 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: jdx/mise-action@9149ea85001c7435d5a66bb127d6a1b6227cb0a5 # v5.0.0
+      - uses: jdx/mise-action@08ae2a091c038e1e05ec6f5115dc5c69d5a2a6b8 # v5.1.2
       - run: uv sync --locked --python "$(mise which python)"
       - name: Run scroll fuzzer campaign
         run: uv run python3 tests/host/run.py --case scroll --fuzz --fuzz-time 60 --fuzz-timeout 5
@@ -26,7 +26,7 @@ jobs:
         run: uv run python3 tests/host/run.py --case stateful-graphics
       - name: Upload crash and corpus artifacts
         if: always()
-        uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08 # v4.6.0
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: fuzz-host-artifacts
           path: |
